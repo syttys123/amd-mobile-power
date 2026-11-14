@@ -42,6 +42,7 @@ const clipLead = parseFloat(arg("--clip-lead", "0.4"));
   }
 
   const browser = await chromium.launch();
+  try {
   const page = await browser.newPage({ viewport: { width, height } });
   await page.goto(`file:///${htmlPath.replace(/\\/g, "/")}`);
   await page.waitForFunction(() => typeof window.__totalDuration === "function");
@@ -120,8 +121,8 @@ const clipLead = parseFloat(arg("--clip-lead", "0.4"));
     "utf8"
   );
 
-  await browser.close();
   console.log(`\nDone. ${frameCount} frames -> ${framesDir}`);
+  } finally { await browser.close(); }
 })().catch((err) => {
   console.error(err);
   process.exit(1);

@@ -21,6 +21,20 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (full silent promo review render):
+
+- Rendered 638 timeline frames using frozen-candidate preset footage,
+  updated claims and visible simulated-data label. Review-only output:
+  `artifacts/media/promo-1.0.34-review/amd-mobile-power-1.0.34-review-silent.mp4`.
+  ffprobe: 1920x1080, 15 fps, 42.533008 seconds; full ffmpeg decode PASS.
+- Browser recorder now closes Chromium in finally on success or failure.
+  Frame rendering and encoding processes completed normally.
+- This silent 15 fps cut is for pacing/content review, not the final video.
+  Consent/policy/device stills remain old, full flash/cursor/motion review is
+  pending, and licensed music/final frame rate remain to be finalized.
+- No application or hardware process launched by this render; deployment and
+  frozen candidate unchanged. No publication performed.
+
 2026-11-14 (promo fixture labeling and image validation):
 
 - Preset scene now labels simulated data outside the application image,
