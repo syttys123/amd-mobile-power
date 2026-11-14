@@ -257,20 +257,25 @@ try {
         Set-Content -LiteralPath $EvidencePath -Encoding UTF8
 }
 finally {
+    try {
     if ($null -ne $window -and $window -ne [IntPtr]::Zero) {
         [AmdMobilePowerMaximizeScroll]::PostMessage(
-            $window, 0x0010,
-            [System.UIntPtr]::Zero, [IntPtr]::Zero) | Out-Null
+            $window, 0x0111,
+            [System.UIntPtr]2, [IntPtr]::Zero) | Out-Null
     }
     if ($process) {
-        $process.WaitForExit(3000) | Out-Null
-        if (-not $process.HasExited) {
-            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+        try {
+        if (-not $process.WaitForExit(5000)) {
+            $process.Kill()
+            if (-not $process.WaitForExit(5000)) { throw 'Maximize test GUI cleanup timed out.' }
         }
+        } finally { $process.Dispose() }
     }
+    } finally {
     $env:LOCALAPPDATA = $previousLocalAppData
     if (Test-Path -LiteralPath $stateDirectory) {
         Remove-Item -LiteralPath $stateDirectory -Recurse -Force
+    }
     }
 }
 

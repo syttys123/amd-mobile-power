@@ -21,6 +21,25 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (1.0.36 packaged layout/resource regressions):
+
+- Pinned 1.0.36 GUI passed 125% and 200% logical-DPI interaction tests,
+  including preset editing, focus, target draft retention, resize and scrolling.
+  200% stress: 480 mode switches/repaints, GDI 27 throughout, USER 61-62,
+  handles 189-190, private bytes 2641920 initially / 2600960 finally.
+  This bounded test is not a long-term leak-free claim.
+- Small-workarea 1366x728 at logical 200% PASS; maximize-scroll PASS with
+  previous scroll position 243 reset to 0 and header top 15. Evidence:
+  `evidence/ui/v1.0.36-dpi200-resource-2026-11-14.json`,
+  `evidence/ui/v1.0.36-dpi125-interaction-2026-11-14.json`,
+  `evidence/ui/v1.0.36-small-viewport-2026-11-15.json`,
+  `evidence/ui/v1.0.36-maximize-scroll-2026-11-15.json`.
+- Small-viewport/maximize verifiers now send explicit Exit rather than Close
+  (which hides to tray), wait for termination, bound fallback kill and dispose
+  process objects. Environment restoration runs even if cleanup fails.
+- These are verifier-only source changes after candidate freeze; frozen package
+  unchanged. No hardware write gate or real OS DPI-transition test performed.
+
 2026-11-14 (1.0.36 candidate build and qualification):
 
 - Clean source 9a7f326558344259d08eba463eb5e9d51358a17a includes the first-line

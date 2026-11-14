@@ -1,0 +1,93 @@
+{
+  "SourceCommit": "5016fdf2b8c4e64b76067a63b40dd3410fea7afd",
+  "SourceDirty": false,
+  "Verification": "PASS",
+  "ResourceStability": {
+    "Verification": "PASS",
+    "ModeSwitches": 480,
+    "SynchronousRepaints": 480,
+    "Samples": [
+      {
+        "Batch": 0,
+        "GdiObjects": 27,
+        "UserObjects": 61,
+        "Handles": 189,
+        "PrivateBytes": 2641920
+      },
+      {
+        "Batch": 1,
+        "GdiObjects": 27,
+        "UserObjects": 61,
+        "Handles": 190,
+        "PrivateBytes": 2707456
+      },
+      {
+        "Batch": 2,
+        "GdiObjects": 27,
+        "UserObjects": 62,
+        "Handles": 190,
+        "PrivateBytes": 2707456
+      },
+      {
+        "Batch": 3,
+        "GdiObjects": 27,
+        "UserObjects": 61,
+        "Handles": 190,
+        "PrivateBytes": 2707456
+      },
+      {
+        "Batch": 4,
+        "GdiObjects": 27,
+        "UserObjects": 61,
+        "Handles": 190,
+        "PrivateBytes": 2600960
+      },
+      {
+        "Batch": 5,
+        "GdiObjects": 27,
+        "UserObjects": 61,
+        "Handles": 190,
+        "PrivateBytes": 2600960
+      }
+    ]
+  },
+  "FixturePolicyIsolation": "Not requested",
+  "Path": "Rust GUI -> C++ worker -> RyzenAdj",
+  "Processor": null,
+  "WorkerStatus": "",
+  "GuiExecutable": "amd-mobile-power-gui.exe",
+  "GuiSHA256": "995a39ed14e28a14d8288904b5aaa4e9dcb99f025919219fc044db0e023d9698",
+  "WorkerExecutable": null,
+  "WorkerSHA256": null,
+  "MinimizeRestoreCycles": 3,
+  "CloseToTray": "PASS",
+  "TrayRestore": "PASS",
+  "SingleInstanceWake": "PASS",
+  "TaskbarIconAvailable": null,
+  "TrayIconId": null,
+  "InitialUiMode": null,
+  "FinalUiMode": "advanced",
+  "DiagnosticsExport": "Not requested",
+  "ViewModes": "PASS",
+  "TopMost": "PASS",
+  "TargetWatts": null,
+  "ReadBackWatts": null,
+  "WriteControls": "PASS",
+  "PresetEditing": "PASS",
+  "BatteryOnlyToggle": "PASS",
+  "FocusNotifications": "PASS",
+  "TargetDraftRetention": "PASS",
+  "MinimumResizeBounds": "PASS",
+  "AdvancedScroll": "PASS",
+  "DpiFixture": "200",
+  "WritePreset": "Not requested",
+  "PolicySave": "Not requested",
+  "BackgroundGuiSessionsToRestore": 1,
+  "RecordedAt": "2026-11-14T23:59:00.0124528+08:00",
+  "BackgroundGuiRestoration": [
+    {
+      "Verification": "PASS",
+      "LiveSessions": 1
+    }
+  ]
+}

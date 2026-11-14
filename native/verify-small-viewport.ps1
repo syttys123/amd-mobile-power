@@ -241,20 +241,25 @@ try {
         Set-Content -LiteralPath $EvidencePath -Encoding UTF8
 }
 finally {
+    try {
     if ($window -ne [IntPtr]::Zero) {
         [AmdMobilePowerSmallViewport]::PostMessage(
-            $window, 0x0010, [UIntPtr]::Zero, [IntPtr]::Zero) | Out-Null
+            $window, 0x0111, [UIntPtr]2, [IntPtr]::Zero) | Out-Null
     }
     if ($process) {
-        $process.WaitForExit(3000) | Out-Null
-        if (-not $process.HasExited) {
+        try {
+        if (-not $process.WaitForExit(5000)) {
             $process.Kill($true)
+            if (-not $process.WaitForExit(5000)) { throw 'Viewport test GUI cleanup timed out.' }
         }
+        } finally { $process.Dispose() }
     }
+    } finally {
     $env:LOCALAPPDATA = $previousLocalAppData
     $env:AMD_MOBILE_POWER_WORK_AREA_FIXTURE = $previousWorkArea
     if (Test-Path -LiteralPath $stateDirectory) {
         Remove-Item -LiteralPath $stateDirectory -Recurse -Force
+    }
     }
 }
 
