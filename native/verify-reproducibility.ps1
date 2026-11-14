@@ -85,9 +85,12 @@ function Rebuild-RustBinary {
         throw "Fresh Rust target directory must stay under artifacts."
     }
     try {
+        . (Join-Path $root 'rust-path-remapping.ps1')
+        Invoke-RemappedRustBuild -RepositoryRoot $repositoryRoot -Action {
         & cargo build --manifest-path $Manifest --target-dir $freshTarget --release --locked --offline
         if ($LASTEXITCODE -ne 0) {
             throw "Fresh Rust rebuild failed for $Manifest"
+        }
         }
         $rebuilt = Join-Path $freshTarget ("release\" + (Split-Path -Leaf $Executable))
         if (-not (Test-Path -LiteralPath $rebuilt)) {

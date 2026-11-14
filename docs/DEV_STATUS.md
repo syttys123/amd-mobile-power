@@ -21,6 +21,24 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (Rust build path remapping implemented):
+
+- Added common rust-path-remapping helper around normal native build and fresh
+  reproducibility Rust builds. Maps repository, user home, explicit Cargo and
+  rustup roots to neutral paths in both slash forms; restores encoded flags in
+  finally. Existing encoded flags are preserved; plain RUSTFLAGS currently uses
+  whitespace splitting, so quoted-space flags need a regression/improvement.
+- PowerShell parse checks and environment restoration smoke PASS. Full offline
+  native build PASS: GUI 60 tests, probe 7 tests, C++ policy/cleanup/resource tests
+  and icon verification. Existing frozen packages untouched.
+- Direct ASCII/UTF-16LE personal-home regex check on rebuilt GUI/probe found
+  no matches. GUI SHA256
+  3199533bae77b20d2d5a8d0598108a18b55f00a8f970f17620b44a5e9def5f37;
+  probe d80fe52c6f10ddc71ac0884ba540bc449e95dfd00503a49b3a40951e6d2a0e84.
+- Pending: independent remapped builds, full ZIP binary scan, positive-control
+  scanner regression, CI path coverage and a new candidate. 1.0.36 stays held.
+  No hardware policy changes or stable deployment replacement performed.
+
 2026-11-15 (binary sanitization found personal build paths):
 
 - Added optional ZIP EXE/DLL/SYS ASCII/UTF-16LE pattern scanning and separate

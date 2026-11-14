@@ -72,6 +72,8 @@ $ryzenAdjRuntime = Join-Path $repositoryRoot "artifacts\ryzenadj-runtime"
 $rustGuiManifest = Join-Path $root "rust-gui\Cargo.toml"
 Push-Location $repositoryRoot
 try {
+    . (Join-Path $root 'rust-path-remapping.ps1')
+    Invoke-RemappedRustBuild -RepositoryRoot $repositoryRoot -Action {
     & $cmake `
         -S (Join-Path $root "cpp-worker") `
         -B $cppBuild `
@@ -208,6 +210,7 @@ try {
             -Path (Join-Path $workerRuntime "*") `
             -Destination $guiRuntime `
             -Force
+    }
     }
 }
 finally {
