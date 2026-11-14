@@ -21,6 +21,23 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (local 07:00/22:30 policy maintenance resumed):
+
+- Stable 1.0.33 policy set to battery 8 W / external 45 W and persisted. Worker
+  read-back confirms all three limits 8 W on battery and all three 45 W on AC.
+- Added `native/restore-day-policy.ps1`, which updates the hidden GUI policy,
+  waits for worker application, reads back all six limits, and writes a PASS/FAIL
+  log. Tested with current 8/45 values under Windows PowerShell 5.1; PASS.
+- Created daily Codex automations: 22:30 -> battery 8 W/AC 45 W; 07:00 ->
+  battery 10 W/AC 45 W. Both invoke the tested helper and require read-back.
+  Their first real time-fire is still pending.
+- Windows Scheduled Tasks were attempted but could not provide reliable,
+  prompt execution in this session; all test and policy tasks were removed.
+  Abandoned local helper copies under LocalAppData may remain but are untracked
+  and inactive.
+- C:\RyzenAdj was not replaced or restarted by this policy change. Evidence:
+  `evidence/hardware/local-night-day-policy-2026-11-15.json`.
+
 2026-11-15 (consent capture completed; user requested pause):
 
 - Added CaptureConsent restricted to read-only isolated fixtures. Opens the
