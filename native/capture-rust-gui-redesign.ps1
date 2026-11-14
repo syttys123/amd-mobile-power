@@ -697,6 +697,7 @@ try {
     }
 }
 finally {
+    try {
     if ($window -ne [IntPtr]::Zero) {
         [AmdMobilePowerUiCapture]::PostMessage(
             $window,
@@ -705,14 +706,20 @@ finally {
             [IntPtr]::Zero) | Out-Null
     }
     if ($process) {
-        $process.WaitForExit(5000) | Out-Null
-        if (-not $process.HasExited) {
-            $process.Kill($true)
+        try {
+            if (-not $process.WaitForExit(5000)) {
+                $process.Kill($true)
+                if (-not $process.WaitForExit(5000)) { throw "Capture GUI did not exit." }
+            }
         }
+        finally { $process.Dispose() }
     }
+    }
+    finally {
     $env:LOCALAPPDATA = $previousLocalAppData
     if (Test-Path -LiteralPath $stateDirectory) {
         Remove-Item -LiteralPath $stateDirectory -Recurse -Force
+    }
     }
 }
 

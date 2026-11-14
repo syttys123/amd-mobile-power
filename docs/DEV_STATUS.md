@@ -21,6 +21,22 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (fixture saved-policy IPC isolation defect found):
+
+- New frozen-candidate advanced capture with enabled saved policy showed
+  pending application and stale simulated limits. Root cause:
+  apply_profile_to_presets auto-saved enabled policy even when ui_fixture
+  was active, starting real pipe IPC in a fixture session.
+- Added ui_fixture.is_none guard to this automatic save path. Rust 59 tests
+  PASS, but enabled-policy fixture runtime regression remains pending.
+- New stills under artifacts/media/frozen-1.0.34-stills are INVALID for promo
+  use until recaptured after this fix. Frozen candidate contains the defect;
+  it remains unpromoted and needs replacement/requalification, not silently
+  relabeling existing hashes. No hardware worker was started by this fixture;
+  the isolated pipe request still violated the intended fixture boundary.
+- Capture script now waits/disposes its process and restores environment in
+  nested finally. Stable GUI/child worker confirmed restored after capture.
+
 2026-11-14 (silent review luminance screening):
 
 - Added `media/promo-html/build/review-luminance.js` to parse ffmpeg

@@ -1,6 +1,6 @@
 {
   "Version": "1.0.34",
-  "Status": "FROZEN_READONLY_PASS_PENDING_FULL_GATES",
+  "Status": "HELD_FIXTURE_POLICY_IPC_DEFECT",
   "SourceCommit": "7734516b6d090e3ad7c2632b52b07350918d2da3",
   "Package": "amd-mobile-power-v1.0.34-win-x64-native-preview.zip",
   "PackageSHA256": "920cc4322b6865910a74b36374a1637eb494165f54a87be343127909f3c55b2f",

@@ -5144,7 +5144,10 @@ unsafe fn apply_profile_to_presets(app: &mut GuiApp, hwnd: HWND, profile: &Profi
                 0,
             );
             app.policy_profile_applied = true;
-            if saved.map(|settings| settings.enabled).unwrap_or(false) && !app.policy_in_flight {
+            if saved.map(|settings| settings.enabled).unwrap_or(false)
+                && !app.policy_in_flight
+                && app.ui_fixture.is_none()
+            {
                 app.policy_in_flight = true;
                 start_policy_save(hwnd as usize, app.worker_pipe.clone(), saved.unwrap());
             }
