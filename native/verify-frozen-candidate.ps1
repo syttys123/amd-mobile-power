@@ -48,6 +48,32 @@ foreach ($file in Get-ChildItem -LiteralPath $stage -File -Recurse) {
     if ($file.Name -eq 'SHA256SUMS.txt' -and $file.DirectoryName -eq $stage) { continue }
     if (-not $seen.ContainsKey($file.FullName)) { throw 'Candidate contains an unchecked extra file.' }
 }
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path -LiteralPath $zip).Path)
+$zipSeen = @{}
+$rootName = [System.IO.Path]::GetFileName($stage) + '/'
+try {
+    foreach ($entry in $archive.Entries) {
+        if (-not $entry.FullName.StartsWith($rootName, [System.StringComparison]::Ordinal)) {
+            throw 'ZIP entry is outside the candidate root.'
+        }
+        if (-not $entry.Name) { continue }
+        $relative = $entry.FullName.Substring($rootName.Length)
+        $path = [System.IO.Path]::GetFullPath((Join-Path $stage $relative))
+        if (-not $path.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase) -or
+            $zipSeen.ContainsKey($path)) { throw 'Escaping or duplicate ZIP entry.' }
+        $zipSeen[$path] = $true
+        $stream = $entry.Open()
+        $sha = [System.Security.Cryptography.SHA256]::Create()
+        try { $entryHash = [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '').ToLowerInvariant() }
+        finally { $stream.Dispose(); $sha.Dispose() }
+        Assert-Hash $path $entryHash
+    }
+    foreach ($file in Get-ChildItem -LiteralPath $stage -File -Recurse) {
+        if (-not $zipSeen.ContainsKey($file.FullName)) { throw 'Staged file is absent from the candidate ZIP.' }
+    }
+}
+finally { $archive.Dispose() }
 $record = [ordered]@{
     Verification = 'PASS'
     Scope = 'Pinned ZIP identity and staged payload checksums; not runtime or release approval'
@@ -55,6 +81,7 @@ $record = [ordered]@{
     SourceCommit = $manifest.SourceCommit
     PackageSHA256 = $manifest.PackageSHA256
     ChecksumEntries = $checksums.Count
+    ZipEntriesMatched = $zipSeen.Count
     RecordedAt = (Get-Date).ToString('o')
 }
 if ($EvidencePath) {

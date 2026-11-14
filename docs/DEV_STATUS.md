@@ -21,6 +21,20 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (frozen ZIP/stage correspondence and privacy scan):
+
+- Frozen identity verifier now streams and hashes every ZIP file entry,
+  compares it with the staged counterpart, rejects duplicate/escaping paths,
+  and checks staged files are present in the ZIP. Current candidate PASS:
+  20 matched entries including SHA256SUMS, 19 payload checksums.
+- Same frozen ZIP public-sanitization PASS: 661 tracked files and 13 ZIP
+  text entries scanned against configured patterns. Evidence:
+  `evidence/release/public-sanitization-1.0.34-frozen-2026-11-14.json` and
+  refreshed `evidence/packaging/v1.0.34-frozen-identity-2026-11-14.json`.
+- Negative path/duplicate cases remain to be exercised; pattern scans do not
+  prove absence of every possible secret. No execution/hardware/deployment
+  operations; frozen artifact unchanged.
+
 2026-11-14 (frozen candidate identity preflight):
 
 - Added `native/verify-frozen-candidate.ps1` to check pinned ZIP hash/size,
