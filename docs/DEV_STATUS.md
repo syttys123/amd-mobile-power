@@ -21,6 +21,20 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (review footage claims and luminance screening):
+
+- Inspected full-render frames 362 and 480: pointer is over the corresponding
+  25/45 W controls, pending state and yellow firmware warning are visible.
+  These two samples do not establish full click/transition synchronization.
+- Changed preset heading to editable quick presets and subtitle to click then
+  read-back confirmation, distinguishing requested target/current draw/effective
+  limits. Seven revised-source scene midpoint image/bounds checks PASS.
+- Existing 30 fps MP4 all 1275 frames screened at 320x180: no isolated mean
+  luma spikes >20 or near-white mean >210. Range 29.4884-73.1055. This heuristic
+  does not rule out local flicker. Results under artifacts/media/promo-1.0.37-review.
+- Existing MP4 predates the copy edit; re-render needed along with current
+  consent/policy/device assets. No hardware or application process changes.
+
 2026-11-15 (1.0.37 full 30 fps silent review render):
 
 - Rendered all 1275 frames of the 42.5-second HTML timeline with pinned 1.0.37

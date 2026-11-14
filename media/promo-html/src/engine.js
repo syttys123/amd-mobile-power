@@ -244,7 +244,7 @@ SCENE_RENDERERS["ui-demo"] = (scene, t, root) => {
     letterSpacing: "5px", marginBottom: "20px",
   });
   const title = el("div", {});
-  title.innerHTML = "一键切换<br>三档功耗";
+  title.innerHTML = "快捷预设<br>自由编辑";
   Object.assign(title.style, {
     color: "#f1f7f4", fontSize: "72px", fontWeight: "900", lineHeight: "1.12",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",

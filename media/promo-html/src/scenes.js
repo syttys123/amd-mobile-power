@@ -13,7 +13,7 @@ window.__SCENES__ = [
   {
     id: "ui-demo",
     duration: 11.0,
-    narration: "三个按钮，点一下立刻切换。现在用了多少瓦、温度多少、上限多少，都实时显示在界面上。",
+    narration: "点击预设，回读确认。目标、当前功耗与实际生效上限分开显示，遇到固件限制会明确提示。",
   },
   {
     id: "auto-policy",
