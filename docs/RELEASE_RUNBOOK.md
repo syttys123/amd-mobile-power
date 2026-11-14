@@ -2,11 +2,11 @@
 
 ## Current Candidate Override (2026-11-14)
 
-Current work targets 1.0.36, while C:\RyzenAdj remains 1.0.33. The steps below
+Current work targets 1.0.37, while C:\RyzenAdj remains 1.0.33. The steps below
 describe historical 1.0.33/1.0.31 promotion, not the current release procedure.
 `RELEASE_CHECKLIST.md` and `DEV_STATUS.md` define pending gates. Source is
-aligned with frozen `9a7f326` 1.0.36, qualified for read-only runtime and
-reproducibility. See `evidence/release/candidate-1.0.36-frozen-2026-11-14.json`.
+aligned with frozen `18aaa56` 1.0.37, qualified for read-only runtime and
+text/binary pattern scanning. See `evidence/release/candidate-1.0.37-frozen-2026-11-15.json`.
 Complete final write/hang and other checklist gates, then refresh the commands
 below before promotion or public release. This file implies no release approval.
 

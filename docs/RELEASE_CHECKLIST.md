@@ -2,15 +2,15 @@
 
 ## Current Candidate Override (2026-11-14)
 
-Current target: **1.0.36**, status **HELD_BINARY_PERSONAL_BUILD_PATH**.
-Binary string inspection found personal Cargo registry paths in GUI/probe.
-Remap build paths and qualify a new candidate before public distribution.
+Current target: **1.0.37**, status **READONLY_AND_PATTERN_SCAN_PASS_PENDING_FULL_GATES**.
+1.0.36 remains held for embedded personal Cargo paths. 1.0.37 remaps build
+paths and passes ZIP text plus ASCII/UTF-16LE binary pattern inspection.
 The checklist below is historical and mixes 1.0.31-1.0.33 evidence. Its
 checked boxes must not be used as current release approval.
 
-The frozen clean 1.0.36 ZIP comes from `9a7f326`, SHA256
-`88dacfa9bcfd9407ff63a63b719ae724a346baa694f724a09ac8f26c45d44305`.
-Exact binary identities: `evidence/release/candidate-1.0.36-frozen-2026-11-14.json`.
+The frozen clean 1.0.37 ZIP comes from `18aaa56`, SHA256
+`2a7f0545cb1144d504628abbb94642f754d90b5ca76c10d95ea3854131404e1a`.
+Exact binary identities: `evidence/release/candidate-1.0.37-frozen-2026-11-15.json`.
 It includes fixture IPC isolation and first-line firmware warnings.
 1.0.34 is held for its fixture IPC defect; 1.0.35 lacks the warning correction.
 C:\RyzenAdj remains 1.0.33. Current readiness is:
@@ -18,7 +18,7 @@ C:\RyzenAdj remains 1.0.33. Current readiness is:
 - [x] Native source build: GUI 60 tests, probe 7 tests, C++ policy tests.
 - [x] No-driver destructor cleanup and transport resource regression pass.
 - [x] Current ZIP read-only runtime, diagnostics and install flow pass.
-- [x] Current ZIP binaries match independent rebuilds; deterministic repack passes.
+- [ ] Current GUI/probe match independent mapped builds; current ZIP repack remains pending.
 - [x] New clean candidate built after worker cleanup changes.
 - [ ] Final candidate formatting, Clippy and hosted CI refreshed.
 - [ ] Final source-to-package reproducibility and sanitization refreshed.

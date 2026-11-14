@@ -21,6 +21,20 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (1.0.37 mapped candidate packaged and scanned):
+
+- Clean source 18aaa564108e58e8638b617a9c79da6c03330aec packaged with mapped
+  GUI/probe binaries matching independently rebuilt hashes. ZIP 778800 bytes,
+  SHA256 2a7f0545cb1144d504628abbb94642f754d90b5ca76c10d95ea3854131404e1a.
+- Extracted fixture isolation, hardware read-only GUI, collector, headless
+  probe and install flow PASS. Runtime snapshot showed 8/8/8 W limits.
+- Pattern scan PASS: 692 tracked text files, 13 ZIP text entries, 7 ZIP
+  binaries in ASCII/UTF-16LE. Prior personal-path hits resolved in this package.
+  Exclusions remain Git history, media and encoded/encrypted content.
+- Candidate manifest/checklist/runbook now point to 1.0.37; 1.0.36 stays held.
+  Exact ZIP repack, full hardware/write/hang gates, current CI, final media and
+  deployment remain pending. No publication or stable replacement performed.
+
 2026-11-15 (remapped Rust builds independently reproducible):
 
 - Reordered remaps so generic home precedes specific Cargo/rustup/repository
