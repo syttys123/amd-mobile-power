@@ -195,9 +195,9 @@ SCENE_RENDERERS.problem = (scene, t, root) => {
   slideUp(title, t, 0.18);
 
   const cards = [
-    { label: "插电 · 性能", value: "45 W", hint: "畅玩 · 剪辑", tone: "#45d6a8", delay: 0.5 },
-    { label: "安静 · 办公", value: "25 W", hint: "风扇更安静", tone: "#ffb45a", delay: 0.68 },
-    { label: "电池 · 长续航", value: "10 W", hint: "撑得更久", tone: "#7fb2ff", delay: 0.86 },
+    { label: "插电 · 示例", value: "45 W", hint: "性能取向", tone: "#45d6a8", delay: 0.5 },
+    { label: "日常 · 示例", value: "25 W", hint: "按机型调整", tone: "#ffb45a", delay: 0.68 },
+    { label: "省电 · 示例", value: "10 W", hint: "预设可编辑", tone: "#7fb2ff", delay: 0.86 },
   ];
   const row = el("div", { display: "flex", gap: "36px" });
   for (const card of cards) {
@@ -456,7 +456,7 @@ SCENE_RENDERERS.compat = (scene, t, root) => {
   slideUp(eyebrow, t, 0.05);
 
   const title = el("div", {});
-  title.innerHTML = "多种 AMD<br>轻薄本可用";
+  title.innerHTML = "识别 AMD 平台<br>逐步验证机型";
   Object.assign(title.style, {
     color: "#f1f7f4", fontSize: "88px", fontWeight: "900", lineHeight: "1.1",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
@@ -466,7 +466,7 @@ SCENE_RENDERERS.compat = (scene, t, root) => {
 
   const stats = [
     ["8845HS", "已实测可用"],
-    ["其他型号", "先安全检测"],
+    ["其他型号", "兼容性待验证"],
     ["诊断", "一键导出"],
   ];
   const row = el("div", { display: "flex", gap: "36px" });

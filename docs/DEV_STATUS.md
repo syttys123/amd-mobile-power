@@ -21,6 +21,26 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (promo claims corrected before new captures):
+
+- Audited existing v9 media: footage/stills still originate from 1.0.28,
+  so they do not establish visual parity with frozen 1.0.34. No new video
+  render or review completion claimed.
+- Revised subtitle/scene source: 10/25/45 W are editable examples with
+  device/firmware-dependent results; compatibility identifies one tested
+  8845HS laptop rather than broad multi-device support. Unlock subtitle now
+  includes confirmation/restart instead of implying immediate activation.
+- Node syntax checks PASS for scenes/renderer; timeline stays seven scenes,
+  42.5 seconds. New longer headline/subtitles still need rendered overflow
+  review. Fixed-candidate recapture, music/human review and encoding pending.
+- Existing MP4/evidence remains historical; source hashes no longer match
+  that render. No executable/hardware/deployment operation performed.
+- Added `media/promo-html/build/review-keyframes.js`; Chromium renders each
+  scene midpoint and checks text bounds/overflow, with browser cleanup in
+  finally. Seven midpoints PASS; compatibility and example-power frames
+  visually inspected. Local output: `artifacts/media/review-claims-2026-11-14`.
+  This does not cover transitions, image provenance or full-frame motion.
+
 2026-11-14 (frozen ZIP/stage correspondence and privacy scan):
 
 - Frozen identity verifier now streams and hashes every ZIP file entry,
