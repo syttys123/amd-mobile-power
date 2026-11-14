@@ -18,7 +18,7 @@ C:\RyzenAdj remains 1.0.33. Current readiness is:
 - [x] Native source build: GUI 60 tests, probe 7 tests, C++ policy tests.
 - [x] No-driver destructor cleanup and transport resource regression pass.
 - [x] Current ZIP read-only runtime, diagnostics and install flow pass.
-- [ ] Current GUI/probe match independent mapped builds; current ZIP repack remains pending.
+- [x] Current GUI/probe match independent mapped builds; frozen ZIP repack matches exactly.
 - [x] New clean candidate built after worker cleanup changes.
 - [ ] Final candidate formatting, Clippy and hosted CI refreshed.
 - [ ] Final source-to-package reproducibility and sanitization refreshed.

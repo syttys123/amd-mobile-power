@@ -121,4 +121,5 @@ jobs:
             artifacts/native-packages/*.zip.sha256
             artifacts/native-packages/*/BUILD-INFO.txt
             artifacts/ci/reproducibility.json
+            artifacts/ci/public-sanitization.json
           if-no-files-found: error

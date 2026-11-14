@@ -21,6 +21,18 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (1.0.37 deterministic repack and documentation checks):
+
+- Frozen ZIP independently extracted/repacked with exact matching SHA256;
+  original ZIP unchanged. Evidence:
+  `evidence/build/repack-1.0.37-2026-11-15.json`. This checks ZIP serialization,
+  not a new source rebuild; independent Rust rebuild evidence is separate.
+- Documentation verifier PASS: 53 Markdown files, 39 relative links.
+- CI upload now includes public-sanitization.json alongside reproducibility
+  evidence. Hosted CI remains pending; local branch is 34 commits ahead of the
+  last known remote tracking ref, so no bulk push performed this session.
+- No app restart, hardware write or deployment replacement performed.
+
 2026-11-15 (1.0.37 mapped candidate packaged and scanned):
 
 - Clean source 18aaa564108e58e8638b617a9c79da6c03330aec packaged with mapped
