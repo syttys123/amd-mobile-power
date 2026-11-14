@@ -21,6 +21,18 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (1.0.36 public text sanitization):
+
+- Current tracked-text and packaged-text pattern scan PASS: 688 tracked files,
+  13 ZIP text entries. ZIP SHA256 matches frozen 1.0.36. Evidence:
+  `evidence/release/public-sanitization-1.0.36-2026-11-15.json`.
+- Sanitization evidence now records scope, exclusions, source HEAD and package
+  SHA256. PASS means no listed text patterns matched, not universal absence of
+  secrets or personal data. Git history, binary/media content, untracked files,
+  scanner source and files over 10 MiB remain outside this scan.
+- Scanner-only changes do not alter the frozen package. No publication,
+  account operation, hardware write or deployment replacement performed.
+
 2026-11-15 (1.0.36 packaged layout/resource regressions):
 
 - Pinned 1.0.36 GUI passed 125% and 200% logical-DPI interaction tests,

@@ -131,6 +131,9 @@ if ($hits.Count -gt 0) {
 $result = [ordered]@{
     SchemaVersion = 1
     Verification = "PASS"
+    Scope = 'Pattern scan of current tracked text files and package text entries; not a comprehensive secret audit'
+    Exclusions = @('Git history', 'Binary and media content', 'Files over 10 MiB', 'Untracked files', 'Scanner source')
+    SourceCommit = (& git -C $root rev-parse HEAD).Trim()
     TrackedFilesScanned = $trackedFilesScanned
     PackageEntriesScanned = $packageEntriesScanned
     Patterns = @($patterns.Keys)
@@ -139,6 +142,9 @@ $result = [ordered]@{
     } else {
         $null
     }
+    PackageSHA256 = if ($PackagePath) {
+        (Get-FileHash -LiteralPath $resolvedPackage -Algorithm SHA256).Hash.ToLowerInvariant()
+    } else { $null }
     RecordedAt = (Get-Date).ToString("o")
 }
 
