@@ -112,9 +112,18 @@ const clipEventsPath = arg("--clip-events", null);
       }, clipDataUrls[clipIndex]);
       await page.evaluate(() => {
         const img = document.getElementById("live-demo-frame");
-        return img && img.decode ? img.decode().catch(() => {}) : null;
+        if (!img) throw new Error("Demo frame element missing");
+        return img.decode();
       });
     }
+
+    await page.evaluate(async () => {
+      await Promise.all(Array.from(document.images).map(async image => {
+        if (!image.getAttribute("src")) return;
+        await image.decode();
+        if (!image.naturalWidth) throw new Error("Rendered image has no pixels");
+      }));
+    });
 
     const name = `frame-${String(i).padStart(5, "0")}.png`;
     const file = path.join(framesDir, name);

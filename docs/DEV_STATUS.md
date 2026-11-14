@@ -21,6 +21,19 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (1.0.37 full 30 fps silent review render):
+
+- Rendered all 1275 frames of the 42.5-second HTML timeline with pinned 1.0.37
+  preset footage and its actual command timestamps driving the pointer.
+  Recorder now fails image decoding instead of swallowing errors and waits
+  for scene image decoding before each screenshot. Browser closes in finally.
+- Encoded review-only output:
+  `artifacts/media/promo-1.0.37-review/amd-mobile-power-1.0.37-review-silent.mp4`.
+  ffprobe confirms 1920x1080, 30 fps, exactly 42.5 seconds; full decode PASS.
+- Not final: consent asset still old, policy/device crops labeled 1.0.35,
+  visual click synchronization and local flash/transition review pending.
+  No audio, publication, hardware writes or application restart this session.
+
 2026-11-15 (1.0.37 preset footage with actual event times):
 
 - Recorded pinned 1.0.37 simple-mode simulated presets, 95 source frames over
