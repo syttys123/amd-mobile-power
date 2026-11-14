@@ -1,6 +1,7 @@
 param(
     [string]$RepositoryRoot,
     [string]$PackagePath,
+    [switch]$ScanPackageBinaries,
     [string]$EvidencePath
 )
 
@@ -40,6 +41,10 @@ $selfRelative = "native/verify-public-sanitization.ps1"
 $hits = New-Object System.Collections.Generic.List[object]
 $trackedFilesScanned = 0
 $packageEntriesScanned = 0
+$packageBinariesScanned = 0
+if ($ScanPackageBinaries -and -not $PackagePath) {
+    throw 'Binary scanning requires a package ZIP.'
+}
 
 function Find-SanitizationHits {
     param(
@@ -98,6 +103,30 @@ if ($PackagePath) {
     $archive = [System.IO.Compression.ZipFile]::OpenRead($resolvedPackage)
     try {
         foreach ($entry in $archive.Entries) {
+            if ($ScanPackageBinaries -and
+                [System.IO.Path]::GetExtension($entry.Name).ToLowerInvariant() -in @('.exe', '.dll', '.sys')) {
+                if ($entry.Length -gt 10MB) { throw 'Package binary exceeds scan size bound.' }
+                $stream = $entry.Open()
+                $buffer = [System.IO.MemoryStream]::new()
+                try {
+                    $stream.CopyTo($buffer)
+                    $bytes = $buffer.ToArray()
+                    foreach ($encoding in @([System.Text.Encoding]::ASCII, [System.Text.Encoding]::Unicode)) {
+                        $text = $encoding.GetString($bytes)
+                        foreach ($regex in $regexes) {
+                            if ($regex.Regex.IsMatch($text)) {
+                                $hits.Add([pscustomobject]@{
+                                    Location = 'package-binary:' + $entry.FullName
+                                    Pattern = $regex.Name
+                                })
+                            }
+                        }
+                    }
+                    $packageBinariesScanned++
+                }
+                finally { $buffer.Dispose(); $stream.Dispose() }
+                continue
+            }
             if ([string]::IsNullOrEmpty($entry.Name) -or
                 $entry.Length -gt 10MB -or
                 [System.IO.Path]::GetExtension($entry.Name).ToLowerInvariant() -in $binaryExtensions) {
@@ -131,11 +160,13 @@ if ($hits.Count -gt 0) {
 $result = [ordered]@{
     SchemaVersion = 1
     Verification = "PASS"
-    Scope = 'Pattern scan of current tracked text files and package text entries; not a comprehensive secret audit'
-    Exclusions = @('Git history', 'Binary and media content', 'Files over 10 MiB', 'Untracked files', 'Scanner source')
+    Scope = 'Pattern scan of tracked text and package text, optionally ASCII/UTF-16LE binary strings; not a comprehensive secret audit'
+    Exclusions = @('Git history', 'Media content', 'Encoded or encrypted secrets', 'Files over 10 MiB', 'Untracked files', 'Scanner source') + $(if (-not $ScanPackageBinaries) { @('Binary content') } else { @() })
     SourceCommit = (& git -C $root rev-parse HEAD).Trim()
     TrackedFilesScanned = $trackedFilesScanned
     PackageEntriesScanned = $packageEntriesScanned
+    PackageBinariesScanned = $packageBinariesScanned
+    BinaryEncodings = if ($ScanPackageBinaries) { @('ASCII', 'UTF-16LE') } else { @() }
     Patterns = @($patterns.Keys)
     PackagePath = if ($PackagePath) {
         [System.IO.Path]::GetFullPath($PackagePath)

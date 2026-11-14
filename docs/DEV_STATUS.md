@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-11-14
+Last updated: 2026-11-15
 
 ## Objective
 
@@ -20,6 +20,21 @@ after each meaningful change. Conversation history and compacted summaries are
 not authoritative.
 
 ## Latest Maintenance Milestone
+
+2026-11-15 (binary sanitization found personal build paths):
+
+- Added optional ZIP EXE/DLL/SYS ASCII/UTF-16LE pattern scanning and separate
+  binary counts. Release verifier now requires this option.
+- Runtime scan FAILED on GUI/probe personal-home strings: Rust dependencies
+  embed Cargo registry source paths in panic/error locations. No key finding
+  was reported by this scan. Raw matched strings were not logged to evidence.
+- 1.0.36 manifest/checklist now HELD_BINARY_PERSONAL_BUILD_PATH. Earlier text
+  PASS remains valid only for its stated text scope; binary privacy is not PASS.
+  Existing package preserved, not promoted or published by this session.
+- Next: common dynamic rustc --remap-path-prefix configuration covering repo,
+  Cargo and rustup roots in build/repro/CI paths; rebuild and rescan GUI/probe,
+  add a synthetic binary positive-control regression, qualify a new candidate.
+- No hardware changes or deployment replacement performed.
 
 2026-11-15 (1.0.36 public text sanitization):
 

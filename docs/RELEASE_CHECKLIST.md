@@ -2,7 +2,9 @@
 
 ## Current Candidate Override (2026-11-14)
 
-Current target: **1.0.36**, status **READ_ONLY_CANDIDATE_PASS_PENDING_FULL_GATES**.
+Current target: **1.0.36**, status **HELD_BINARY_PERSONAL_BUILD_PATH**.
+Binary string inspection found personal Cargo registry paths in GUI/probe.
+Remap build paths and qualify a new candidate before public distribution.
 The checklist below is historical and mixes 1.0.31-1.0.33 evidence. Its
 checked boxes must not be used as current release approval.
 
