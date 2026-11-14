@@ -108,10 +108,14 @@ $failures = New-Object System.Collections.Generic.List[string]
 if (-not $SkipGui) {
     $manifest = Join-Path $root "rust-gui\Cargo.toml"
     $executable = Join-Path $root "rust-gui\target\release\amd-mobile-power-gui.exe"
+    $previous = Get-Sha256 $executable
+    Rebuild-RustBinary -Manifest $manifest -Executable $executable
     $first = Get-Sha256 $executable
     Rebuild-RustBinary -Manifest $manifest -Executable $executable
     $second = Get-Sha256 $executable
     $results.Gui = [ordered]@{
+        PreviousArtifact = $previous
+        PreviousArtifactMatches = $previous -eq $first
         First = $first
         Second = $second
         Reproducible = $first -eq $second
@@ -125,10 +129,14 @@ if (-not $SkipGui) {
 if (-not $SkipProbe) {
     $manifest = Join-Path $root "rust-probe\Cargo.toml"
     $executable = Join-Path $root "rust-probe\target\release\amd-mobile-power-probe.exe"
+    $previous = Get-Sha256 $executable
+    Rebuild-RustBinary -Manifest $manifest -Executable $executable
     $first = Get-Sha256 $executable
     Rebuild-RustBinary -Manifest $manifest -Executable $executable
     $second = Get-Sha256 $executable
     $results.Probe = [ordered]@{
+        PreviousArtifact = $previous
+        PreviousArtifactMatches = $previous -eq $first
         First = $first
         Second = $second
         Reproducible = $first -eq $second

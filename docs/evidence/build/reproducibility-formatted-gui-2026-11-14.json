@@ -1,0 +1,14 @@
+{
+  "Verification": "PASS",
+  "RustBuildIsolation": "Fresh unique target directory; removed in finally",
+  "RecordedAt": "2026-11-14T21:54:38.8029054+08:00",
+  "Results": {
+    "Gui": {
+      "First": "c26953498fd5d788a2acfd24f12af473eab631fc4c90c3d10aa2752f0ce591c7",
+      "Second": "c26953498fd5d788a2acfd24f12af473eab631fc4c90c3d10aa2752f0ce591c7",
+      "Reproducible": true,
+      "Size": 881664
+    }
+  },
+  "Failures": []
+}

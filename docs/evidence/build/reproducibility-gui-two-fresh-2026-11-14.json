@@ -1,0 +1,16 @@
+{
+  "Verification": "PASS",
+  "RustBuildIsolation": "Fresh unique target directory; removed in finally",
+  "RecordedAt": "2026-11-14T21:56:43.3018217+08:00",
+  "Results": {
+    "Gui": {
+      "PreviousArtifact": "c26953498fd5d788a2acfd24f12af473eab631fc4c90c3d10aa2752f0ce591c7",
+      "PreviousArtifactMatches": true,
+      "First": "c26953498fd5d788a2acfd24f12af473eab631fc4c90c3d10aa2752f0ce591c7",
+      "Second": "c26953498fd5d788a2acfd24f12af473eab631fc4c90c3d10aa2752f0ce591c7",
+      "Reproducible": true,
+      "Size": 881664
+    }
+  },
+  "Failures": []
+}

@@ -21,6 +21,23 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (two-fresh-build reproducibility separates stale artifacts):
+
+- Reproducibility initially FAILED for GUI: old local artifact `f04afe7e`
+  differed from current formatted-source build `c2695349`. Worker `537a53ed`
+  and probe `9750418f` matched. Failure retained in
+  `evidence/build/reproducibility-ols-final-2026-11-14.json`.
+- Verifier now builds Rust binaries twice in unique empty target directories
+  before comparing, and separately records PreviousArtifact/Matches. This
+  distinguishes stale outputs from same-source reproducibility failures.
+- Two fresh GUI builds PASS with identical full hashes:
+  `evidence/build/reproducibility-gui-two-fresh-2026-11-14.json`.
+  Intermediate confirmation is retained in
+  `evidence/build/reproducibility-formatted-gui-2026-11-14.json`.
+- Existing candidate ZIP was not changed and contains the earlier GUI source
+  identity; fresh candidate gates still required. No hardware/deployment change.
+- Hosted run `43601760409` for `872643f` was observed in progress, not PASS.
+
 2026-11-14 (hosted CI confirmed; no-build verifier completeness):
 
 - Public Actions summary confirms `3888e1a` run `43601426593` Success,

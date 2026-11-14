@@ -1,0 +1,28 @@
+{
+  "Verification": "FAILED",
+  "RustBuildIsolation": "Fresh unique target directory; removed in finally",
+  "RecordedAt": "2026-11-14T21:54:05.0861352+08:00",
+  "Results": {
+    "Gui": {
+      "First": "f04afe7efb46ae991ae0e4fe23a569945edb6b320a5471536412125a08b5177d",
+      "Second": "c26953498fd5d788a2acfd24f12af473eab631fc4c90c3d10aa2752f0ce591c7",
+      "Reproducible": false,
+      "Size": 881664
+    },
+    "Probe": {
+      "First": "9750418f15ebce2d70e750e845cfa5408751a96b178d60bbaa168155322a615e",
+      "Second": "9750418f15ebce2d70e750e845cfa5408751a96b178d60bbaa168155322a615e",
+      "Reproducible": true,
+      "Size": 334848
+    },
+    "Worker": {
+      "First": "537a53ed8f8221878ef95af8314ac3a5a71b159a92ec5db99faaa2b8afa9c85d",
+      "Second": "537a53ed8f8221878ef95af8314ac3a5a71b159a92ec5db99faaa2b8afa9c85d",
+      "Reproducible": true,
+      "Size": 142848
+    }
+  },
+  "Failures": [
+    "GUI rebuild produced a different hash."
+  ]
+}
