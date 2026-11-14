@@ -21,10 +21,14 @@ param(
     [int]$FocusControlId,
     [switch]$ApplyFixtureTarget,
     [switch]$ForcePrintWindow,
+    [switch]$CaptureConsent,
     [switch]$ReadOnly
 )
 
 $ErrorActionPreference = "Stop"
+if ($CaptureConsent -and (-not $ReadOnly -or -not $Fixture)) {
+    throw 'Consent capture requires a read-only isolated fixture.'
+}
 if ($ApplyFixtureTarget -and ($Fixture -ne 'firmware-clamp' -or $ReadOnly)) {
     throw 'ApplyFixtureTarget requires a writable firmware-clamp fixture.'
 }
@@ -34,6 +38,8 @@ using System;
 using System.Runtime.InteropServices;
 
 public static class AmdMobilePowerUiCapture {
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern IntPtr FindWindow(string className, string title);
     public delegate bool ChildCallback(IntPtr hwnd, IntPtr parameter);
     [DllImport("user32.dll")]
     public static extern bool EnumChildWindows(IntPtr hwnd, ChildCallback callback, IntPtr parameter);
@@ -558,6 +564,28 @@ try {
             throw "Fixture did not report completed application: $fixtureApplyStatus"
         }
     }
+    $consentCapture = $null
+    if ($CaptureConsent) {
+        [AmdMobilePowerUiCapture]::PostMessage($window, 0x0111, [UIntPtr]111, [IntPtr]::Zero) | Out-Null
+        $deadline = [DateTime]::UtcNow.AddSeconds(5)
+        $dialog = [IntPtr]::Zero
+        do {
+            Start-Sleep -Milliseconds 50
+            $dialog = [AmdMobilePowerUiCapture]::FindWindow('AmdMobilePower.UnlockConsent.v1', '启用写入之前')
+        } while ($dialog -eq [IntPtr]::Zero -and [DateTime]::UtcNow -lt $deadline)
+        if ($dialog -eq [IntPtr]::Zero) { throw 'Consent dialog did not open.' }
+        try {
+            $confirm = [AmdMobilePowerUiCapture]::GetDlgItem($dialog, 402)
+            if ($confirm -eq [IntPtr]::Zero -or [AmdMobilePowerUiCapture]::IsWindowEnabled($confirm)) {
+                throw 'Consent confirm must remain disabled before agreement.'
+            }
+            [void](Focus-CaptureWindow -Window $dialog)
+            $consentCapture = Save-WindowImage -Window $dialog -Path (Join-Path $OutputDirectory "$FilePrefix-consent-$FileDate.png")
+        } finally {
+            [AmdMobilePowerUiCapture]::PostMessage($dialog, 0x0010, [UIntPtr]::Zero, [IntPtr]::Zero) | Out-Null
+        }
+        Start-Sleep -Milliseconds 150
+    }
     $advancedButton = [AmdMobilePowerUiCapture]::GetDlgItem($window, 109)
     if ($advancedButton -eq [IntPtr]::Zero) {
         throw "Advanced-mode control was not found."
@@ -670,6 +698,7 @@ try {
             }
             Fixture = if ($Fixture) { $Fixture } else { $null }
             FixtureApplyRequested = [bool]$ApplyFixtureTarget
+            Consent = $consentCapture
             FixtureApplyStatus = if ($ApplyFixtureTarget) { $fixtureApplyStatus } else { $null }
             DpiFixture = if ($DpiFixture) { [int]$DpiFixture } else { $null }
             UniformTargetWatts = if ($UniformTargetWatts -gt 0) {

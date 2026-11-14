@@ -21,6 +21,23 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (consent capture completed; user requested pause):
+
+- Added CaptureConsent restricted to read-only isolated fixtures. Opens the
+  actual candidate consent window, asserts confirmation is disabled before
+  agreement, captures it and cancels without checking consent or enabling writes.
+- Pinned 1.0.37 runtime capture PASS after finding the dialog by explicit class
+  and title (null title lookup initially failed). Inspected complete consent
+  screenshot; confirm disabled. Evidence:
+  `evidence/ui/frozen-1.0.37-consent-2026-11-15.json`.
+- Asset is under artifacts/media/frozen-1.0.37-consent, not yet substituted
+  into final video. Consent manual still describes firmware restriction only
+  as a lower-bound limitation; wording merits later correction.
+- User requested pause after this work item. Stop further maintenance after
+  recording and restoring the stable session. Remaining: final media assets/
+  rerender, full hardware gates, remote TLS/CI, verified deployment and publication
+  approval. Do not treat the broad project objective as completed.
+
 2026-11-15 (review footage claims and luminance screening):
 
 - Inspected full-render frames 362 and 480: pointer is over the corresponding
