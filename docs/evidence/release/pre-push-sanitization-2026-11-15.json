@@ -1,0 +1,33 @@
+{
+  "SchemaVersion": 1,
+  "Verification": "PASS",
+  "Scope": "Pattern scan of tracked text and package text, optionally ASCII/UTF-16LE binary strings; not a comprehensive secret audit",
+  "Exclusions": [
+    "Git history",
+    "Media content",
+    "Encoded or encrypted secrets",
+    "Files over 10 MiB",
+    "Untracked files",
+    "Scanner source"
+  ],
+  "SourceCommit": "fa5276036756827c1439110fe860af57426b6ac3",
+  "TrackedFilesScanned": 700,
+  "PackageEntriesScanned": 13,
+  "PackageBinariesScanned": 7,
+  "BinaryEncodings": [
+    "ASCII",
+    "UTF-16LE"
+  ],
+  "Patterns": [
+    "personal_windows_home",
+    "internal_agent_marker",
+    "openai_key",
+    "github_personal_token",
+    "github_fine_grained_token",
+    "aws_access_key",
+    "private_key_header"
+  ],
+  "PackagePath": "D:\\amd-mobile-power\\artifacts\\native-packages\\amd-mobile-power-v1.0.37-win-x64-native-preview.zip",
+  "PackageSHA256": "2a7f0545cb1144d504628abbb94642f754d90b5ca76c10d95ea3854131404e1a",
+  "RecordedAt": "2026-11-15T00:38:07.4917260+08:00"
+}

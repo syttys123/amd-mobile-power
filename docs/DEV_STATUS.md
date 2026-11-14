@@ -21,6 +21,19 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (remote synchronization preflight):
+
+- Reviewed local-ahead commit log and path summary before remote sync. Current
+  tracked-text/package scan PASS: 700 tracked text files, 13 package text entries,
+  7 ASCII/UTF-16LE binaries. Evidence:
+  `evidence/release/pre-push-sanitization-2026-11-15.json`.
+- Remote ls-remote failed TLS handshake with default Schannel, command-local
+  OpenSSL, and the existing Windows proxy 127.0.0.1:7890. Certificate verification
+  remained enabled; no global Git/network settings changed. No push occurred.
+- Hosted CI remains unverified. Local commits and frozen candidate retained;
+  network failure does not block offline video/runtime verification work.
+  No application, hardware policy or deployment changes this session.
+
 2026-11-15 (CI identity gate negative controls):
 
 - Extended local synthetic-contract tests: mismatched sanitization ZIP hash,
