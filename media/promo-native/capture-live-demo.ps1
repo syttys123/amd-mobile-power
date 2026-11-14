@@ -307,19 +307,26 @@ try {
     } | ConvertTo-Json
 }
 finally {
+    try {
     if ($null -ne $window -and $window -ne [IntPtr]::Zero) {
         [AmdMobilePowerLiveDemo]::PostMessage(
-            $window, 0x0010,
-            [System.UIntPtr]::Zero, [IntPtr]::Zero) | Out-Null
+            $window, 0x0111,
+            [System.UIntPtr]2, [IntPtr]::Zero) | Out-Null
     }
     if ($process) {
-        $process.WaitForExit(3000) | Out-Null
-        if (-not $process.HasExited) {
-            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+        try {
+            if (-not $process.WaitForExit(5000)) {
+                $process.Kill()
+                if (-not $process.WaitForExit(5000)) { throw "Capture GUI did not exit." }
+            }
         }
+        finally { $process.Dispose() }
     }
+    }
+    finally {
     $env:LOCALAPPDATA = $previousLocalAppData
     if (Test-Path -LiteralPath $stateDirectory) {
         Remove-Item -LiteralPath $stateDirectory -Recurse -Force
+    }
     }
 }

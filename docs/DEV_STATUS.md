@@ -21,6 +21,26 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (frozen GUI preset footage recorded):
+
+- Recorded the frozen 1.0.34 GUI in an isolated firmware-clamp fixture:
+  `artifacts/media/frozen-1.0.34-demo/presets-demo.mp4`, 11 seconds,
+  750x450, 25 fps (110 source captures at 10 fps). SHA256
+  `224560c6a48db16696af95c5824093a1b4deba485e13f2ea1aaaa76ba3033343`.
+- Full ffmpeg decode PASS. Inspected the 10 W frame: target/preset/read-back
+  are coherent and no visible black margin or cropped text in that frame.
+  All-frame flash/motion review remains pending. This is simulated telemetry,
+  not a hardware-write demonstration; final composition must label it clearly.
+- Capture cleanup now uses explicit Exit rather than close-to-tray, waits
+  for exit and disposes the process handle. Environment/state cleanup runs
+  in nested finally. Syntax check and actual recording PASS.
+- Stable GUI was gracefully paused and restored; post-command query confirms
+  its GUI and child worker. No capture state directories remain. No test
+  hardware write or deployment replacement performed.
+- This clip is source footage only, not the requested complete 42.5-second
+  promo. Consent/policy/device scenes still need current captures and final
+  music, compositing and full video review remain outstanding.
+
 2026-11-14 (promo claims corrected before new captures):
 
 - Audited existing v9 media: footage/stills still originate from 1.0.28,
