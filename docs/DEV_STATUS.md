@@ -21,6 +21,20 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (1.0.36 candidate build and qualification):
+
+- Clean source 9a7f326558344259d08eba463eb5e9d51358a17a includes the first-line
+  clamp warning and warning badge. Full native build PASS (60 GUI/7 probe tests,
+  C++ policy/cleanup and request/resource tests). Fresh Rust double builds,
+  C++ clean rebuild and double ZIP hashing PASS.
+- ZIP 778768 bytes, SHA256
+  88dacfa9bcfd9407ff63a63b719ae724a346baa694f724a09ac8f26c45d44305.
+  Extracted fixture isolation, real read-only GUI, collector/probe and install
+  flow PASS. Hardware snapshot during verification showed 8/8/8 W limits.
+- Candidate manifest pins 1.0.36; release checklist/runbook now point here
+  instead of held 1.0.34. Write/hang, full DPI/work-area/resource gates, current
+  CI/sanitization, final video and deployment remain pending. No promotion.
+
 2026-11-14 (clamp warning visual acceptance):
 
 - Held-result firmware warning now uses warning colors and the firmware-limit
