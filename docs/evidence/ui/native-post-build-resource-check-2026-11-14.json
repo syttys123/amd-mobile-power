@@ -1,0 +1,82 @@
+{
+  "CollectionStatus": "PASS",
+  "Scope": "Read-only bounded observation; not a leak-free verdict",
+  "DurationSeconds": 30,
+  "Summary": [
+    {
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytesFirst": 2072576,
+      "PrivateBytesLast": 2002944,
+      "PrivateBytesPeak": 2072576.0,
+      "HandleDelta": 0,
+      "ThreadDelta": -2,
+      "CpuSecondsDelta": 0.0
+    }
+  ],
+  "Samples": [
+    {
+      "Sample": 0,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2072576,
+      "WorkingSetBytes": 12599296,
+      "Handles": 151,
+      "Threads": 6,
+      "CpuSeconds": 0.0625
+    },
+    {
+      "Sample": 1,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2072576,
+      "WorkingSetBytes": 12599296,
+      "Handles": 151,
+      "Threads": 6,
+      "CpuSeconds": 0.0625
+    },
+    {
+      "Sample": 2,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2002944,
+      "WorkingSetBytes": 12558336,
+      "Handles": 151,
+      "Threads": 4,
+      "CpuSeconds": 0.0625
+    },
+    {
+      "Sample": 3,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2002944,
+      "WorkingSetBytes": 12558336,
+      "Handles": 151,
+      "Threads": 4,
+      "CpuSeconds": 0.0625
+    },
+    {
+      "Sample": 4,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2002944,
+      "WorkingSetBytes": 12558336,
+      "Handles": 151,
+      "Threads": 4,
+      "CpuSeconds": 0.0625
+    },
+    {
+      "Sample": 5,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2002944,
+      "WorkingSetBytes": 12558336,
+      "Handles": 151,
+      "Threads": 4,
+      "CpuSeconds": 0.0625
+    },
+    {
+      "Sample": 6,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2002944,
+      "WorkingSetBytes": 12558336,
+      "Handles": 151,
+      "Threads": 4,
+      "CpuSeconds": 0.0625
+    }
+  ],
+  "RecordedAt": "2026-11-14T23:05:33.7228884+08:00"
+}

@@ -21,6 +21,30 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (central fixture policy boundary and process cleanup):
+
+- start_policy_save now handles fixture mode centrally at all three callers:
+  simulated saves persist local fixture state without constructing WorkerClient
+  and explicitly report simulation. Production IPC behavior is unchanged.
+- Fixture startup now retains the requested private pipe name, correcting the
+  previous regression listener mismatch. The regression exercises manual policy
+  save, waits for simulated completion, verifies policyInFlight false, and checks
+  that the private listener has no connection throughout the lifecycle.
+- Rust 59 tests, Clippy with warnings denied, Release build, and fixture GUI
+  lifecycle verification PASS. Test status matching uses all child texts because
+  the longest child text is not necessarily the operation status.
+- Stable GUI restoration PASS; no deployment replacement or explicit hardware
+  write test performed. Frozen 1.0.34 remains held. A short post-build resource
+  observation is recorded separately; it is not proof against long-term leaks.
+- Request-bounds test now checks its worker termination deadline instead of
+  ignoring WaitForExit's return, and records private bytes plus confirmed exit.
+  Read-only runtime PASS: 100 requests, handles 54/54, threads 4/4, private bytes
+  1159168/1159168; oversized, idle/partial and unread-response recovery PASS.
+  Evidence: `evidence/ui/native-worker-resource-cleanup-2026-11-14.json`.
+- Stable GUI 30-second read-only observation: private bytes 2072576 -> 2002944,
+  handle delta 0, thread delta -2, CPU delta 0 seconds. Evidence:
+  `evidence/ui/native-post-build-resource-check-2026-11-14.json`.
+
 2026-11-14 (enabled-policy fixture isolation regression):
 
 - Added opt-in VerifyFixturePolicyIsolation to GUI verification: seeds an

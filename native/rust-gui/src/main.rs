@@ -4945,18 +4945,30 @@ unsafe fn save_preset_edits(app: &mut GuiApp) -> Result<(), String> {
     state::save_presets(presets)
 }
 
-fn start_policy_save(hwnd_address: usize, pipe_name: String, settings: PowerPolicySettings) {
+fn start_policy_save(
+    hwnd_address: usize,
+    pipe_name: String,
+    settings: PowerPolicySettings,
+    fixture: Option<UiFixture>,
+) {
     thread::spawn(move || {
-        let client = WorkerClient::new(pipe_name);
-        let deadline = Instant::now() + Duration::from_secs(10);
-        while client.health().is_err() && Instant::now() < deadline {
-            thread::sleep(Duration::from_millis(200));
+        let result = if fixture.is_some() {
+            state::save_power_policy(settings)
+        } else {
+            let client = WorkerClient::new(pipe_name);
+            let deadline = Instant::now() + Duration::from_secs(10);
+            while client.health().is_err() && Instant::now() < deadline {
+                thread::sleep(Duration::from_millis(200));
+            }
+            client
+                .set_power_policy(settings)
+                .map(|_| ())
+                .and_then(|_| state::save_power_policy(settings))
+        };
+        let mut text = format_policy_result(settings, result);
+        if fixture.is_some() {
+            text.insert_str(0, "界面模拟，未请求硬件。\n");
         }
-        let result = client
-            .set_power_policy(settings)
-            .map(|_| ())
-            .and_then(|_| state::save_power_policy(settings));
-        let text = format_policy_result(settings, result);
         unsafe {
             let pointer = Box::into_raw(Box::new(text));
             let hwnd = hwnd_address as HWND;
@@ -5152,7 +5164,12 @@ unsafe fn apply_profile_to_presets(app: &mut GuiApp, hwnd: HWND, profile: &Profi
                 && app.ui_fixture.is_none()
             {
                 app.policy_in_flight = true;
-                start_policy_save(hwnd as usize, app.worker_pipe.clone(), saved.unwrap());
+                start_policy_save(
+                    hwnd as usize,
+                    app.worker_pipe.clone(),
+                    saved.unwrap(),
+                    app.ui_fixture,
+                );
             }
         }
     }
@@ -5597,7 +5614,12 @@ unsafe extern "system" fn window_proc(
                     if let Some(settings) = state::load_power_policy() {
                         if settings.enabled {
                             app.policy_in_flight = true;
-                            start_policy_save(hwnd as usize, app.worker_pipe.clone(), settings);
+                            start_policy_save(
+                                hwnd as usize,
+                                app.worker_pipe.clone(),
+                                settings,
+                                app.ui_fixture,
+                            );
                         }
                     }
                 }
@@ -5912,7 +5934,12 @@ unsafe extern "system" fn window_proc(
                             let text = wide("正在保存自动策略…");
                             SetWindowTextW(app.status_label, text.as_ptr());
                         }
-                        start_policy_save(hwnd as usize, app.worker_pipe.clone(), settings);
+                        start_policy_save(
+                            hwnd as usize,
+                            app.worker_pipe.clone(),
+                            settings,
+                            app.ui_fixture,
+                        );
                         InvalidateRect(hwnd, std::ptr::null(), 0);
                     }
                 }
@@ -6168,6 +6195,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     if let Some(fixture) = options.ui_fixture {
         unsafe {
+            (*app).worker_pipe = options.pipe_name.clone();
             apply_ui_fixture(&mut *app, hwnd, fixture);
         }
     } else {

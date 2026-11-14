@@ -562,6 +562,17 @@ try {
             throw 'Fixture policy idle state is missing or a real policy request is in flight.'
         }
         if ($fixtureConnection.IsCompleted) { throw 'Fixture attempted real worker pipe IPC.' }
+        [AmdMobilePowerRustGuiNative]::SendMessage($window, 0x0111, 105, 0) | Out-Null
+        $saveDeadline = [DateTime]::UtcNow.AddSeconds(4)
+        do {
+            Start-Sleep -Milliseconds 150
+            if ($fixtureConnection.IsCompleted) { throw 'Fixture policy save attempted real worker pipe IPC.' }
+        } while (((Get-GuiChildTexts -Window $window) -join "`n") -notmatch '界面模拟' -and [DateTime]::UtcNow -lt $saveDeadline)
+        if (((Get-GuiChildTexts -Window $window) -join "`n") -notmatch '界面模拟') {
+            throw 'Fixture policy save did not report simulation.'
+        }
+        $fixtureState = Export-GuiDiagnostics -Window $window -LocalAppDataRoot $isolatedLocalAppData
+        if ([bool]$fixtureState.Document.ui.policyInFlight) { throw 'Fixture policy save did not finish.' }
     }
     if ($firstProcess.MainWindowTitle -notlike "AMD Mobile Power*") {
         throw "Unexpected Rust GUI window title: $($firstProcess.MainWindowTitle)"

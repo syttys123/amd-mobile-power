@@ -95,6 +95,7 @@ try {
     $worker.Refresh()
     $beforeHandles = $worker.HandleCount
     $beforeThreads = $worker.Threads.Count
+    $beforePrivateBytes = $worker.PrivateMemorySize64
     for ($index = 0; $index -lt 100; $index++) { Send-Request ($request + "`n") }
     Start-Sleep -Milliseconds 200
     $worker.Refresh()
@@ -102,13 +103,24 @@ try {
     $record.HandlesAfter = $worker.HandleCount
     $record.ThreadsBefore = $beforeThreads
     $record.ThreadsAfter = $worker.Threads.Count
+    $record.PrivateBytesBefore = $beforePrivateBytes
+    $record.PrivateBytesAfter = $worker.PrivateMemorySize64
     if ($worker.HandleCount -gt ($beforeHandles + 2) -or $worker.Threads.Count -gt ($beforeThreads + 1)) {
         throw 'Response watchdog resources accumulated across normal requests.'
     }
 }
 finally {
     if ($worker) {
-        try { $worker.Refresh(); if (-not $worker.HasExited) { $worker.Kill(); $worker.WaitForExit(5000) | Out-Null } }
+        try {
+            $worker.Refresh()
+            if (-not $worker.HasExited) {
+                $worker.Kill()
+                if (-not $worker.WaitForExit(5000)) {
+                    throw 'Isolated request-bounds worker did not exit within cleanup deadline.'
+                }
+            }
+            if ($null -ne $record) { $record.WorkerExitConfirmed = $true }
+        }
         finally { $worker.Dispose() }
     }
 }

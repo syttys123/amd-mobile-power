@@ -1,5 +1,5 @@
 {
-  "SourceCommit": "735f46147d9f27f3d8b6deae4301e78421cee3fe",
+  "SourceCommit": "b7a57e7c18bd08663d41400a3bf501ee9aa12749",
   "SourceDirty": true,
   "Verification": "PASS",
   "ResourceStability": null,
@@ -8,7 +8,7 @@
   "Processor": null,
   "WorkerStatus": "",
   "GuiExecutable": "amd-mobile-power-gui.exe",
-  "GuiSHA256": "8ee03d5a52d0e20c53fecb7e5081ee3f65e7ab2e38319296c5d6519dce95f4cb",
+  "GuiSHA256": "070a6cbcb86693a32bce83ae95582fa973e8ecccbaa654c33769d9fb66c9f8ec",
   "WorkerExecutable": null,
   "WorkerSHA256": null,
   "MinimizeRestoreCycles": 3,
@@ -35,7 +35,7 @@
   "WritePreset": "Not requested",
   "PolicySave": "Not requested",
   "BackgroundGuiSessionsToRestore": 1,
-  "RecordedAt": "2026-11-14T22:58:12.3567992+08:00",
+  "RecordedAt": "2026-11-14T23:04:43.1276182+08:00",
   "BackgroundGuiRestoration": [
     {
       "Verification": "PASS",

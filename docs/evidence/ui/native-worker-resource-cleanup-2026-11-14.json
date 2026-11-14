@@ -1,0 +1,18 @@
+{
+  "HandlesBefore": 54,
+  "ThreadsAfter": 4,
+  "SlowClientCases": 2,
+  "PrivateBytesBefore": 1159168,
+  "WorkerExitConfirmed": true,
+  "ThreadsBefore": 4,
+  "FragmentedRequestBytes": 5000,
+  "HardwareEnabled": false,
+  "Verification": "PASS",
+  "HealthAfterOversize": "PASS",
+  "UnreadResponseRecovery": "PASS",
+  "RecordedAt": "2026-11-14T23:07:03.5661376+08:00",
+  "SlowClientDeadline": "PASS",
+  "HandlesAfter": 54,
+  "OversizedRequestBytes": 70000,
+  "PrivateBytesAfter": 1159168
+}
