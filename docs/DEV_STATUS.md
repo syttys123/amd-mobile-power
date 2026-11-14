@@ -21,6 +21,22 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (1.0.35 reproducibility and final candidate identity):
+
+- Two fresh isolated Rust builds per GUI/probe matched each other and the
+  previously tested binaries. C++ clean rebuild and two ZIP builds matched.
+  All fresh repro target directories removed after completion.
+- Repack captured documentation commit dfed27bdcb9d8a1678bdb29fa028d434142b3583,
+  changing BUILD-INFO and ZIP identity, not binary hashes. Re-ran full read-only
+  package qualification after repack: PASS. The earlier 778682-byte ZIP identity
+  below is superseded by final 778683-byte ZIP SHA256
+  26df609b3ae35ff01fef23e37e21fae3598b0c3b4220d8d37dbac8904c91a7a2.
+- Final manifest: `evidence/release/candidate-1.0.35-frozen-2026-11-14.json`.
+  Do not rebuild this version after documentation commits; verify the pinned
+  artifact. Write/hang/full release gates remain pending, no deployment change.
+- Final process inspection found only stable AMD GUI/worker for this project.
+  Concurrent cargo/rustc belonged to D:\tong engine and were left untouched.
+
 2026-11-14 (1.0.35 clean candidate packaged):
 
 - Native offline Release build PASS: C++ policy/cleanup tests, request-bounds

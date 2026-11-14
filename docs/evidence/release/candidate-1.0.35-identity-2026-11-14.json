@@ -1,0 +1,10 @@
+{
+  "Verification": "PASS",
+  "Scope": "Pinned ZIP identity and staged payload checksums; not runtime or release approval",
+  "Version": "1.0.35",
+  "SourceCommit": "dfed27bdcb9d8a1678bdb29fa028d434142b3583",
+  "PackageSHA256": "26df609b3ae35ff01fef23e37e21fae3598b0c3b4220d8d37dbac8904c91a7a2",
+  "ChecksumEntries": 19,
+  "ZipEntriesMatched": 20,
+  "RecordedAt": "2026-11-14T23:21:19.3343524+08:00"
+}
