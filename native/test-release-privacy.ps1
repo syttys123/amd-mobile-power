@@ -2,8 +2,9 @@ $ErrorActionPreference = 'Stop'
 $repository = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'rust-path-remapping.ps1')
 $oldFlags = $env:CARGO_ENCODED_RUSTFLAGS
+$oldPlainFlags = $env:RUSTFLAGS
 try {
-    $env:CARGO_ENCODED_RUSTFLAGS = '--cfg' + [char]31 + 'fixture'
+    $env:CARGO_ENCODED_RUSTFLAGS = '--cfg' + [char]31 + 'fixture="value with spaces"'
     $expected = $env:CARGO_ENCODED_RUSTFLAGS
     $caught = $false
     try {
@@ -17,7 +18,28 @@ try {
         $caught = $true
     }
     if (-not $caught -or $env:CARGO_ENCODED_RUSTFLAGS -ne $expected) { throw 'Flags restoration failed.' }
-} finally { $env:CARGO_ENCODED_RUSTFLAGS = $oldFlags }
+    $env:CARGO_ENCODED_RUSTFLAGS = $null
+    $env:RUSTFLAGS = "--cfg fixture`t-C opt-level=2"
+    Invoke-RemappedRustBuild -RepositoryRoot $repository -Action {
+        $parts = $env:CARGO_ENCODED_RUSTFLAGS.Split([char]31)
+        if (($parts[0..3] -join '|') -ne '--cfg|fixture|-C|opt-level=2') {
+            throw 'Plain RUSTFLAGS whitespace semantics changed.'
+        }
+        $homeIndex = -1
+        $repoIndex = -1
+        for ($i = 0; $i -lt $parts.Length; $i++) {
+            if ($parts[$i].EndsWith('=/build/home')) { $homeIndex = $i }
+            if ($parts[$i].EndsWith('=/src/amd-mobile-power')) { $repoIndex = $i }
+        }
+        if ($env:USERPROFILE -and ($homeIndex -lt 0 -or $repoIndex -le $homeIndex)) {
+            throw 'Specific remapping must follow the home prefix.'
+        }
+    }
+    if ($env:CARGO_ENCODED_RUSTFLAGS) { throw 'Unset encoded flags were not restored.' }
+} finally {
+    $env:CARGO_ENCODED_RUSTFLAGS = $oldFlags
+    $env:RUSTFLAGS = $oldPlainFlags
+}
 
 $workspace = Join-Path $repository ('artifacts\privacy-test-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $workspace | Out-Null

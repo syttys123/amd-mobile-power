@@ -21,6 +21,22 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (remapped Rust builds independently reproducible):
+
+- Reordered remaps so generic home precedes specific Cargo/rustup/repository
+  mappings (rustc chooses the last matching prefix). Added regressions for
+  encoded arguments containing spaces, Cargo-style plain whitespace splitting,
+  priority order and restoration of an initially unset encoded variable.
+- Privacy regression suite PASS. Plain RUSTFLAGS intentionally follows Cargo
+  whitespace semantics; single arguments containing spaces use encoded flags.
+- GUI/probe each built twice in fresh unique targets: hashes match each other
+  and normal mapped build. Evidence:
+  `evidence/build/remapped-rust-reproducibility-2026-11-15.json`.
+  Direct ASCII/UTF-16LE personal-home scan of final binaries passed again;
+  no repro temporary directories remained. No application/hardware changes.
+- Next: stage a new candidate with these mapped binaries, complete full ZIP
+  text/binary scan and runtime qualification. 1.0.36 remains held.
+
 2026-11-15 (release privacy positive-control regressions):
 
 - Added test-release-privacy.ps1: disposable local Git/ZIP fixtures prove clean
