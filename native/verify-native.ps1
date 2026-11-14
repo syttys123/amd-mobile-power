@@ -23,17 +23,34 @@ $powerPolicyTests = Join-Path `
 if (-not $NoBuild) {
     & (Join-Path $root "build.ps1")
 }
+if (-not (Test-Path -LiteralPath $powerLimitTests)) {
+    throw "Required C++ power-limit tests are missing: $powerLimitTests"
+}
 if (Test-Path -LiteralPath $powerLimitTests) {
     & $powerLimitTests
     if ($LASTEXITCODE -ne 0) {
         throw "C++ power-limit policy tests failed."
     }
 }
+if (-not (Test-Path -LiteralPath $powerPolicyTests)) {
+    throw "Required C++ power-policy tests are missing: $powerPolicyTests"
+}
 if (Test-Path -LiteralPath $powerPolicyTests) {
     & $powerPolicyTests
     if ($LASTEXITCODE -ne 0) {
         throw "C++ power-policy tests failed."
     }
+}
+
+$cleanupTests = Join-Path $cppBuild "Release\amdmobilepower_hardware_cleanup_tests.exe"
+if (-not (Test-Path -LiteralPath $cleanupTests)) {
+    throw "Required C++ hardware cleanup tests are missing: $cleanupTests"
+}
+& $cleanupTests
+if ($LASTEXITCODE -ne 0) { throw "C++ hardware cleanup tests failed." }
+if ($NoBuild) {
+    & (Join-Path $root "test-worker-request-bounds.ps1") `
+        -WorkerExecutable (Join-Path $cppBuild "Release\amdmobilepower_native_worker.exe")
 }
 
 $cppWorker = Join-Path `

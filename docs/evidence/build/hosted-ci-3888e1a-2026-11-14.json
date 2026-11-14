@@ -1,0 +1,13 @@
+{
+  "Verification": "PASS",
+  "SourceCommit": "3888e1abb372034e477ff31dc01d3327a5662959",
+  "RunId": "43601426593",
+  "JobId": "132466794100",
+  "RunUrl": "https://github.com/syttys123/amd-mobile-power/actions/runs/43601426593",
+  "ObservationSource": "Public GitHub Actions summary HTML",
+  "ObservedStatus": "Success",
+  "TotalDuration": "3m 3s",
+  "Artifacts": 1,
+  "Scope": "This commit only; not subsequent source or final hardware gates",
+  "Warning": "checkout@v4 and upload-artifact@v4 declare deprecated Node 20 runtime"
+}

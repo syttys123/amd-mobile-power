@@ -21,6 +21,19 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (hosted CI confirmed; no-build verifier completeness):
+
+- Public Actions summary confirms `3888e1a` run `43601426593` Success,
+  duration 3m 3s with one artifact. Recorded exact-commit evidence in
+  `evidence/build/hosted-ci-3888e1a-2026-11-14.json`. Later `872643f` was
+  pushed separately and is not covered by that PASS.
+- `verify-native.ps1 -NoBuild` now fails if required C++ test executables
+  are absent, includes destructor cleanup tests and runs transport regression.
+  Previously missing policy-test binaries could be silently skipped.
+- No-build software verification PASS: policy/cleanup/transport tests,
+  profile catalog (10 entries), no-hardware worker health and graceful shutdown.
+  Hardware flags, GUI tests and real writes were not requested.
+
 2026-11-14 (CI failure propagation hardened):
 
 - GitHub anonymous REST API was rate-limited. Public Actions HTML confirmed
