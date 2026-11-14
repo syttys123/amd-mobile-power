@@ -21,6 +21,24 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (frozen candidate four-scale UI and resource gates):
+
+- Verified frozen ZIP hash before executing packaged GUI. Logical DPI
+  100/125/150/200 checks PASS for modes, presets, drafts, narrow command
+  bounds, scrolling, focus and tray lifecycle. Evidence files:
+  `evidence/ui/native-frozen-1.0.34-{100,125,150}-2026-11-14.json` and
+  `evidence/ui/native-frozen-1.0.34-200-resource-2026-11-14.json`.
+- Packaged GUI hash matches frozen manifest `c2695349...`. At 200%, 480
+  synchronous repaints/switches kept GDI=27, USER=61; handles=189-190,
+  private bytes=2,625,536-2,691,072, stable in the final samples.
+- These are simulated telemetry/logical DPI fixtures, not hardware write,
+  actual OS DPI transition or full visual-readiness evidence.
+- Final inspection initially found no stable session after verifier cleanup.
+  Relaunched C:\RyzenAdj with original tray/simple/45-ceiling arguments;
+  confirmed GUI and child worker. Missing automatic restoration remains a
+  verifier lifecycle issue to investigate, not a successful restore claim.
+- Frozen ZIP and deployed files unchanged; no test power write requested.
+
 2026-11-14 (candidate frozen for remaining gates):
 
 - Clean `7734516` built the frozen 1.0.34 candidate, 778,151 bytes,
