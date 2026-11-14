@@ -21,6 +21,20 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (worker-hang verifier cleanup hardened):
+
+- Inspected hang verifier: it applies a 10 W policy, so it was not executed
+  against hardware in this milestone. Added checked absolute scratch paths,
+  finally removal of isolated state, bounded process-exit waits and disposal
+  of GUI/worker process handles. Worker cleanup requires token and exact path.
+- Cleanup failures now fail the evidence instead of being silently ignored.
+  Test GUI launch is hidden. Frozen candidate payload remains unchanged.
+- Exercised existing-owner preflight with one-second wait: expected FAIL
+  before test GUI/worker startup, no new state directories and empty cleanup
+  failures. Local diagnostic: `artifacts/verify/worker-hang-preflight-cleanup.json`.
+- This proves the preflight cleanup path only, not suspended-worker cleanup,
+  watchdog replacement or 10 W policy restoration. No test power write.
+
 2026-11-14 (verifier restoration identity and final evidence):
 
 - Saved GUI identity now includes creation time and executable path. Restore

@@ -70,6 +70,13 @@ $pipePath = "\\.\pipe\$pipeName"
 $isolatedLocalAppData = Join-Path `
     $repositoryRoot `
     "artifacts\verify\worker-hang-state-$token"
+$isolatedLocalAppData = [System.IO.Path]::GetFullPath($isolatedLocalAppData)
+$allowedStateRoot = [System.IO.Path]::GetFullPath(
+    (Join-Path $repositoryRoot "artifacts\verify")) + [System.IO.Path]::DirectorySeparatorChar
+if (-not $isolatedLocalAppData.StartsWith($allowedStateRoot,
+    [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "Worker-hang state directory escapes the verification workspace."
+}
 New-Item -ItemType Directory -Path $isolatedLocalAppData -Force | Out-Null
 
 $result = [ordered]@{
@@ -165,6 +172,7 @@ try {
         -FilePath $gui `
         -ArgumentList $arguments `
         -WorkingDirectory (Split-Path -Parent $gui) `
+        -WindowStyle Hidden `
         -PassThru
 
     $snapshot = $null
@@ -289,13 +297,42 @@ catch {
     $result.Failure = $failure
 }
 finally {
-    if ($null -ne $testGui -and -not $testGui.HasExited) {
-        Stop-Process -Id $testGui.Id -Force -ErrorAction SilentlyContinue
+    $cleanupFailures = @()
+    if ($null -ne $testGui) {
+        try {
+            $testGui.Refresh()
+            if (-not $testGui.HasExited) {
+                $testGui.Kill()
+                if (-not $testGui.WaitForExit(10000)) { throw "Test GUI did not exit." }
+            }
+        }
+        catch { $cleanupFailures += $_.Exception.Message }
+        finally { $testGui.Dispose() }
     }
-    Get-HangTestWorker | ForEach-Object {
-        Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+    Get-HangTestWorker | Where-Object { $_.ExecutablePath -eq $worker } | ForEach-Object {
+        $owned = Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue
+        if ($owned) {
+            try {
+                $owned.Kill()
+                if (-not $owned.WaitForExit(10000)) { throw "Test worker did not exit." }
+            }
+            catch { $cleanupFailures += $_.Exception.Message }
+            finally { $owned.Dispose() }
+        }
     }
     $env:LOCALAPPDATA = $previousLocalAppData
+    try {
+        if (Test-Path -LiteralPath $isolatedLocalAppData) {
+            Remove-Item -LiteralPath $isolatedLocalAppData -Recurse -Force
+        }
+    }
+    catch { $cleanupFailures += $_.Exception.Message }
+    $result.CleanupFailures = @($cleanupFailures)
+    if ($cleanupFailures.Count -gt 0) {
+        $result.Verification = "FAIL"
+        $failure = (@($failure) + $cleanupFailures | Where-Object { $_ }) -join "; "
+        $result.Failure = $failure
+    }
     $result.RecordedAt = (Get-Date).ToString("o")
 }
 
