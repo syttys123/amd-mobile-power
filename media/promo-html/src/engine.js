@@ -270,6 +270,11 @@ SCENE_RENDERERS["ui-demo"] = (scene, t, root) => {
   img.id = "live-demo-frame";
   img.src = window.__CLIP_POSTER__ || "";
   frameWrap.append(img);
+  const fixtureLabel = txt("界面演示 · 模拟数据", {
+    marginTop: "22px", color: "#a6b8b0",
+    fontSize: "18px", fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
+  });
+  head.append(fixtureLabel);
 
   // Synthetic pointer: the PrintWindow capture never includes the real
   // cursor, so the demo draws one whose clicks line up with the recorded

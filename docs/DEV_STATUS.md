@@ -21,6 +21,18 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (promo fixture labeling and image validation):
+
+- Preset scene now labels simulated data outside the application image,
+  avoiding obstruction of its diagnostics button. Keyframe review accepts
+  recorded frames and selects the frame matching scene time/0.4s clip lead.
+- Image decode failures now fail review instead of being silently ignored.
+  Seven midpoint captures PASS for image loading and text bounds using frozen
+  candidate preset footage. Local output:
+  `artifacts/media/review-frozen-timed`.
+- Other scene images still use older captures; full motion/cursor matching
+  and final video rendering remain pending. No hardware or deployment change.
+
 2026-11-14 (frozen GUI preset footage recorded):
 
 - Recorded the frozen 1.0.34 GUI in an isolated firmware-clamp fixture:
