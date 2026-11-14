@@ -111,6 +111,15 @@ jobs:
             throw "Headless probe self-test failed."
           }
 
+      - name: Verify required CI artifact identities
+        shell: pwsh
+        run: |
+          $version = "$env:CI_VERSION." + $env:GITHUB_SHA.Substring(0, 7)
+          .\native\verify-ci-artifacts.ps1 `
+            -PackagePath "artifacts\native-packages\amd-mobile-power-v$version-win-x64-native-preview.zip" `
+            -ReproducibilityPath artifacts\ci\reproducibility.json `
+            -SanitizationPath artifacts\ci\public-sanitization.json
+
       - name: Upload native portable package
         if: github.event_name == 'push'
         uses: actions/upload-artifact@v4

@@ -21,6 +21,18 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (CI artifact identity gate):
+
+- Added verify-ci-artifacts.ps1 before upload: requires ZIP/checksum and both
+  reports; checks PASS/coverage, package hashes, all three rebuilt binary
+  hashes against ZIP entries, clean BUILD-INFO source/version identity.
+- Local contract regression using frozen 1.0.37 plus explicitly synthetic
+  reproducibility metadata PASS; missing-report negative control PASS.
+  This is a verifier contract test, not proof of source reproducibility or
+  hosted CI completion. Test scratch directory removed.
+- CI wiring updated; hosted run still pending. No hardware/app/deployment
+  changes. Frozen candidate unchanged.
+
 2026-11-15 (1.0.37 deterministic repack and documentation checks):
 
 - Frozen ZIP independently extracted/repacked with exact matching SHA256;
