@@ -26,5 +26,31 @@ try {
         $caught = $true
     }
     if (-not $caught) { throw 'Missing report was accepted.' }
-    Write-Output 'PASS: synthetic contract only; positive and missing-report negative control.'
+    foreach ($case in @('privacy-hash', 'coverage', 'source', 'binary-hash')) {
+        $privacyCopy = Get-Content -LiteralPath $privacy -Raw | ConvertFrom-Json
+        $reproCopy = Get-Content -LiteralPath $synthetic -Raw | ConvertFrom-Json
+        $expected = switch ($case) {
+            'privacy-hash' { $privacyCopy.PackageSHA256 = '0' * 64; 'sanitization evidence' }
+            'coverage' { $privacyCopy.PackageBinariesScanned = 0; 'sanitization evidence' }
+            'source' { $privacyCopy.SourceCommit = '0' * 40; 'source/version identity' }
+            'binary-hash' {
+                $reproCopy.Results.Gui.First = '0' * 64
+                $reproCopy.Results.Gui.Second = '0' * 64
+                'ZIP binary hash mismatch'
+            }
+        }
+        $privacyFixture = Join-Path $scratch "$case-privacy.json"
+        $reproFixture = Join-Path $scratch "$case-repro.json"
+        $privacyCopy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $privacyFixture
+        $reproCopy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $reproFixture
+        $caught = $false
+        try {
+            & (Join-Path $PSScriptRoot 'verify-ci-artifacts.ps1') -PackagePath $zip -ReproducibilityPath $reproFixture -SanitizationPath $privacyFixture
+        } catch {
+            if ($_.Exception.Message -notmatch $expected) { throw }
+            $caught = $true
+        }
+        if (-not $caught) { throw "Invalid report was accepted: $case" }
+    }
+    Write-Output 'PASS: synthetic contract; positive plus missing, hash, coverage, source and binary mismatch controls.'
 } finally { Remove-Item -LiteralPath $scratch -Recurse -Force }

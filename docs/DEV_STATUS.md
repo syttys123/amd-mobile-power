@@ -21,6 +21,16 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (CI identity gate negative controls):
+
+- Extended local synthetic-contract tests: mismatched sanitization ZIP hash,
+  zero binary coverage, wrong source commit and wrong packaged GUI hash all
+  fail at the expected gate. Positive case and missing-report control still
+  PASS. Frozen package untouched; temporary reports removed.
+- These controls test verifier rejection behavior, not hosted CI execution.
+  Test currently depends on locally available frozen 1.0.37 and is not itself
+  a standalone clean-checkout CI fixture. No runtime/deployment changes.
+
 2026-11-15 (CI artifact identity gate):
 
 - Added verify-ci-artifacts.ps1 before upload: requires ZIP/checksum and both
