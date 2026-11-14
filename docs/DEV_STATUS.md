@@ -21,6 +21,19 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (silent review luminance screening):
+
+- Added `media/promo-html/build/review-luminance.js` to parse ffmpeg
+  signalstats frame samples and report isolated mean-luma spikes (>20 above
+  both neighbors) and near-white mean frames (>210). Incomplete input fails.
+- Silent review: all 638 downscaled full frames screened, no threshold hits;
+  mean luma range 29.2842-74.2983. The 11-second preset scene was separately
+  cropped to its 1050x630 demo region: 165 samples, no threshold hits,
+  mean range 30-127.516. Outputs under `artifacts/media/promo-1.0.34-review`.
+- This heuristic can miss small/local flashes and is not a visual acceptance
+  verdict. Threshold calibration, synthetic detector regression and visual
+  click/transition review remain pending. MP4 unchanged; no hardware access.
+
 2026-11-14 (full silent promo review render):
 
 - Rendered 638 timeline frames using frozen-candidate preset footage,
