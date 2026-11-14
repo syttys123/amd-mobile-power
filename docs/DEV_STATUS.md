@@ -21,13 +21,31 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (1.0.35 clean candidate packaged):
+
+- Native offline Release build PASS: C++ policy/cleanup tests, request-bounds
+  recovery, Rust GUI 59 tests, probe 7 tests, and packed icon verification.
+- Built 1.0.35 from clean source 290917ae1d00384b3086a72d91a88ea7a594e413.
+  ZIP SHA256 12134cf177f75a3bdfe6c74f0a001469882eeb745a51fb454629ff8d3a68fc87,
+  size 778682 bytes, 19 checksum entries.
+- Extracted-package fixture policy isolation, read-only hardware GUI runtime,
+  diagnostics, preset editing, focus, draft retention, resize/scroll, collector,
+  headless probe and install flow PASS. Evidence:
+  `evidence/packaging/v1.0.35-clean-2026-11-14.json` and
+  `evidence/packaging/v1.0.35-fixture-policy-isolation-2026-11-14.json`.
+- Policy write verification was explicitly skipped. Fresh reproducibility,
+  frozen identity, full release gates and media refresh remain pending;
+  packaging PASS is not a stable release verdict. 1.0.34 stays held.
+- Final process inventory contains only the stable C:\RyzenAdj GUI and worker;
+  no candidate GUI/worker or compiler remains. Stable deployment unchanged.
+
 2026-11-14 (packaged fixture isolation gate):
 
 - Packaging now runs enabled-policy startup and manual-save isolation against
   the extracted ZIP GUI before other runtime checks, including the reduced
   runtime path. Version-specific evidence is written under packaging.
 - This makes the fixed regression part of package qualification rather than
-  relying only on a developer-built GUI test. New package build pending.
+  relying only on a developer-built GUI test. Passed on the 1.0.35 package.
 
 2026-11-14 (central fixture policy boundary and process cleanup):
 
