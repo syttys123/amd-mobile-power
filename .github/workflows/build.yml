@@ -41,6 +41,11 @@ jobs:
         run: |
           .\native\verify-docs.ps1
 
+      - name: Verify release privacy regressions
+        shell: pwsh
+        run: |
+          .\native\test-release-privacy.ps1
+
       - name: Verify Rust formatting and lint
         shell: pwsh
         run: |
@@ -87,6 +92,7 @@ jobs:
             "artifacts\native-packages" `
             "amd-mobile-power-v$version-win-x64-native-preview.zip"
           .\native\verify-public-sanitization.ps1 `
+            -ScanPackageBinaries `
             -PackagePath $package `
             -EvidencePath artifacts\ci\public-sanitization.json
 

@@ -21,6 +21,19 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (release privacy positive-control regressions):
+
+- Added test-release-privacy.ps1: disposable local Git/ZIP fixtures prove clean
+  binary PASS and ASCII/UTF-16LE personal-path detection FAIL as expected.
+  Tests do not use actual account details or credentials. Temporary workspace
+  deletion is restricted to the resolved artifacts subtree.
+- Verified remapping preserves existing encoded flags and restores them when
+  the build action throws. All regressions PASS locally.
+- CI now runs these regressions and enables binary package sanitization.
+  Hosted execution is not yet verified. Plain RUSTFLAGS quoted-space handling,
+  independent remapped rebuilds and new candidate ZIP qualification remain open.
+- No hardware write, application restart or deployment replacement performed.
+
 2026-11-15 (Rust build path remapping implemented):
 
 - Added common rust-path-remapping helper around normal native build and fresh
