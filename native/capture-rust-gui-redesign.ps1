@@ -546,15 +546,15 @@ try {
                 $text = [System.Text.StringBuilder]::new(1024)
                 [AmdMobilePowerUiCapture]::ReadText(
                     $child, 0x000D, [UIntPtr]::new($text.Capacity), $text) | Out-Null
-                if ($text.ToString() -match '^已应用 ') {
+                if ($text.ToString() -match '^(已应用 |固件限制：)') {
                     $script:completedFixtureStatus = $text.ToString()
                 }
                 return $true
             }
             [AmdMobilePowerUiCapture]::EnumChildWindows($window, $statusCallback, [IntPtr]::Zero) | Out-Null
             $fixtureApplyStatus = $script:completedFixtureStatus
-        } while ($fixtureApplyStatus -notmatch '^已应用 ' -and [DateTime]::UtcNow -lt $applyDeadline)
-        if ($fixtureApplyStatus -notmatch '^已应用 ') {
+        } while ($fixtureApplyStatus -notmatch '^(已应用 |固件限制：)' -and [DateTime]::UtcNow -lt $applyDeadline)
+        if ($fixtureApplyStatus -notmatch '^(已应用 |固件限制：)') {
             throw "Fixture did not report completed application: $fixtureApplyStatus"
         }
     }

@@ -4985,6 +4985,12 @@ fn format_apply_result(
 ) -> String {
     match result {
         Ok(result) if result.is_successful => {
+            if result.has_firmware_clamp || result.has_stapm_warning {
+                return format!(
+                    "固件限制：目标 {} W，实际以上限回读为准。\n请求 STAPM / Fast / Slow：{} / {} / {} W。",
+                    target.stapm_watts, target.stapm_watts, target.fast_watts, target.slow_watts
+                );
+            }
             let mut text = format!(
                 "已应用 {} W / {} W / {} W。\n",
                 target.stapm_watts, target.fast_watts, target.slow_watts
@@ -5020,14 +5026,16 @@ fn start_apply(
         let text = match fixture {
             Some(UiFixture::FirmwareClamp) => {
                 thread::sleep(Duration::from_millis(500));
-                let clamp_note = if target.stapm_watts > 10 {
-                    "\n固件报告了钳制或 STAPM 警告。"
-                } else {
-                    ""
-                };
-                format!(
-                    "已应用 {} W / {} W / {} W。{}",
-                    target.stapm_watts, target.fast_watts, target.slow_watts, clamp_note
+                format_apply_result(
+                    target,
+                    Ok(ApplyTargetResult {
+                        is_successful: true,
+                        error: None,
+                        has_firmware_clamp: target.stapm_watts > 10,
+                        has_stapm_warning: false,
+                        restore_attempted: false,
+                        restored_previous_limits: false,
+                    }),
                 )
             }
             Some(_) => {
@@ -6267,6 +6275,24 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn clamped_apply_surfaces_warning_on_the_first_line() {
+        for (clamp, stapm_warning) in [(true, false), (false, true), (true, true)] {
+            let text = super::format_apply_result(
+                super::PowerLimitTarget::uniform(45),
+                Ok(super::ApplyTargetResult {
+                    is_successful: true,
+                    error: None,
+                    has_firmware_clamp: clamp,
+                    has_stapm_warning: stapm_warning,
+                    restore_attempted: false,
+                    restored_previous_limits: false,
+                }),
+            );
+            assert!(text.lines().next().unwrap().starts_with("固件限制："));
+            assert!(!text.contains("已应用"));
+        }
+    }
     #[test]
     fn dpi_unscale_is_symmetric_and_identity_at_100_percent() {
         for value in [1, 8, 12, 31, 560] {

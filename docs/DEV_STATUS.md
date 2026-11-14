@@ -21,6 +21,23 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (clamp warning must survive compact status truncation):
+
+- Visual review of timed 1.0.35 footage at 3s/6s found Fast/Slow correctly
+  changed to 25/45 W while STAPM stayed 10 W. However first status line claimed
+  all requested limits applied; the clamp warning was only on hidden line two.
+- Successful apply with firmware-clamp or STAPM warning now puts firmware
+  restriction in the first line and labels requested limits separately.
+  Fixture apply shares production result formatting instead of duplicating it.
+- New unit regression covers clamp-only, STAPM-only and combined warning.
+  Rust 60 tests, Clippy, Release build PASS. GUI lifecycle/fixture isolation
+  runtime PASS, but that runtime test does NOT exercise high-target warning
+  visuals; dedicated warning screenshot verification remains pending.
+- Frozen 1.0.35 unchanged; source is ahead with this correctness fix. Its preset
+  footage remains review-only, not final promo. Next candidate must incorporate
+  the warning fix before final media capture/deployment qualification.
+- No hardware writes requested by this verification. Stable session restored.
+
 2026-11-14 (1.0.35 timestamped preset footage):
 
 - Live-demo capture now permits only firmware-clamp simulation, checks every
