@@ -1,0 +1,35 @@
+{
+  "SchemaVersion": 1,
+  "CaptureMode": "write-controls-visible-policy-seeded",
+  "Fixture": "firmware-clamp",
+  "FixtureApplyRequested": true,
+  "FixtureApplyStatus": "已应用 10 W / 10 W / 10 W。",
+  "DpiFixture": 125,
+  "UniformTargetWatts": null,
+  "PolicyBatteryWatts": 10,
+  "PolicyAcWatts": 45,
+  "PolicySeeded": true,
+  "BatteryOnly": false,
+  "FocusControlId": null,
+  "ControlChecks": {
+    "TargetAndPresetEnabled": true,
+    "DiagnosticsEnabled": true
+  },
+  "Simple": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\printwindow-exact-125\\exact125-simple-2026-11-14.png",
+    "Width": 752,
+    "Height": 489,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "28db3b4145798d7846bc614660e9fdc6750e223b96f98bc5398081a17494ec78"
+  },
+  "Advanced": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\printwindow-exact-125\\exact125-advanced-2026-11-14.png",
+    "Width": 977,
+    "Height": 889,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "d75c808175aa820d458ede3f2fb26e40f15bda8c8194278e28746d9f5f5617b8"
+  },
+  "SimpleClientSize": "750x450",
+  "AdvancedClientSize": "975x850",
+  "RecordedAt": "2026-11-14T23:37:23.3496756+08:00"
+}

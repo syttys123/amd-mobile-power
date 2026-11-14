@@ -34,6 +34,12 @@ using System;
 using System.Runtime.InteropServices;
 
 public static class AmdMobilePowerUiCapture {
+    public delegate bool ChildCallback(IntPtr hwnd, IntPtr parameter);
+    [DllImport("user32.dll")]
+    public static extern bool EnumChildWindows(IntPtr hwnd, ChildCallback callback, IntPtr parameter);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "SendMessageW")]
+    public static extern IntPtr ReadText(IntPtr hwnd, uint message, UIntPtr capacity,
+        System.Text.StringBuilder text);
     [DllImport("user32.dll")]
     public static extern bool SetProcessDpiAwarenessContext(IntPtr value);
 
@@ -529,7 +535,28 @@ try {
     if ($ApplyFixtureTarget) {
         [AmdMobilePowerUiCapture]::PostMessage(
             $window, 0x0111, [UIntPtr]::new(104), [IntPtr]::Zero) | Out-Null
-        Start-Sleep -Seconds 1
+        $applyDeadline = [DateTime]::UtcNow.AddSeconds(5)
+        $fixtureApplyStatus = ''
+        do {
+            Start-Sleep -Milliseconds 50
+            if ($process.HasExited) { throw 'Fixture exited before apply completion.' }
+            $script:completedFixtureStatus = ''
+            $statusCallback = [AmdMobilePowerUiCapture+ChildCallback] {
+                param($child, $parameter)
+                $text = [System.Text.StringBuilder]::new(1024)
+                [AmdMobilePowerUiCapture]::ReadText(
+                    $child, 0x000D, [UIntPtr]::new($text.Capacity), $text) | Out-Null
+                if ($text.ToString() -match '^已应用 ') {
+                    $script:completedFixtureStatus = $text.ToString()
+                }
+                return $true
+            }
+            [AmdMobilePowerUiCapture]::EnumChildWindows($window, $statusCallback, [IntPtr]::Zero) | Out-Null
+            $fixtureApplyStatus = $script:completedFixtureStatus
+        } while ($fixtureApplyStatus -notmatch '^已应用 ' -and [DateTime]::UtcNow -lt $applyDeadline)
+        if ($fixtureApplyStatus -notmatch '^已应用 ') {
+            throw "Fixture did not report completed application: $fixtureApplyStatus"
+        }
     }
     $advancedButton = [AmdMobilePowerUiCapture]::GetDlgItem($window, 109)
     if ($advancedButton -eq [IntPtr]::Zero) {
@@ -643,6 +670,7 @@ try {
             }
             Fixture = if ($Fixture) { $Fixture } else { $null }
             FixtureApplyRequested = [bool]$ApplyFixtureTarget
+            FixtureApplyStatus = if ($ApplyFixtureTarget) { $fixtureApplyStatus } else { $null }
             DpiFixture = if ($DpiFixture) { [int]$DpiFixture } else { $null }
             UniformTargetWatts = if ($UniformTargetWatts -gt 0) {
                 $UniformTargetWatts

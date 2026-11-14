@@ -21,6 +21,21 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (capture waits for simulated completion):
+
+- Replaced ApplyFixtureTarget's fixed one-second delay with a five-second
+  bounded wait for the GUI's actual completed-result text. Reads child controls
+  through WM_GETTEXT because the compact status is immediately overwritten by
+  dashboard refresh. Captured result is recorded in evidence.
+- Runtime PASS with pinned 1.0.35, ForcePrintWindow and logical DPI 125:
+  result `已应用 10 W / 10 W / 10 W。`; both mode captures completed.
+  Evidence: `evidence/ui/printwindow-exact-125-2026-11-14.json`.
+  This checks completion text, not an independent numeric telemetry assertion.
+- Initial wrapper timeout was caused by MainWindowHandle=0 for the hidden
+  tray window; PID-owned EnumWindows exit succeeded. Shared session helper
+  remains pending. Stable both-line 8 W policy rechecked after restoration;
+  only stable GUI/worker remained. Real OS DPI transitions remain untested.
+
 2026-11-14 (PrintWindow frame-coordinate fix):
 
 - Root cause: capture allocated DWM-visible size but PrintWindow rendered the
