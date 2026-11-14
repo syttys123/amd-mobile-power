@@ -13,6 +13,7 @@ param(
     [string]$PipeName,
     [string]$CaptureDirectory,
     [switch]$VerifyResourceStability,
+    [switch]$VerifyFixturePolicyIsolation,
     [string]$EvidencePath
 )
 
@@ -43,6 +44,18 @@ if (-not $isolatedLocalAppData.StartsWith(
     throw "Unsafe isolated LOCALAPPDATA path: $isolatedLocalAppData"
 }
 $previousLocalAppData = $env:LOCALAPPDATA
+if ($VerifyFixturePolicyIsolation) {
+    if ($UiFixture -ne 'firmware-clamp') { throw 'Policy isolation requires firmware-clamp fixture.' }
+    $stateFolder = Join-Path $isolatedLocalAppData 'AmdMobilePower'
+    New-Item -ItemType Directory -Path $stateFolder -Force | Out-Null
+    $target = @{ stapmWatts=10; fastWatts=10; slowWatts=10 }
+    @{ presets=@(12,25,45); mode='simple'; powerPolicy=@{
+        enabled=$true; batteryEnabled=$true; acEnabled=$true;
+        batteryTarget=$target; acTarget=$target
+    }} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $stateFolder 'rust-ui-state.json') -Encoding utf8
+    $VerifyWriteControls = $true
+    $PipeName = "AmdMobilePower.FixtureIsolation.$([Guid]::NewGuid().ToString('N'))"
+}
 $env:LOCALAPPDATA = $isolatedLocalAppData
 
 if (-not $NoBuild) {
@@ -438,6 +451,8 @@ function Set-GuiControlFocus {
 $firstProcess = $null
 $secondProcess = $null
 $backgroundGuiSessions = @()
+$fixturePipe = $null
+$fixtureConnection = $null
 $existingWorkerIds = @(
     Get-Process `
         -Name "amdmobilepower_native_worker" `
@@ -446,6 +461,13 @@ $existingWorkerIds = @(
 )
 try {
     # The GUI owns a machine-wide single-instance mutex, so the verification
+    if ($VerifyFixturePolicyIsolation) {
+        $fixturePipe = [System.IO.Pipes.NamedPipeServerStream]::new($PipeName,
+            [System.IO.Pipes.PipeDirection]::InOut, 1,
+            [System.IO.Pipes.PipeTransmissionMode]::Byte,
+            [System.IO.Pipes.PipeOptions]::Asynchronous)
+        $fixtureConnection = $fixturePipe.WaitForConnectionAsync()
+    }
     # instance needs exclusive ownership. Remember any GUI that is already
     # running (normally the user's deployed tray app) and relaunch it in the
     # `finally` block instead of silently closing it.
@@ -529,6 +551,18 @@ try {
         -ArgumentList $startArguments `
         -PassThru
     $window = Wait-ProcessWindow -Process $firstProcess
+    if ($VerifyFixturePolicyIsolation) {
+        Start-Sleep -Seconds 2
+        $fixtureState = Export-GuiDiagnostics -Window $window -LocalAppDataRoot $isolatedLocalAppData
+        if (-not [bool]$fixtureState.Document.ui.policyEnabled) {
+            throw 'Fixture isolation precondition failed: saved policy was not enabled.'
+        }
+        if ($null -eq $fixtureState.Document.ui.policyInFlight -or
+            [bool]$fixtureState.Document.ui.policyInFlight) {
+            throw 'Fixture policy idle state is missing or a real policy request is in flight.'
+        }
+        if ($fixtureConnection.IsCompleted) { throw 'Fixture attempted real worker pipe IPC.' }
+    }
     if ($firstProcess.MainWindowTitle -notlike "AMD Mobile Power*") {
         throw "Unexpected Rust GUI window title: $($firstProcess.MainWindowTitle)"
     }
@@ -812,7 +846,7 @@ try {
     $targetDraftResult = "Not requested"
     $resizeBoundsResult = "Not requested"
     $advancedScrollResult = "Not requested"
-    if ($VerifyWriteControls) {
+    if ($VerifyWriteControls -and -not $VerifyFixturePolicyIsolation) {
         $childTexts = @(Get-GuiChildTexts -Window $window)
         foreach ($required in @(
             "12 W",
@@ -1468,6 +1502,9 @@ try {
         }
 
     $resourceStability = $null
+    if ($VerifyFixturePolicyIsolation -and $fixtureConnection.IsCompleted) {
+        throw 'Fixture attempted real worker pipe IPC during interaction checks.'
+    }
     if ($VerifyResourceStability) {
         $samples = @()
         for ($batch = 0; $batch -lt 6; $batch++) {
@@ -1527,6 +1564,7 @@ try {
             SourceDirty = [bool]((& git -C $repositoryRoot status --porcelain --untracked-files=no | Out-String).Trim())
             Verification = "PASS"
             ResourceStability = $resourceStability
+            FixturePolicyIsolation = if ($VerifyFixturePolicyIsolation) { 'PASS' } else { 'Not requested' }
             Path = "Rust GUI -> C++ worker -> RyzenAdj"
             Processor = if ($workerStatus -match "worker · [^\r\n]+\r?\n([^\r\n]+)") {
                 $Matches[1].Trim()
@@ -1649,6 +1687,7 @@ finally {
         }
     }
     $env:LOCALAPPDATA = $previousLocalAppData
+    if ($null -ne $fixturePipe) { $fixturePipe.Dispose() }
     if (Test-Path -LiteralPath $isolatedLocalAppData) {
         Remove-Item -LiteralPath $isolatedLocalAppData -Recurse -Force
     }

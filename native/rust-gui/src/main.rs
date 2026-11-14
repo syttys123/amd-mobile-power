@@ -350,6 +350,7 @@ struct PolicyControls {
 
 #[derive(Clone, Copy)]
 struct UiDiagnostics {
+    policy_in_flight: bool,
     mode: state::UiMode,
     top_most: bool,
     policy_enabled: bool,
@@ -2657,6 +2658,7 @@ fn diagnostics_document(
             "mode": ui_state.mode,
             "topMost": ui_state.top_most,
             "policyEnabled": ui_state.policy_enabled,
+            "policyInFlight": ui_state.policy_in_flight,
             "batteryOnly": ui_state.battery_only,
             "highContrast": ui_state.high_contrast,
             "taskbarIconAvailable": ui_state.taskbar_icon_available,
@@ -2703,6 +2705,7 @@ fn export_diagnostics(app: &GuiApp) -> Result<PathBuf, String> {
         package_version.as_deref(),
         captured_at_unix_ms,
         UiDiagnostics {
+            policy_in_flight: app.policy_in_flight,
             mode: app.view_mode,
             top_most: app.top_most,
             policy_enabled: app.policy_enabled,
@@ -6485,6 +6488,7 @@ mod tests {
             Some("0.6.0-native-test"),
             1_762_819_200_000,
             UiDiagnostics {
+                policy_in_flight: false,
                 mode: state::UiMode::Advanced,
                 top_most: true,
                 policy_enabled: true,

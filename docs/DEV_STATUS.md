@@ -21,6 +21,23 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (enabled-policy fixture isolation regression):
+
+- Added opt-in VerifyFixturePolicyIsolation to GUI verification: seeds an
+  enabled policy in isolated state, verifies it loaded through diagnostics,
+  and watches a private pipe listener during GUI lifecycle checks.
+- Negative control against held candidate did not trigger the listener:
+  fixture startup never assigns the command-line pipe to app.worker_pipe,
+  so the original erroneous request targets the default pipe. Listener-only
+  PASS was insufficient and is not treated as proof of isolation.
+- Diagnostics now expose policyInFlight; the regression requires this field
+  and false while saved policy is enabled. Updated Release GUI passes the
+  strengthened check; Rust 59 tests and Clippy PASS. Evidence:
+  `evidence/ui/native-fixture-policy-isolation-2026-11-14.json`.
+- Full IPC observation and a controlled old-code negative test remain useful.
+  Other fixture controls are not covered by this startup-only isolation claim.
+  Held frozen candidate remains held; no package/deployment replacement.
+
 2026-11-14 (fixture saved-policy IPC isolation defect found):
 
 - New frozen-candidate advanced capture with enabled saved policy showed
