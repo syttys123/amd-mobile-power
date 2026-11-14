@@ -21,6 +21,19 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (clamp warning visual acceptance):
+
+- Held-result firmware warning now uses warning colors and the firmware-limit
+  badge instead of green generic status. Rust 60 tests, Clippy and Release PASS.
+- Isolated firmware-clamp visual test requested 45 W with presets 45/25/10;
+  completion-aware capture recorded the warning and completed both modes.
+  Inspected compact screenshot: yellow badge, complete first-line warning,
+  STAPM 10 W alongside Fast/Slow 45 W. No all-limits-applied claim remains.
+  Evidence: `evidence/ui/clamp-warning-visual-2026-11-14.json`.
+- This is current-source fixture verification, not hardware 45 W validation
+  or qualification of the unchanged frozen 1.0.35. Compact CPU subtitle
+  truncation remains separate. C deployment unchanged; stable session restored.
+
 2026-11-14 (clamp warning must survive compact status truncation):
 
 - Visual review of timed 1.0.35 footage at 3s/6s found Fast/Slow correctly

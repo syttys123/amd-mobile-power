@@ -933,6 +933,14 @@ unsafe fn visible_status(app: &GuiApp) -> (String, String, u32, u32) {
     if Instant::now() < app.status_hold_until && !app.status_label.is_null() {
         let message = get_control_text(app.status_label);
         if let Some(first_line) = message.lines().find(|line| !line.trim().is_empty()) {
+            if first_line.starts_with("固件限制：") {
+                return (
+                    "固件限制".to_owned(),
+                    first_line.to_owned(),
+                    palette().warning_soft,
+                    palette().warning,
+                );
+            }
             let is_error = first_line.contains("失败")
                 || first_line.contains("异常")
                 || first_line.contains("错误");

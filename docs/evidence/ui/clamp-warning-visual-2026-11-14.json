@@ -1,0 +1,35 @@
+{
+  "SchemaVersion": 1,
+  "CaptureMode": "write-controls-visible-policy-seeded",
+  "Fixture": "firmware-clamp",
+  "FixtureApplyRequested": true,
+  "FixtureApplyStatus": "固件限制：目标 45 W，实际以上限回读为准。\n请求 STAPM / Fast / Slow：45 / 45 / 45 W。",
+  "DpiFixture": null,
+  "UniformTargetWatts": null,
+  "PolicyBatteryWatts": 10,
+  "PolicyAcWatts": 45,
+  "PolicySeeded": true,
+  "BatteryOnly": false,
+  "FocusControlId": null,
+  "ControlChecks": {
+    "TargetAndPresetEnabled": true,
+    "DiagnosticsEnabled": true
+  },
+  "Simple": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\clamp-warning-fixed\\warning-simple-2026-11-14.png",
+    "Width": 752,
+    "Height": 489,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "80e2c7fcb0974164407a7b4a43d9fc33150c17335ae9ee556c557ace241b07d6"
+  },
+  "Advanced": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\clamp-warning-fixed\\warning-advanced-2026-11-14.png",
+    "Width": 977,
+    "Height": 889,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "7852798a94d10d29255e7988beb3011ee9a537e061b00ed216bed2ed897c1222"
+  },
+  "SimpleClientSize": null,
+  "AdvancedClientSize": null,
+  "RecordedAt": "2026-11-14T23:47:28.8292664+08:00"
+}
