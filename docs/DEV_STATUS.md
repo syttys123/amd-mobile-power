@@ -21,6 +21,20 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (stable read-only resource observation and CI confirmation):
+
+- Added `native/measure-process-resources.ps1`: fixes process ID/start time,
+  samples without restart or hardware commands, disposes observation handles,
+  and labels collection PASS separately from a leak-free verdict.
+- Stable 1.0.33 60-second observation: GUI private bytes 2,142,208 constant;
+  worker 1,392,640 constant; both handle/thread deltas zero. CPU deltas
+  0.046875/0.09375 seconds. Evidence:
+  `evidence/diagnostics/stable-1.0.33-resources-60s-2026-11-14.json`.
+  This does not qualify current candidate or overnight resource behavior.
+- Public Actions summary confirmed `872643f` run `43601760409` Success,
+  duration 4m 8s, one artifact. Later commits are not covered by this result.
+- No GUI interruption, hardware command or deployment change in this check.
+
 2026-11-14 (two-fresh-build reproducibility separates stale artifacts):
 
 - Reproducibility initially FAILED for GUI: old local artifact `f04afe7e`

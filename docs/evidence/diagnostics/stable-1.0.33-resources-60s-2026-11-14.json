@@ -1,0 +1,262 @@
+{
+  "CollectionStatus": "PASS",
+  "Scope": "Read-only bounded observation; not a leak-free verdict",
+  "DurationSeconds": 60,
+  "Summary": [
+    {
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytesFirst": 2142208,
+      "PrivateBytesLast": 2142208,
+      "PrivateBytesPeak": 2142208.0,
+      "HandleDelta": 0,
+      "ThreadDelta": 0,
+      "CpuSecondsDelta": 0.046875
+    },
+    {
+      "Name": "amdmobilepower_native_worker",
+      "PrivateBytesFirst": 1392640,
+      "PrivateBytesLast": 1392640,
+      "PrivateBytesPeak": 1392640.0,
+      "HandleDelta": 0,
+      "ThreadDelta": 0,
+      "CpuSecondsDelta": 0.09375
+    }
+  ],
+  "Samples": [
+    {
+      "Sample": 0,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2142208,
+      "WorkingSetBytes": 12836864,
+      "Handles": 151,
+      "Threads": 3,
+      "CpuSeconds": 0.609375
+    },
+    {
+      "Sample": 0,
+      "Name": "amdmobilepower_native_worker",
+      "PrivateBytes": 1392640,
+      "WorkingSetBytes": 7086080,
+      "Handles": 70,
+      "Threads": 2,
+      "CpuSeconds": 1.671875
+    },
+    {
+      "Sample": 1,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2142208,
+      "WorkingSetBytes": 12836864,
+      "Handles": 151,
+      "Threads": 3,
+      "CpuSeconds": 0.609375
+    },
+    {
+      "Sample": 1,
+      "Name": "amdmobilepower_native_worker",
+      "PrivateBytes": 1392640,
+      "WorkingSetBytes": 7086080,
+      "Handles": 70,
+      "Threads": 2,
+      "CpuSeconds": 1.671875
+    },
+    {
+      "Sample": 2,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2142208,
+      "WorkingSetBytes": 12836864,
+      "Handles": 151,
+      "Threads": 3,
+      "CpuSeconds": 0.609375
+    },
+    {
+      "Sample": 2,
+      "Name": "amdmobilepower_native_worker",
+      "PrivateBytes": 1392640,
+      "WorkingSetBytes": 7086080,
+      "Handles": 70,
+      "Threads": 2,
+      "CpuSeconds": 1.6875
+    },
+    {
+      "Sample": 3,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2142208,
+      "WorkingSetBytes": 12836864,
+      "Handles": 151,
+      "Threads": 3,
+      "CpuSeconds": 0.625
+    },
+    {
+      "Sample": 3,
+      "Name": "amdmobilepower_native_worker",
+      "PrivateBytes": 1392640,
+      "WorkingSetBytes": 7086080,
+      "Handles": 70,
+      "Threads": 2,
+      "CpuSeconds": 1.6875
+    },
+    {
+      "Sample": 4,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2142208,
+      "WorkingSetBytes": 12836864,
+      "Handles": 151,
+      "Threads": 3,
+      "CpuSeconds": 0.625
+    },
+    {
+      "Sample": 4,
+      "Name": "amdmobilepower_native_worker",
+      "PrivateBytes": 1392640,
+      "WorkingSetBytes": 7086080,
+      "Handles": 70,
+      "Threads": 2,
+      "CpuSeconds": 1.6875
+    },
+    {
+      "Sample": 5,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2142208,
+      "WorkingSetBytes": 12836864,
+      "Handles": 151,
+      "Threads": 3,
+      "CpuSeconds": 0.625
+    },
+    {
+      "Sample": 5,
+      "Name": "amdmobilepower_native_worker",
+      "PrivateBytes": 1392640,
+      "WorkingSetBytes": 7086080,
+      "Handles": 70,
+      "Threads": 2,
+      "CpuSeconds": 1.703125
+    },
+    {
+      "Sample": 6,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2142208,
+      "WorkingSetBytes": 12836864,
+      "Handles": 151,
+      "Threads": 3,
+      "CpuSeconds": 0.640625
+    },
+    {
+      "Sample": 6,
+      "Name": "amdmobilepower_native_worker",
+      "PrivateBytes": 1392640,
+      "WorkingSetBytes": 7086080,
+      "Handles": 70,
+      "Threads": 2,
+      "CpuSeconds": 1.703125
+    },
+    {
+      "Sample": 7,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2142208,
+      "WorkingSetBytes": 12836864,
+      "Handles": 151,
+      "Threads": 3,
+      "CpuSeconds": 0.640625
+    },
+    {
+      "Sample": 7,
+      "Name": "amdmobilepower_native_worker",
+      "PrivateBytes": 1392640,
+      "WorkingSetBytes": 7086080,
+      "Handles": 70,
+      "Threads": 2,
+      "CpuSeconds": 1.734375
+    },
+    {
+      "Sample": 8,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2142208,
+      "WorkingSetBytes": 12836864,
+      "Handles": 151,
+      "Threads": 3,
+      "CpuSeconds": 0.640625
+    },
+    {
+      "Sample": 8,
+      "Name": "amdmobilepower_native_worker",
+      "PrivateBytes": 1392640,
+      "WorkingSetBytes": 7086080,
+      "Handles": 70,
+      "Threads": 2,
+      "CpuSeconds": 1.75
+    },
+    {
+      "Sample": 9,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2142208,
+      "WorkingSetBytes": 12546048,
+      "Handles": 151,
+      "Threads": 3,
+      "CpuSeconds": 0.640625
+    },
+    {
+      "Sample": 9,
+      "Name": "amdmobilepower_native_worker",
+      "PrivateBytes": 1392640,
+      "WorkingSetBytes": 6914048,
+      "Handles": 70,
+      "Threads": 2,
+      "CpuSeconds": 1.765625
+    },
+    {
+      "Sample": 10,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2142208,
+      "WorkingSetBytes": 12546048,
+      "Handles": 151,
+      "Threads": 3,
+      "CpuSeconds": 0.640625
+    },
+    {
+      "Sample": 10,
+      "Name": "amdmobilepower_native_worker",
+      "PrivateBytes": 1392640,
+      "WorkingSetBytes": 6914048,
+      "Handles": 70,
+      "Threads": 2,
+      "CpuSeconds": 1.765625
+    },
+    {
+      "Sample": 11,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2142208,
+      "WorkingSetBytes": 12546048,
+      "Handles": 151,
+      "Threads": 3,
+      "CpuSeconds": 0.65625
+    },
+    {
+      "Sample": 11,
+      "Name": "amdmobilepower_native_worker",
+      "PrivateBytes": 1392640,
+      "WorkingSetBytes": 6914048,
+      "Handles": 70,
+      "Threads": 2,
+      "CpuSeconds": 1.765625
+    },
+    {
+      "Sample": 12,
+      "Name": "amd-mobile-power-gui",
+      "PrivateBytes": 2142208,
+      "WorkingSetBytes": 12546048,
+      "Handles": 151,
+      "Threads": 3,
+      "CpuSeconds": 0.65625
+    },
+    {
+      "Sample": 12,
+      "Name": "amdmobilepower_native_worker",
+      "PrivateBytes": 1392640,
+      "WorkingSetBytes": 6914048,
+      "Handles": 70,
+      "Threads": 2,
+      "CpuSeconds": 1.765625
+    }
+  ],
+  "RecordedAt": "2026-11-14T22:02:45.8112402+08:00"
+}
