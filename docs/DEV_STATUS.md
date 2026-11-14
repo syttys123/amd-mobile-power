@@ -21,6 +21,20 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (verifier restoration identity and final evidence):
+
+- Saved GUI identity now includes creation time and executable path. Restore
+  skipping no longer depends solely on an old PID, which could be reused.
+- Evidence previously labeled sessions relaunched before finally executed.
+  It now records sessions-to-restore, then updates restoration results after
+  checking matching executable-path liveness. Failure makes verification fail.
+- Frozen packaged GUI fixture PASS; finally recorded one matching live GUI.
+  A separate post-command query confirmed stable GUI and its child worker.
+  Evidence: `evidence/ui/native-restoration-identity-2026-11-14.json`.
+- This closes concrete identity/evidence gaps. PID reuse is not proven as
+  the cause of earlier missing sessions; repeated lifecycle stress remains
+  useful. No frozen payload/deployment changes or test power writes.
+
 2026-11-14 (frozen candidate four-scale UI and resource gates):
 
 - Verified frozen ZIP hash before executing packaged GUI. Logical DPI

@@ -462,6 +462,7 @@ try {
                 }
                 [pscustomobject]@{
                     Id = [int]$_.ProcessId
+                    CreationDate = $_.CreationDate
                     ExecutablePath = $_.ExecutablePath
                     Arguments = $arguments.Trim()
                 }
@@ -1574,7 +1575,8 @@ try {
             DpiFixture = $DpiFixture
             WritePreset = $writePresetResult
             PolicySave = if ($ExecutePolicySave) { "PASS" } else { "Not requested" }
-            BackgroundGuiRelaunched = $backgroundGuiSessions.Count
+            BackgroundGuiSessionsToRestore = $backgroundGuiSessions.Count
+            BackgroundGuiRestoration = "Pending finally verification"
             RecordedAt = (Get-Date).ToString("o")
         } |
             ConvertTo-Json -Depth 8 |
@@ -1650,21 +1652,43 @@ finally {
     if (Test-Path -LiteralPath $isolatedLocalAppData) {
         Remove-Item -LiteralPath $isolatedLocalAppData -Recurse -Force
     }
+    $restorationResults = @()
     foreach ($session in $backgroundGuiSessions) {
-        if (Get-Process -Id $session.Id -ErrorAction SilentlyContinue) { continue }
         try {
-            Start-Process `
+            $existing = @(Get-CimInstance Win32_Process -Filter "Name = 'amd-mobile-power-gui.exe'" |
+                Where-Object { $_.ProcessId -eq $session.Id -and
+                    $_.ExecutablePath -eq $session.ExecutablePath -and
+                    $_.CreationDate -eq $session.CreationDate })
+            $launched = $null
+            if ($existing.Count -eq 0) {
+            $launched = Start-Process `
                 -FilePath $session.ExecutablePath `
                 -ArgumentList $session.Arguments `
                 -WorkingDirectory (Split-Path -Parent $session.ExecutablePath) `
                 -WindowStyle Hidden `
+                -PassThru `
                 -ErrorAction Stop
+            }
+            try {
+                Start-Sleep -Seconds 3
+                $live = @(Get-CimInstance Win32_Process -Filter "Name = 'amd-mobile-power-gui.exe'" |
+                    Where-Object { $_.ExecutablePath -eq $session.ExecutablePath })
+                if ($live.Count -eq 0) { throw "No live GUI with the saved executable path after restoration." }
+                $restorationResults += [pscustomobject]@{ Verification = "PASS"; LiveSessions = $live.Count }
+            }
+            finally { if ($null -ne $launched) { $launched.Dispose() } }
         }
         catch {
-            Write-Warning "Unable to relaunch the GUI that was running before the check: $($session.ExecutablePath)"
+            $restorationResults += [pscustomobject]@{ Verification = "FAILED"; Error = $_.Exception.Message }
+            Write-Warning "Background GUI restoration failed: $($_.Exception.Message)"
         }
     }
-    if ($backgroundGuiSessions.Count -gt 0) {
-        Start-Sleep -Seconds 3
+    if ($EvidencePath -and (Test-Path -LiteralPath $EvidencePath)) {
+        $document = Get-Content -LiteralPath $EvidencePath -Raw | ConvertFrom-Json
+        $document | Add-Member -NotePropertyName BackgroundGuiRestoration -NotePropertyValue @($restorationResults) -Force
+        $document | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $EvidencePath -Encoding UTF8
+    }
+    if (@($restorationResults | Where-Object { $_.Verification -eq "FAILED" }).Count -gt 0) {
+        throw "GUI verification finished but background session restoration failed."
     }
 }
