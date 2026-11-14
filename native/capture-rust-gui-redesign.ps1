@@ -20,6 +20,7 @@ param(
     [switch]$BatteryOnly,
     [int]$FocusControlId,
     [switch]$ApplyFixtureTarget,
+    [switch]$ForcePrintWindow,
     [switch]$ReadOnly
 )
 
@@ -161,7 +162,7 @@ function Save-WindowImage {
     $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
     $captureMethod = $null
     try {
-        if ([AmdMobilePowerUiCapture]::GetForegroundWindow() -eq $Window) {
+        if (-not $ForcePrintWindow -and [AmdMobilePowerUiCapture]::GetForegroundWindow() -eq $Window) {
             $graphics.CopyFromScreen(
                 $rect.Left,
                 $rect.Top,
@@ -171,67 +172,46 @@ function Save-WindowImage {
             $captureMethod = "CopyFromScreen(foreground-verified)"
         }
         else {
-            $graphics.Clear([System.Drawing.Color]::White)
-            $graphicsHdc = $graphics.GetHdc()
+            $windowRect = New-Object AmdMobilePowerUiCapture+RECT
+            if (-not [AmdMobilePowerUiCapture]::GetWindowRect($Window, [ref]$windowRect)) {
+                throw 'GetWindowRect failed for PrintWindow capture.'
+            }
+            $windowWidth = $windowRect.Right - $windowRect.Left
+            $windowHeight = $windowRect.Bottom - $windowRect.Top
+            $offsetX = $rect.Left - $windowRect.Left
+            $offsetY = $rect.Top - $windowRect.Top
+            if ($offsetX -lt 0 -or $offsetY -lt 0 -or
+                ($offsetX + $width) -gt $windowWidth -or
+                ($offsetY + $height) -gt $windowHeight) {
+                throw 'Visible frame lies outside the PrintWindow surface.'
+            }
+            $surface = [System.Drawing.Bitmap]::new($windowWidth, $windowHeight)
             try {
-                $rendered = [AmdMobilePowerUiCapture]::PrintWindow(
-                    $Window,
-                    $graphicsHdc,
-                    2)
-            }
-            finally {
-                $graphics.ReleaseHdc($graphicsHdc)
-            }
-            if (-not $rendered) {
-                throw "Neither foreground capture nor PrintWindow fallback succeeded."
-            }
-
-            $minX = $width
-            $minY = $height
-            $maxX = -1
-            $maxY = -1
-            for ($y = 0; $y -lt $height; $y += 2) {
-                for ($x = 0; $x -lt $width; $x += 2) {
-                    $pixel = $bitmap.GetPixel($x, $y)
-                    if ($pixel.R -lt 246 -or $pixel.G -lt 246 -or $pixel.B -lt 246) {
-                        $minX = [Math]::Min($minX, $x)
-                        $minY = [Math]::Min($minY, $y)
-                        $maxX = [Math]::Max($maxX, $x)
-                        $maxY = [Math]::Max($maxY, $y)
+                $surfaceGraphics = [System.Drawing.Graphics]::FromImage($surface)
+                try {
+                    $surfaceGraphics.Clear([System.Drawing.Color]::White)
+                    $graphicsHdc = $surfaceGraphics.GetHdc()
+                    try {
+                        $rendered = [AmdMobilePowerUiCapture]::PrintWindow(
+                            $Window,
+                            $graphicsHdc,
+                            2)
                     }
+                    finally {
+                        $surfaceGraphics.ReleaseHdc($graphicsHdc)
+                    }
+                    if (-not $rendered) {
+                        throw "Neither foreground capture nor PrintWindow fallback succeeded."
+                    }
+                    $graphics.DrawImage($surface,
+                        [System.Drawing.Rectangle]::new(0, 0, $width, $height),
+                        [System.Drawing.Rectangle]::new($offsetX, $offsetY, $width, $height),
+                        [System.Drawing.GraphicsUnit]::Pixel)
                 }
+                finally { $surfaceGraphics.Dispose() }
             }
-            if ($maxX -le $minX -or $maxY -le $minY) {
-                throw "PrintWindow fallback produced a blank capture."
-            }
-
-            $sourceWidth = $maxX - $minX + 1
-            $sourceHeight = $maxY - $minY + 1
-            $normalized = New-Object System.Drawing.Bitmap $width, $height
-            $normalizedGraphics = [System.Drawing.Graphics]::FromImage($normalized)
-            try {
-                $normalizedGraphics.InterpolationMode =
-                    [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-                $normalizedGraphics.PixelOffsetMode =
-                    [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
-                $destination = New-Object System.Drawing.Rectangle 0, 0, $width, $height
-                $source = New-Object System.Drawing.Rectangle `
-                    $minX, `
-                    $minY, `
-                    $sourceWidth, `
-                    $sourceHeight
-                $normalizedGraphics.DrawImage(
-                    $bitmap,
-                    $destination,
-                    $source,
-                    [System.Drawing.GraphicsUnit]::Pixel)
-            }
-            finally {
-                $normalizedGraphics.Dispose()
-            }
-            $bitmap.Dispose()
-            $bitmap = $normalized
-            $captureMethod = "PrintWindow(normalized-fallback)"
+            finally { $surface.Dispose() }
+            $captureMethod = "PrintWindow(exact-frame-crop)"
         }
         $bitmap.Save($Path, [System.Drawing.Imaging.ImageFormat]::Png)
     }

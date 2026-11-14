@@ -21,6 +21,25 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (PrintWindow frame-coordinate fix):
+
+- Root cause: capture allocated DWM-visible size but PrintWindow rendered the
+  whole GetWindowRect surface, then color-based normalization guessed bounds
+  and rescaled content. Replaced that with full-window rendering and exact
+  DWM offset crop, preserving pixels and disposing HDC/graphics/bitmaps.
+- Added ForcePrintWindow for repeatable fallback testing. Runtime PASS at
+  native DPI with pinned 1.0.35: simple 752x489, advanced 977x889. Inspected
+  both captures: left strip/shift removed and bottom complete. Evidence:
+  `evidence/ui/printwindow-exact-2026-11-14.json`.
+- Compact CPU subtitle still uses ellipsis; this is application layout, not
+  capture distortion. Fractional-DPI fallback pixel comparison remains pending.
+- First capture wrapper failed before producing output and its duplicate
+  restore check masked the original error; verified stable process live, then
+  reran successfully. Capture-script session restoration still merits a shared
+  helper instead of ad hoc wrappers. No test processes remain.
+- Stable runtime getPowerPolicy confirmed both lines 8 W and last successful
+  8/8/8 W target after restoration. No deployment replacement.
+
 2026-11-14 (1.0.35 promo policy/device panel refresh):
 
 - Captured pinned 1.0.35 GUI with isolated fixture policy 10 W battery / 45 W
