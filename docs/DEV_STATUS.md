@@ -21,6 +21,18 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (frozen candidate identity preflight):
+
+- Added `native/verify-frozen-candidate.ps1` to check pinned ZIP hash/size,
+  staged GUI/worker/probe hashes, BUILD-INFO source/version/clean status,
+  checksum paths and duplicates, and unchecked extra staged files.
+- Current frozen candidate PASS with 19 checksum entries; evidence:
+  `evidence/packaging/v1.0.34-frozen-identity-2026-11-14.json`.
+- This is artifact identity verification, not runtime or release approval.
+  Negative cases for malformed manifests/checksum paths remain untested.
+  It does not independently compare every ZIP entry with the staged tree.
+- No executable launched, hardware accessed or deployment modified.
+
 2026-11-14 (worker-hang verifier cleanup hardened):
 
 - Inspected hang verifier: it applies a 10 W policy, so it was not executed
