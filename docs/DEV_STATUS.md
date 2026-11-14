@@ -21,6 +21,14 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (packaged fixture isolation gate):
+
+- Packaging now runs enabled-policy startup and manual-save isolation against
+  the extracted ZIP GUI before other runtime checks, including the reduced
+  runtime path. Version-specific evidence is written under packaging.
+- This makes the fixed regression part of package qualification rather than
+  relying only on a developer-built GUI test. New package build pending.
+
 2026-11-14 (central fixture policy boundary and process cleanup):
 
 - start_policy_save now handles fixture mode centrally at all three callers:

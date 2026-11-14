@@ -378,6 +378,12 @@ public static class PackageGuiSession {
     Reset-ArtifactDirectory $verifyRoot
     Expand-Archive -LiteralPath $zipPath -DestinationPath $verifyRoot -Force
     $verifyGui = Join-Path $verifyRoot "$stageName\amd-mobile-power-gui.exe"
+    & (Join-Path $root "verify-rust-gui.ps1") `
+        -NoBuild `
+        -GuiExecutable $verifyGui `
+        -UiFixture firmware-clamp `
+        -VerifyFixturePolicyIsolation `
+        -EvidencePath (Join-Path $repositoryRoot "docs\evidence\packaging\v$Version-fixture-policy-isolation-$(Get-Date -Format 'yyyy-MM-dd').json")
     if ($SkipRuntimeVerification) {
         try {
             & (Join-Path $root "verify-rust-gui.ps1") `
