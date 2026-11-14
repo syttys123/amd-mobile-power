@@ -1,0 +1,17 @@
+{
+  "Version": "1.0.34",
+  "Status": "FROZEN_READONLY_PASS_PENDING_FULL_GATES",
+  "SourceCommit": "7734516b6d090e3ad7c2632b52b07350918d2da3",
+  "Package": "amd-mobile-power-v1.0.34-win-x64-native-preview.zip",
+  "PackageSHA256": "920cc4322b6865910a74b36374a1637eb494165f54a87be343127909f3c55b2f",
+  "PackageBytes": 778151,
+  "GuiSHA256": "c26953498fd5d788a2acfd24f12af473eab631fc4c90c3d10aa2752f0ce591c7",
+  "WorkerSHA256": "537a53ed8f8221878ef95af8314ac3a5a71b159a92ec5db99faaa2b8afa9c85d",
+  "ProbeSHA256": "9750418f15ebce2d70e750e845cfa5408751a96b178d60bbaa168155322a615e",
+  "ReadOnlyEvidence": "../packaging/v1.0.34-frozen-readonly-2026-11-14.json",
+  "WriteGate": "PENDING",
+  "WorkerHangGate": "PENDING",
+  "Deployment": "NOT_PROMOTED",
+  "Publication": "NOT_APPROVED",
+  "Rule": "Validate this exact artifact; documentation-only commits do not require regenerating it."
+}

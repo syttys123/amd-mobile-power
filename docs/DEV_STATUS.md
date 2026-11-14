@@ -21,6 +21,19 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (candidate frozen for remaining gates):
+
+- Clean `7734516` built the frozen 1.0.34 candidate, 778,151 bytes,
+  SHA256 `920cc4322b6865910a74b36374a1637eb494165f54a87be343127909f3c55b2f`.
+  Full build and read-only package gates PASS; writes explicitly skipped.
+- Pinned source and all three binary hashes in
+  `evidence/release/candidate-1.0.34-frozen-2026-11-14.json`.
+  Subsequent documentation-only commits should not regenerate this artifact.
+- Remaining gates must reference this exact hash. Earlier candidate hashes
+  remain historical; current checklist/runbook summaries need this pointer.
+- Stable GUI and child worker confirmed running under C:\RyzenAdj (1.0.33).
+  No deployment replacement performed.
+
 2026-11-14 (stable read-only resource observation and CI confirmation):
 
 - Added `native/measure-process-resources.ps1`: fixes process ID/start time,

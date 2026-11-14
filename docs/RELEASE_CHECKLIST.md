@@ -6,8 +6,9 @@ Current target: **1.0.34**, status **READ_ONLY_CANDIDATE_PASS_PENDING_FULL_GATES
 The checklist below is historical and mixes 1.0.31-1.0.33 evidence. Its
 checked boxes must not be used as current release approval.
 
-The current clean 1.0.34 ZIP comes from `df3c776`, SHA256
-`a78c663b55b9ac9254fd4fb727333efd6fa425d3ea1c17d852c51d0da1085c32`.
+The frozen clean 1.0.34 ZIP comes from `7734516`, SHA256
+`920cc4322b6865910a74b36374a1637eb494165f54a87be343127909f3c55b2f`.
+Exact binary identities: `evidence/release/candidate-1.0.34-frozen-2026-11-14.json`.
 It includes the driver-cleanup correction; earlier hashes are historical.
 C:\RyzenAdj remains 1.0.33. Current readiness is:
 
