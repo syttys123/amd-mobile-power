@@ -21,6 +21,25 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (1.0.35 promo policy/device panel refresh):
+
+- Captured pinned 1.0.35 GUI with isolated fixture policy 10 W battery / 45 W
+  external. Added firmware-clamp-only ApplyFixtureTarget capture option to
+  simulate the selected target before capture, avoiding stale 12 W telemetry.
+  The option currently uses a one-second settle delay, not a diagnostic idle
+  assertion; strengthen that before treating it as an automated acceptance gate.
+- Final full-window capture used PrintWindow fallback and visibly has a black
+  left strip/shift: NOT accepted for whole-window promo use. Independently
+  inspected complete policy and device crops; replaced old promo panel assets
+  and explicitly labeled both as 1.0.35 simulated-data UI demonstrations.
+- Added bounded crop helper with deterministic image/graphics disposal.
+  Seven HTML scene midpoint checks PASS for text bounds and image decoding;
+  full final video has not been re-rendered. Consent/preset footage still needs
+  current-version refresh and final transition review.
+- Stable GUI restored after capture; getPowerPolicy confirmed enabled 8/8 W
+  settings and successful 8/8/8 W last target, preserving user's latest night
+  request. Presets remain 10/25/45. No release/deployment change.
+
 2026-11-14 (1.0.35 reproducibility and final candidate identity):
 
 - Two fresh isolated Rust builds per GUI/probe matched each other and the

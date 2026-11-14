@@ -19,10 +19,14 @@ param(
     [int[]]$PresetWatts = @(12, 25, 45),
     [switch]$BatteryOnly,
     [int]$FocusControlId,
+    [switch]$ApplyFixtureTarget,
     [switch]$ReadOnly
 )
 
 $ErrorActionPreference = "Stop"
+if ($ApplyFixtureTarget -and ($Fixture -ne 'firmware-clamp' -or $ReadOnly)) {
+    throw 'ApplyFixtureTarget requires a writable firmware-clamp fixture.'
+}
 Add-Type -AssemblyName System.Drawing
 Add-Type @"
 using System;
@@ -542,6 +546,11 @@ try {
     Start-Sleep -Seconds 1
     [void](Focus-CaptureWindow -Window $window -FocusControlId $FocusControlId)
     Start-Sleep -Milliseconds 500
+    if ($ApplyFixtureTarget) {
+        [AmdMobilePowerUiCapture]::PostMessage(
+            $window, 0x0111, [UIntPtr]::new(104), [IntPtr]::Zero) | Out-Null
+        Start-Sleep -Seconds 1
+    }
     $advancedButton = [AmdMobilePowerUiCapture]::GetDlgItem($window, 109)
     if ($advancedButton -eq [IntPtr]::Zero) {
         throw "Advanced-mode control was not found."
@@ -653,6 +662,7 @@ try {
                 "write-controls-visible-no-write-requested"
             }
             Fixture = if ($Fixture) { $Fixture } else { $null }
+            FixtureApplyRequested = [bool]$ApplyFixtureTarget
             DpiFixture = if ($DpiFixture) { [int]$DpiFixture } else { $null }
             UniformTargetWatts = if ($UniformTargetWatts -gt 0) {
                 $UniformTargetWatts

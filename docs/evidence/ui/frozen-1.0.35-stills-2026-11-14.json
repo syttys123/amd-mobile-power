@@ -1,0 +1,34 @@
+{
+  "SchemaVersion": 1,
+  "CaptureMode": "write-controls-visible-policy-seeded",
+  "Fixture": "firmware-clamp",
+  "FixtureApplyRequested": true,
+  "DpiFixture": null,
+  "UniformTargetWatts": null,
+  "PolicyBatteryWatts": 10,
+  "PolicyAcWatts": 45,
+  "PolicySeeded": true,
+  "BatteryOnly": false,
+  "FocusControlId": null,
+  "ControlChecks": {
+    "TargetAndPresetEnabled": true,
+    "DiagnosticsEnabled": true
+  },
+  "Simple": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\frozen-1.0.35-stills\\frozen-1.0.35-simple-2026-11-14.png",
+    "Width": 752,
+    "Height": 489,
+    "CaptureMethod": "PrintWindow(normalized-fallback)",
+    "SHA256": "7c3e896b5641ea3fca12d225a0a5ad45a7e7d876ec14005280002cb10c85e4f2"
+  },
+  "Advanced": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\frozen-1.0.35-stills\\frozen-1.0.35-advanced-2026-11-14.png",
+    "Width": 977,
+    "Height": 889,
+    "CaptureMethod": "PrintWindow(normalized-fallback)",
+    "SHA256": "3f0479bcad97666855710a7377f48f61b80fa4613dab952e10d344883fa42adc"
+  },
+  "SimpleClientSize": null,
+  "AdvancedClientSize": null,
+  "RecordedAt": "2026-11-14T23:28:00.1869015+08:00"
+}

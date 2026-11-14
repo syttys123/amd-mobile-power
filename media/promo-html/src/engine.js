@@ -490,7 +490,7 @@ SCENE_RENDERERS.compat = (scene, t, root) => {
     row.append(box);
   });
 
-  // Right: the real device/runtime panel from the shipped advanced UI.
+  // Candidate UI captured with isolated fixture data.
   const card = el("div", {
     width: "620px", flexShrink: "0", background: "#f7f7f8",
     border: "1px solid rgba(69,214,168,0.28)", borderRadius: "14px",
@@ -501,7 +501,7 @@ SCENE_RENDERERS.compat = (scene, t, root) => {
     display: "flex", alignItems: "center", justifyContent: "space-between",
     padding: "16px 20px", background: "#111a1e",
   });
-  const shotTitle = txt("实机界面 · 平台检测", {
+  const shotTitle = txt("1.0.35 界面演示 · 模拟数据", {
     color: "#f1f7f4", fontSize: "21px", fontWeight: "700",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
   });
@@ -515,7 +515,7 @@ SCENE_RENDERERS.compat = (scene, t, root) => {
   const shot = el("img", {
     width: "100%", height: "auto", display: "block",
   });
-  shot.src = "assets/device-panel-real-2026-11-14.png";
+  shot.src = "assets/device-panel-1.0.35-fixture.png";
   card.append(shotHead, shot);
   const cardPop = clamp01((t - 0.5) / 0.6);
   const cardEased = easeOut(cardPop);
@@ -563,7 +563,7 @@ SCENE_RENDERERS["auto-policy"] = (scene, t, root) => {
   });
   slideUp(sub, t, 0.34);
 
-  // Right: the real advanced-mode policy panel, captured from the shipped UI.
+  // Candidate policy controls captured with isolated fixture data.
   const card = el("div", {
     width: "820px", flexShrink: "0", background: "#f7f7f8",
     border: "1px solid rgba(69,214,168,0.28)", borderRadius: "14px",
@@ -574,7 +574,7 @@ SCENE_RENDERERS["auto-policy"] = (scene, t, root) => {
     display: "flex", alignItems: "center", justifyContent: "space-between",
     padding: "16px 20px", background: "#111a1e",
   });
-  const shotTitle = txt("实机界面 · 高级模式", {
+  const shotTitle = txt("1.0.35 界面演示 · 模拟数据", {
     color: "#f1f7f4", fontSize: "21px", fontWeight: "700",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
   });
@@ -588,7 +588,7 @@ SCENE_RENDERERS["auto-policy"] = (scene, t, root) => {
   const shot = el("img", {
     width: "100%", height: "auto", display: "block",
   });
-  shot.src = "assets/advanced-left-panel-real-2026-11-14.png";
+  shot.src = "assets/advanced-left-panel-1.0.35-fixture.png";
   card.append(shotHead, shot);
   const cardPop = clamp01((t - 0.35) / 0.6);
   const cardEased = easeOut(cardPop);
