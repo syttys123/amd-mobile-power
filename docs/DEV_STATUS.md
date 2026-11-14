@@ -21,6 +21,24 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-14 (1.0.35 timestamped preset footage):
+
+- Live-demo capture now permits only firmware-clamp simulation, checks every
+  PrintWindow return and records GUI SHA256 plus simulated-data provenance.
+- Found timing defect under current 8 W operation: initial 15 fps requested
+  capture yielded only 49 frames/11 seconds, while uniform-rate encoding
+  redistributed timestamps. That first clip is not accepted for promo use.
+- Encoder now uses per-frame monotonic times through ffconcat durations.
+  New take: `artifacts/media/frozen-1.0.35-demo-timed/presets-demo.mp4`,
+  82 source frames, 750x450, 25 fps, exactly 11 seconds, full decode PASS.
+  SHA256 80e180bd0a1f9f9b682f7eafabcfde1051844ed40f97bfce6173b97461f7151c.
+  Evidence: `evidence/ui/frozen-1.0.35-demo-timed-2026-11-14.json`.
+- Candidate GUI hash matches pinned 1.0.35. Clip visual/cursor transition
+  review remains pending; 25 fps encoding does not mean 25 distinct source
+  captures per second. Final full video not yet replaced.
+- Stable session restored and enabled 8 W policy confirmed for both power
+  lines; no explicit hardware write test or deployment replacement.
+
 2026-11-14 (capture waits for simulated completion):
 
 - Replaced ApplyFixtureTarget's fixed one-second delay with a five-second

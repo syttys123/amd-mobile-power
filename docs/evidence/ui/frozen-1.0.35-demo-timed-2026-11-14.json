@@ -1,0 +1,13 @@
+{
+  "Verification": "PASS",
+  "Clip": "artifacts\\media\\frozen-1.0.35-demo-timed\\presets-demo.mp4",
+  "ClipSha256": "80e180bd0a1f9f9b682f7eafabcfde1051844ed40f97bfce6173b97461f7151c",
+  "GuiSha256": "070a6cbcb86693a32bce83ae95582fa973e8ecccbaa654c33769d9fb66c9f8ec",
+  "SimulatedData": true,
+  "DurationSeconds": 11.0,
+  "Frames": 82,
+  "Timing": "Per-frame monotonic timestamps; no uniform redistribution",
+  "Fixture": "firmware-clamp",
+  "DpiFixture": 125,
+  "RecordedAt": "2026-11-14T23:41:14.1565814+08:00"
+}

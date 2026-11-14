@@ -3,11 +3,14 @@ param(
     [string]$GuiExecutable,
     [string]$OutputDirectory,
     [string]$ClipPath,
+    [ValidateSet("firmware-clamp")]
     [string]$UiFixture = "firmware-clamp",
     [int]$DpiFixture = 125,
     [ValidateSet("advanced", "simple")]
     [string]$Mode = "advanced",
+    [ValidateRange(10, 60)]
     [double]$DurationSeconds = 13.5,
+    [ValidateRange(1, 30)]
     [int]$Fps = 10
 )
 
@@ -108,7 +111,9 @@ function Save-Frame {
             # draws the whole window (title bar and borders) shifted into the
             # smaller bitmap, which shows a dark left strip and crops the
             # bottom row.
-            [AmdMobilePowerLiveDemo]::PrintWindow($Window, $hdc, 3) | Out-Null
+            if (-not [AmdMobilePowerLiveDemo]::PrintWindow($Window, $hdc, 3)) {
+                throw 'PrintWindow failed while recording a fixture frame.'
+            }
         }
         finally {
             $graphics.ReleaseHdc($hdc)
@@ -231,6 +236,7 @@ try {
 
     $watch = [System.Diagnostics.Stopwatch]::StartNew()
     $frameIndex = 0
+    $capturedFrames = [System.Collections.Generic.List[object]]::new()
     $frameInterval = 1.0 / $Fps
     $nextFrameAt = 0.0
     while ($watch.Elapsed.TotalSeconds -lt $DurationSeconds) {
@@ -263,6 +269,7 @@ try {
                 $frameDirectory `
                 ("frame-{0:d4}.png" -f $frameIndex)
             Save-Frame -Window $window -Path $framePath
+            $capturedFrames.Add([pscustomobject]@{ Path=$framePath; At=$elapsed })
             $frameIndex++
             $nextFrameAt += $frameInterval
         }
@@ -270,18 +277,26 @@ try {
     }
 
     $ffmpeg = (Get-Command ffmpeg -ErrorAction Stop).Source
-    $actualRate = [Math]::Max(1.0, $frameIndex / $DurationSeconds)
-    $actualRateText = $actualRate.ToString(
-        "0.###",
-        [Globalization.CultureInfo]::InvariantCulture)
+    if ($capturedFrames.Count -lt 2) { throw 'Insufficient captured frames.' }
+    $concat = [System.Collections.Generic.List[string]]::new()
+    for ($i = 0; $i -lt $capturedFrames.Count; $i++) {
+        $frame = $capturedFrames[$i]
+        $end = if ($i + 1 -lt $capturedFrames.Count) { $capturedFrames[$i + 1].At } else { $DurationSeconds }
+        $duration = [Math]::Max(0.001, $end - $frame.At)
+        $concat.Add("file '$($frame.Path.Replace('\','/').Replace("'", "'\''"))'")
+        $concat.Add('duration ' + $duration.ToString('0.######', [Globalization.CultureInfo]::InvariantCulture))
+    }
+    $concat.Add("file '$($capturedFrames[-1].Path.Replace('\','/').Replace("'", "'\''"))'")
+    $concatPath = Join-Path $resolvedOutput 'frames.ffconcat'
+    $concat | Set-Content -LiteralPath $concatPath -Encoding ascii
     # Keep the raw client-sized frames: the promo renderer places this clip
     # inside its screenshot card and adds the scene fades itself. H.264 needs
     # even dimensions, so round down to a multiple of two.
     $filter = "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p"
     & $ffmpeg `
         -y `
-        -framerate $actualRateText `
-        -i (Join-Path $frameDirectory "frame-%04d.png") `
+        -f concat -safe 0 `
+        -i $concatPath `
         -filter_complex $filter `
         -r 25 `
         -c:v libx264 `
@@ -299,8 +314,11 @@ try {
         Verification = "PASS"
         Clip = $ClipPath
         ClipSha256 = $hash
+        GuiSha256 = (Get-FileHash -LiteralPath $GuiExecutable -Algorithm SHA256).Hash.ToLowerInvariant()
+        SimulatedData = $true
         DurationSeconds = $DurationSeconds
         Frames = $frameIndex
+        Timing = 'Per-frame monotonic timestamps; no uniform redistribution'
         Fixture = $UiFixture
         DpiFixture = $DpiFixture
         RecordedAt = (Get-Date).ToString("o")
