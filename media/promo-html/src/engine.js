@@ -284,6 +284,9 @@ SCENE_RENDERERS["ui-demo"] = (scene, t, root) => {
     { t: 5.0, x: 0.75, y: 0.535 },
     { t: 8.0, x: 0.275, y: 0.535 },
   ];
+  if (window.__PRESET_CLICK_TIMES__) {
+    clicks.forEach((click, index) => { click.t = window.__PRESET_CLICK_TIMES__[index]; });
+  }
   const idleStart = { x: 0.62, y: 0.78 };
   const cursor = el("div", {
     position: "absolute", left: "0", top: "0", zIndex: "5",

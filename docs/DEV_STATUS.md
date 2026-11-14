@@ -21,6 +21,21 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (1.0.37 preset footage with actual event times):
+
+- Recorded pinned 1.0.37 simple-mode simulated presets, 95 source frames over
+  11 seconds, encoded 25 fps, full decode PASS. GUI hash matches frozen package.
+  Clip SHA256 56cd760e105a4804c0cc7eafa9762bb493aa7b592a742e60299b5fa8fff42929.
+  Evidence: `evidence/ui/frozen-1.0.37-demo-2026-11-15.json`.
+- Captured actual command dispatch times 1.6660074 / 4.6887989 / 7.687624 s.
+  Recorder now accepts --clip-events, validates ordered simulated preset events
+  and supplies their times plus clip lead to the synthetic pointer renderer.
+  Node syntax checks PASS; full event-driven render remains pending.
+- Inspected 6s frame: target/Fast/Slow 45 W, STAPM 10 W, yellow firmware warning
+  fully visible. This is simulation, not a hardware 45 W test.
+- Stable GUI restored; enabled battery/external 8 W policy and last successful
+  8/8/8 W target confirmed. Final complete video and consent asset still pending.
+
 2026-11-15 (remote synchronization preflight):
 
 - Reviewed local-ahead commit log and path summary before remote sync. Current

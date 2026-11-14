@@ -262,6 +262,7 @@ try {
                     }
                 }
                 $step.Done = $true
+                $step.ActualAt = $elapsed
             }
         }
         if ($elapsed -ge $nextFrameAt) {
@@ -319,6 +320,9 @@ try {
         DurationSeconds = $DurationSeconds
         Frames = $frameIndex
         Timing = 'Per-frame monotonic timestamps; no uniform redistribution'
+        Events = @($timeline | ForEach-Object {
+            [ordered]@{ Action=$_.Action; Command=$_.Command; ScheduledAt=$_.At; ActualAt=$_.ActualAt; Completed=$_.Done }
+        })
         Fixture = $UiFixture
         DpiFixture = $DpiFixture
         RecordedAt = (Get-Date).ToString("o")

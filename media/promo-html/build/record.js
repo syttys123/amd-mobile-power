@@ -26,6 +26,7 @@ const clipFramesDir = arg("--clip-frames", null);
 const clipSceneId = arg("--clip-scene", "ui-demo");
 const clipFps = parseInt(arg("--clip-fps", "30"), 10);
 const clipLead = parseFloat(arg("--clip-lead", "0.4"));
+const clipEventsPath = arg("--clip-events", null);
 
 (async () => {
   fs.mkdirSync(framesDir, { recursive: true });
@@ -46,6 +47,19 @@ const clipLead = parseFloat(arg("--clip-lead", "0.4"));
   const page = await browser.newPage({ viewport: { width, height } });
   await page.goto(`file:///${htmlPath.replace(/\\/g, "/")}`);
   await page.waitForFunction(() => typeof window.__totalDuration === "function");
+  if (clipEventsPath) {
+    const evidence = JSON.parse(fs.readFileSync(path.resolve(clipEventsPath), "utf8").replace(/^\uFEFF/, ""));
+    const events = evidence.Events;
+    if (!evidence.SimulatedData || !Array.isArray(events) || events.length !== 3 ||
+        events.some((event, index) => event.Completed !== true ||
+          event.Command !== [102, 103, 101][index] ||
+          !Number.isFinite(event.ActualAt) || event.ActualAt < 0 ||
+          (index > 0 && event.ActualAt <= events[index - 1].ActualAt))) {
+      throw new Error("Invalid recorded preset events");
+    }
+    await page.evaluate(times => { window.__PRESET_CLICK_TIMES__ = times; },
+      events.map(event => event.ActualAt + clipLead));
+  }
 
   const total = await page.evaluate(() => window.__totalDuration());
   const scenes = await page.evaluate(() => window.__SCENES__);
