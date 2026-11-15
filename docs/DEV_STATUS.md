@@ -21,6 +21,21 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-16 (local schedule fallback verified):
+
+- The 07:00 Codex heartbeat did not apply the day policy. At 07:05 both lines
+  were still 8 W; the manual helper restored battery 10 W / AC 45 W with PASS.
+- Added `native/apply-power-policy-direct.ps1`, which talks directly to the
+  worker pipe, skips unchanged targets, verifies all six limits, mirrors policy
+  into UI state, and synchronizes the running GUI when accessible.
+- Registered local daily Windows tasks with battery-start enabled:
+  `AmdMobilePower DirectNightPolicy 2230` (8/8 W) and
+  `AmdMobilePower DirectDayPolicy 0700` (10/45 W). The day task was actually
+  started: Ready, exit code 0, PASS, GUI sync true. Codex heartbeats remain as
+  a second idempotent layer.
+- Current policy at verification: battery 10 W / AC 45 W on battery.
+  Evidence: `evidence/hardware/local-night-day-policy-2026-11-15.json`.
+
 2026-11-15 (night policy corrected: all six limits 8 W):
 
 - User clarified that night mode applies 8 W to both battery and external power.
