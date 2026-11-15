@@ -21,6 +21,19 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-15 (night policy corrected: all six limits 8 W):
+
+- User clarified that night mode applies 8 W to both battery and external power.
+  At 22:34 the saved policy and current AC target both had 45 W, so the previous
+  22:30 automation had not enforced full-night 8 W.
+- Set battery and AC targets to 8 W, persisted through the GUI, and verified
+  all six worker read-back limits at 8 W on AC. Ran the Windows PowerShell 5.1
+  helper with 8/8 and received PASS.
+- Updated the 22:30 Codex automation to call the helper with AC 8 W and require
+  all six limits. Day automation remains 07:00 battery 10 W / AC 45 W.
+- Evidence updated:
+  `evidence/hardware/local-night-day-policy-2026-11-15.json`.
+
 2026-11-15 (local 07:00/22:30 policy maintenance resumed):
 
 - Stable 1.0.33 policy set to battery 8 W / external 45 W and persisted. Worker

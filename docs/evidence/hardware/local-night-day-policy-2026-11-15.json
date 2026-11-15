@@ -4,14 +4,14 @@
   "CurrentPolicy": {
     "enabled": true,
     "batteryTargetWatts": 8,
-    "acTargetWatts": 45,
-    "powerLine": "battery",
+    "acTargetWatts": 8,
+    "powerLine": "ac",
     "lastAppliedTargetWatts": 8,
     "readBackCommand": "getPowerPolicy"
   },
   "Schedule": {
     "Day": "07:00 battery 10 W / AC 45 W",
-    "Night": "22:30 battery 8 W / AC 45 W",
+    "Night": "22:30 battery 8 W / AC 8 W (all six limits)",
     "Owner": "Codex app automations",
     "DayAutomationId": "amd-mobile-power-day-policy-07-00",
     "NightAutomationId": "amd-mobile-power-night-policy-22-30"
@@ -19,7 +19,7 @@
   "Helper": {
     "Path": "native/restore-day-policy.ps1",
     "Runtime": "Windows PowerShell 5.1",
-    "TestValues": "battery 8 W / AC 45 W",
+    "TestValues": "battery 8 W / AC 8 W",
     "TestResult": "PASS",
     "ReadBackVerified": true
   },
@@ -27,5 +27,5 @@
     "Result": "REMOVED",
     "Reason": "Task Scheduler execution remained queued/running and did not provide a reliable time-fire result in this session."
   },
-  "RecordedAt": "2026-11-15T04:20:00+08:00"
+  "RecordedAt": "2026-11-15T22:36:17+08:00"
 }
