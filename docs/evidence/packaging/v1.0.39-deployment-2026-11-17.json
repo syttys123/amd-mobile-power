@@ -1,0 +1,39 @@
+{
+  "SchemaVersion": 1,
+  "Verification": "PASS",
+  "Version": "1.0.39",
+  "Package": "amd-mobile-power-v1.0.39-win-x64-native-preview.zip",
+  "PackageSHA256": "06efdcff2584b9fd50856a34084957241c7966f7a21189c2db7e316db5193d53",
+  "Target": "C:\\RyzenAdj",
+  "DeployedHashes": {
+    "gui": "6e9b688b9732b7be4decbea4019f02353aa7f08c4f6701aaf9f4501791466def",
+    "worker": "537a53ed8f8221878ef95af8314ac3a5a71b159a92ec5db99faaa2b8afa9c85d",
+    "probe": "d80fe52c6f10ddc71ac0884ba540bc449e95dfd00503a49b3a40951e6d2a0e84"
+  },
+  "Backup": "C:\\RyzenAdj.before-20261117-035509",
+  "BackupVersion": "1.0.33",
+  "BackupFileCount": 17,
+  "Shortcut": {
+    "Path": "C:\\Users\\SYT\\Desktop\\功耗设置 5-60W.lnk",
+    "Target": "C:\\RyzenAdj\\amd-mobile-power-gui.exe",
+    "Arguments": "--simple-mode --max-target-watts 45"
+  },
+  "LaunchVerification": "PASS",
+  "Running": {
+    "Gui": "C:\\RyzenAdj\\amd-mobile-power-gui.exe",
+    "Worker": "C:\\RyzenAdj\\amdmobilepower_native_worker.exe",
+    "LaunchMode": "tray-hidden-simple-mode"
+  },
+  "PolicyAfterDeployment": {
+    "enabled": true,
+    "batteryTargetWatts": "15/15/15",
+    "acTargetWatts": "15/15/15",
+    "powerLine": "ac",
+    "measuredPackagePowerWatts": 15.0009,
+    "fastLimitWatts": 15,
+    "slowLimitWatts": 15,
+    "firmwareStapmLimitWatts": 24.8009
+  },
+  "Rollback": "Stop the promoted GUI/worker, move C:\\RyzenAdj aside and restore C:\\RyzenAdj.before-20261117-035509; then relaunch the desktop shortcut.",
+  "RecordedAt": "2026-11-17T03:55:50+08:00"
+}

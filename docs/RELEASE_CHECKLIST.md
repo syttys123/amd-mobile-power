@@ -13,7 +13,9 @@ The frozen clean 1.0.39 ZIP comes from `a6d8eed`, SHA256
 `06efdcff2584b9fd50856a34084957241c7966f7a21189c2db7e316db5193d53`.
 Exact binary identities: `evidence/release/candidate-1.0.39-frozen-2026-11-17.json`.
 It includes fixture IPC isolation, first-line firmware warnings and corrected
-consent wording. C:\RyzenAdj remains 1.0.33. Current readiness is:
+consent wording. The exact ZIP is deployed to `C:\RyzenAdj`; the previous
+1.0.33 tree remains at `C:\RyzenAdj.before-20261117-035509`. Current readiness
+is:
 
 - [x] Native source build: GUI 61 tests, probe 7 tests, C++ policy tests.
 - [x] No-driver destructor cleanup and transport resource regression pass.
@@ -27,7 +29,7 @@ consent wording. C:\RyzenAdj remains 1.0.33. Current readiness is:
 - [ ] Final package battery/AC transition and driver lifecycle evidence recorded.
 - [x] Final packaged DPI/work-area/resource and regional visual review pass.
 - [ ] Real OS DPI transitions, second AMD device and clean Windows baseline recorded.
-- [ ] Exact gated ZIP promoted with rollback and deployed hashes/read-back verified.
+- [x] Exact gated ZIP promoted with rollback and deployed hashes/read-back verified.
 - [x] Media refreshed to final UI; 42.5-second silent review rendered and inspected.
 - [ ] Owner approves final GitHub Release and Bilibili publication.
 

@@ -2,8 +2,9 @@
 
 ## Current Candidate Override (2026-11-17)
 
-Current work targets 1.0.39, while C:\RyzenAdj remains 1.0.33. The steps below
-describe historical 1.0.33/1.0.31 promotion, not the current release procedure.
+Current work targets 1.0.39, and C:\RyzenAdj now runs the promoted 1.0.39
+package. The steps below describe historical 1.0.33/1.0.31 promotion, not the
+current release procedure.
 `RELEASE_CHECKLIST.md` and `DEV_STATUS.md` define pending gates. Source is
 aligned with frozen `a6d8eed` 1.0.39, qualified for read-only runtime,
 text/binary pattern scanning, safe 15 W write/read-back with the firmware STAPM

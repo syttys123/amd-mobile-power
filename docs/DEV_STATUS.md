@@ -52,9 +52,13 @@ not authoritative.
   42.5-second, 1920x1080, 30 fps silent review with 1275 frames. Seven scene
   keyframes, full decode and luminance screening PASS. Evidence:
   `evidence/media/native-promo-1.0.39-review-2026-11-17.json`.
-- Still pending: a fresh physical battery/AC transition, owner media review,
-  publication approval, and rollback-backed replacement of `C:\RyzenAdj`
-  1.0.33.
+- Promoted the exact 1.0.39 ZIP to `C:\RyzenAdj` after launch verification:
+  deployed GUI `6e9b688b`, worker `537a53ed`, probe `d80fe52c`, desktop
+  shortcut arguments unchanged, rollback at
+  `C:\RyzenAdj.before-20261117-035509`. Evidence:
+  `evidence/packaging/v1.0.39-deployment-2026-11-17.json`.
+- Still pending: a fresh physical battery/AC transition, owner media review and
+  publication approval.
 
 2026-11-17 (1.0.39 simple-header fit; 1.0.38 build evidence recorded):
 
@@ -66,7 +70,9 @@ not authoritative.
 - Rust 61 tests (35 library + 26 GUI), formatting and Clippy with `-D warnings`
   PASS. Source changed after 1.0.38, so the next package must be 1.0.39 and
   must not reuse 1.0.38 hashes as current.
-- Stable `C:\RyzenAdj` 1.0.33 GUI/worker were restored after fixture capture.
+- Stable `C:\RyzenAdj` now runs 1.0.39 after the rollback-backed promotion;
+  the previous 1.0.33 tree is preserved at
+  `C:\RyzenAdj.before-20261117-035509`.
   Night was subsequently raised to 15 W on both power lines; read-back shows
   Fast/Slow 15 W and actual STAPM 15.03 W on AC. The firmware-reported STAPM
   limit is dynamic (observed 22.9-25 W), while Fast/Slow remain the effective
