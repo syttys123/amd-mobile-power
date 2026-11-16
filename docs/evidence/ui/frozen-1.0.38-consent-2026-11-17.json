@@ -1,0 +1,42 @@
+{
+  "SchemaVersion": 1,
+  "CaptureMode": "read-only-no-write-controls",
+  "Fixture": "firmware-clamp",
+  "FixtureApplyRequested": false,
+  "Consent": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\frozen-1.0.38-consent\\frozen38-consent-2026-11-17.png",
+    "Width": 809,
+    "Height": 792,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "4b27afe9604172181102614da12a857788803b6ea66126b6f783d779b63e856b"
+  },
+  "FixtureApplyStatus": null,
+  "DpiFixture": null,
+  "UniformTargetWatts": null,
+  "PolicyBatteryWatts": null,
+  "PolicyAcWatts": null,
+  "PolicySeeded": false,
+  "BatteryOnly": false,
+  "FocusControlId": null,
+  "ControlChecks": {
+    "TargetAndPresetEnabled": false,
+    "DiagnosticsEnabled": true
+  },
+  "Simple": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\frozen-1.0.38-consent\\frozen38-simple-2026-11-17.png",
+    "Width": 752,
+    "Height": 489,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "8337c57eb8285f821582d55982671741fc44dfd2921015355604ddcdd970d615"
+  },
+  "Advanced": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\frozen-1.0.38-consent\\frozen38-advanced-2026-11-17.png",
+    "Width": 977,
+    "Height": 889,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "aff2733111310d4f3dea8850dcbd057ad9ebd0605b13d343315e7654b5390a9e"
+  },
+  "SimpleClientSize": null,
+  "AdvancedClientSize": null,
+  "RecordedAt": "2026-11-17T01:58:55.1112683+08:00"
+}
