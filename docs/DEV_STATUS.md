@@ -21,6 +21,19 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-16 (day 25/45 and night boundary corrected to 23:00):
+
+- User clarified external power remains 45 W and night battery 8 W starts
+  after 23:00. Applied current policy battery 25 W / AC 45 W; worker read-back
+  confirms all three 25 W on battery and all three 45 W on AC.
+- Updated local direct-worker fallback tasks: 07:00 battery 25 W / AC 45 W,
+  23:00 battery 8 W / AC 45 W. Removed the old 22:30 task. Updated both Codex
+  heartbeats to the same boundaries.
+- Re-registered and actually ran the updated 07:00 direct task with current
+  25/45 values: Ready, exit 0, PASS, GUI sync true. Night task next run 23:00.
+- Evidence updated:
+  `evidence/hardware/local-night-day-policy-2026-11-15.json`.
+
 2026-11-16 (local schedule fallback verified):
 
 - The 07:00 Codex heartbeat did not apply the day policy. At 07:05 both lines
