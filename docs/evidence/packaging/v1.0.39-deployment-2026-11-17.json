@@ -14,7 +14,7 @@
   "BackupVersion": "1.0.33",
   "BackupFileCount": 17,
   "Shortcut": {
-    "Path": "C:\\Users\\SYT\\Desktop\\功耗设置 5-60W.lnk",
+    "Path": "%USERPROFILE%\\Desktop\\功耗设置 5-60W.lnk",
     "Target": "C:\\RyzenAdj\\amd-mobile-power-gui.exe",
     "Arguments": "--simple-mode --max-target-watts 45"
   },
