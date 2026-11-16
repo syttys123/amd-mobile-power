@@ -45,13 +45,16 @@ not authoritative.
 - Frozen candidate identity PASS:
   `evidence/release/candidate-1.0.39-frozen-2026-11-17.json`,
   `evidence/release/candidate-1.0.39-identity-2026-11-17.json`.
+- Hosted Windows CI PASS for docs head `5582af2`: run `43942623854`,
+  conclusion `success`. Evidence:
+  `evidence/build/hosted-ci-1.0.39-2026-11-17.json`.
 - Re-captured 1.0.39 simple/advanced/consent and preset demo; rendered a
   42.5-second, 1920x1080, 30 fps silent review with 1275 frames. Seven scene
   keyframes, full decode and luminance screening PASS. Evidence:
   `evidence/media/native-promo-1.0.39-review-2026-11-17.json`.
-- Still pending: hosted CI, a fresh physical battery/AC transition, owner media
-  review, publication approval, and rollback-backed replacement of
-  `C:\RyzenAdj` 1.0.33.
+- Still pending: a fresh physical battery/AC transition, owner media review,
+  publication approval, and rollback-backed replacement of `C:\RyzenAdj`
+  1.0.33.
 
 2026-11-17 (1.0.39 simple-header fit; 1.0.38 build evidence recorded):
 

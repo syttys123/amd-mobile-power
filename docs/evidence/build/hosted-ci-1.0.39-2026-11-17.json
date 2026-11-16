@@ -1,0 +1,16 @@
+{
+  "SchemaVersion": 1,
+  "Verification": "PASS",
+  "Repository": "syttys123/amd-mobile-power",
+  "Branch": "release/1.0.33",
+  "Commit": "5582af236819bec1b076054dee54665c343e554c",
+  "Workflow": "build",
+  "RunId": 43942623854,
+  "Job": "windows-native",
+  "Status": "completed",
+  "Conclusion": "success",
+  "StartedAt": "2026-11-16T19:45:24Z",
+  "CompletedAt": "2026-11-16T19:50:18Z",
+  "Url": "https://github.com/syttys123/amd-mobile-power/actions/runs/43942623854",
+  "RecordedAt": "2026-11-17T03:51:00+08:00"
+}

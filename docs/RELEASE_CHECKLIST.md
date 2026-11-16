@@ -21,7 +21,7 @@ consent wording. C:\RyzenAdj remains 1.0.33. Current readiness is:
 - [x] Current GUI/probe match independent mapped builds; frozen ZIP repack matches exactly.
 - [x] New clean candidate built after worker cleanup changes.
 - [x] Final candidate formatting, Clippy and local release refresh pass.
-- [ ] Hosted CI refreshed for `a6d8eed`.
+- [x] Hosted CI refreshed: run `43942623854` succeeded for docs head `5582af2`.
 - [x] Final source-to-package reproducibility and sanitization refreshed.
 - [x] Final current-value 15 W write/read-back and worker-hang recovery gates pass.
 - [ ] Final package battery/AC transition and driver lifecycle evidence recorded.
