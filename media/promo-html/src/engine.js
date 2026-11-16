@@ -416,7 +416,7 @@ SCENE_RENDERERS.safety = (scene, t, root) => {
     display: "flex", alignItems: "center", justifyContent: "space-between",
     padding: "16px 20px", background: "rgba(255,255,255,0.035)",
   });
-  const shotTitle = txt("实机界面 · 写入解锁", {
+  const shotTitle = txt("1.0.37 解锁确认 · 模拟数据", {
     color: "#f1f7f4", fontSize: "21px", fontWeight: "700",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
   });
@@ -430,7 +430,7 @@ SCENE_RENDERERS.safety = (scene, t, root) => {
   const shot = el("img", {
     width: "100%", height: "auto", display: "block",
   });
-  shot.src = "assets/unlock-dialog-real-2026-11-14.png";
+  shot.src = "assets/unlock-dialog-1.0.37-fixture.png";
   card.append(shotHead, shot);
   const cardPop = clamp01((t - 0.5) / 0.6);
   const cardEased = easeOut(cardPop);
@@ -504,7 +504,7 @@ SCENE_RENDERERS.compat = (scene, t, root) => {
     display: "flex", alignItems: "center", justifyContent: "space-between",
     padding: "16px 20px", background: "#111a1e",
   });
-  const shotTitle = txt("1.0.35 界面演示 · 模拟数据", {
+  const shotTitle = txt("1.0.37 界面演示 · 模拟数据", {
     color: "#f1f7f4", fontSize: "21px", fontWeight: "700",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
   });
@@ -518,7 +518,7 @@ SCENE_RENDERERS.compat = (scene, t, root) => {
   const shot = el("img", {
     width: "100%", height: "auto", display: "block",
   });
-  shot.src = "assets/device-panel-1.0.35-fixture.png";
+  shot.src = "assets/device-panel-1.0.37-fixture.png";
   card.append(shotHead, shot);
   const cardPop = clamp01((t - 0.5) / 0.6);
   const cardEased = easeOut(cardPop);
@@ -577,11 +577,11 @@ SCENE_RENDERERS["auto-policy"] = (scene, t, root) => {
     display: "flex", alignItems: "center", justifyContent: "space-between",
     padding: "16px 20px", background: "#111a1e",
   });
-  const shotTitle = txt("1.0.35 界面演示 · 模拟数据", {
+  const shotTitle = txt("1.0.37 界面演示 · 模拟数据", {
     color: "#f1f7f4", fontSize: "21px", fontWeight: "700",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
   });
-  const shotBadge = txt("电池 10 W / 插电 45 W", {
+  const shotBadge = txt("电池 25 W / 插电 45 W", {
     color: "#45d6a8", fontSize: "16px", fontWeight: "700",
     padding: "6px 12px", border: "1px solid rgba(69,214,168,0.45)",
     borderRadius: "999px", background: "rgba(69,214,168,0.1)",
@@ -591,7 +591,7 @@ SCENE_RENDERERS["auto-policy"] = (scene, t, root) => {
   const shot = el("img", {
     width: "100%", height: "auto", display: "block",
   });
-  shot.src = "assets/advanced-left-panel-1.0.35-fixture.png";
+  shot.src = "assets/advanced-left-panel-1.0.37-fixture.png";
   card.append(shotHead, shot);
   const cardPop = clamp01((t - 0.35) / 0.6);
   const cardEased = easeOut(cardPop);

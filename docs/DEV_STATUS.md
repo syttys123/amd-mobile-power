@@ -21,6 +21,22 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-17 (release-UI copy correction and 1.0.37 media panels):
+
+- Reviewing the safety keyframe exposed two inaccurate statements: firmware
+  restriction was described as only a lower bound, and video narration said
+  the consent flow restarts the app. Corrected the dialog to say firmware may
+  not fully accept the target and actual read-back governs; narration now says
+  confirm write access, matching background worker restart.
+- Captured fresh 1.0.37 fixture policy (battery 25 W / external 45 W), device
+  and consent panels; inspected complete policy/device crops and the consent
+  dialog. Replaced 1.0.35 promo assets and re-ran seven scene keyframe checks:
+  no missing images or out-of-bounds text.
+- Rust 60 tests, Clippy and Release PASS after the dialog copy change. 1.0.37
+  no longer contains the corrected consent copy, so a 1.0.38 candidate must be
+  built before final media capture. Full video rerender remains pending.
+- No real worker started by the fixture captures; stable session restored.
+
 2026-11-17 (night changed to 12 W on both power lines):
 
 - At 01:24 the system was inside the night window but still had battery 8 W /

@@ -23,7 +23,7 @@ window.__SCENES__ = [
   {
     id: "safety",
     duration: 5.5,
-    narration: "首次启动默认只读。要启用修改，点右上角的锁，阅读并勾选须知，再确认重启。",
+    narration: "首次启动默认只读。要启用修改，点右上角的锁，阅读并勾选须知，再确认启用写入。",
   },
   {
     id: "compat",

@@ -1,0 +1,36 @@
+{
+  "SchemaVersion": 1,
+  "CaptureMode": "write-controls-visible-policy-seeded",
+  "Fixture": "firmware-clamp",
+  "FixtureApplyRequested": true,
+  "Consent": null,
+  "FixtureApplyStatus": "已应用 10 W / 10 W / 10 W。\n回读校验通过。",
+  "DpiFixture": null,
+  "UniformTargetWatts": null,
+  "PolicyBatteryWatts": 25,
+  "PolicyAcWatts": 45,
+  "PolicySeeded": true,
+  "BatteryOnly": false,
+  "FocusControlId": null,
+  "ControlChecks": {
+    "TargetAndPresetEnabled": true,
+    "DiagnosticsEnabled": true
+  },
+  "Simple": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\frozen-1.0.37-panels\\frozen37-simple-2026-11-17.png",
+    "Width": 752,
+    "Height": 489,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "f8b19bb16c980dc4a67f1f89cc949ba8b30c7de272fce661feeb4ce98e1e4d92"
+  },
+  "Advanced": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\frozen-1.0.37-panels\\frozen37-advanced-2026-11-17.png",
+    "Width": 977,
+    "Height": 889,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "c97dbee3ddc41ece6d13e654a445dc762792eebd4f47c112640eb50ab08de191"
+  },
+  "SimpleClientSize": null,
+  "AdvancedClientSize": null,
+  "RecordedAt": "2026-11-17T01:30:22.4506638+08:00"
+}
