@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-11-15
+Last updated: 2026-11-17
 
 ## Objective
 
@@ -20,6 +20,40 @@ after each meaningful change. Conversation history and compacted summaries are
 not authoritative.
 
 ## Latest Maintenance Milestone
+
+2026-11-17 (1.0.39 simple-header fit; 1.0.38 build evidence recorded):
+
+- The 1.0.38 read-only simple fixture still ellipsized the header subtitle to
+  `Ryzen 7 8845HS · Ha...` at 752x489. The header now measures the available
+  width and falls back from `processor · family` to processor-only before
+  hiding the line, instead of drawing an ellipsis. Unit coverage locks the
+  full, processor-only and no-fit cases.
+- Rust 61 tests (35 library + 26 GUI), formatting and Clippy with `-D warnings`
+  PASS. Source changed after 1.0.38, so the next package must be 1.0.39 and
+  must not reuse 1.0.38 hashes as current.
+- Stable `C:\RyzenAdj` 1.0.33 GUI/worker were restored after fixture capture.
+  Worker read-back at 02:00 was STAPM/Fast/Slow 12 W on battery, matching the
+  23:00-07:00 12 W policy. Day/night tasks remain 07:00 25/45 and 23:00 12/12.
+
+2026-11-17 (1.0.38 candidate build and read-only evidence):
+
+- Packaged clean source `d28ac81` with mapped Rust builds and the corrected
+  firmware-limit/consent copy. ZIP
+  `amd-mobile-power-v1.0.38-win-x64-native-preview.zip`, 778807 bytes,
+  SHA256 `ebce931e87073c8600499df3c5efcaff3631cfaf4199d47e066a38c1a8075fe6`.
+- GUI `786af44e`, worker `537a53ed`, probe `d80fe52c`. Rust 60 tests, probe
+  7 tests, formatting, Clippy, Release, C++ policy/cleanup/resource tests,
+  extracted fixture policy isolation, read-only GUI runtime, collector,
+  headless probe and install flow PASS. Independent GUI/probe/worker rebuilds
+  and double ZIP hashing match.
+- Sanitization PASS over 707 tracked text files, 13 ZIP text entries and 7
+  ASCII/UTF-16LE binaries. Evidence:
+  `evidence/build/reproducibility-1.0.38-2026-11-17.json`,
+  `evidence/packaging/v1.0.38-clean-2026-11-17.json`,
+  `evidence/packaging/v1.0.38-fixture-policy-isolation-2026-11-17.json`,
+  `evidence/release/public-sanitization-1.0.38-2026-11-17.json`.
+- 1.0.38 was not frozen, promoted or published. The header-fit source change
+  supersedes it for the next candidate; its evidence remains historical.
 
 2026-11-17 (release-UI copy correction and 1.0.37 media panels):
 
@@ -44,7 +78,7 @@ not authoritative.
 - Applied battery 12 W / AC 12 W through the direct worker helper. Persisted
   state and GUI sync PASS; all six STAPM/Fast/Slow read-back values are 12 W.
 - Updated `AmdMobilePower DirectNightPolicy 2300` to 12/12 and actually started
-  it: Ready, exit 0, PASS, GUI sync true. Updated the Codex night heartbeat to
+  it: Ready, exit 0, PASS, GUI sync true. Updated the app night heartbeat to
   the same values. Day policy remains 07:00 battery 25 W / AC 45 W.
 - Evidence updated:
   `evidence/hardware/local-night-day-policy-2026-11-15.json`.
@@ -55,7 +89,7 @@ not authoritative.
   after 23:00. Applied current policy battery 25 W / AC 45 W; worker read-back
   confirms all three 25 W on battery and all three 45 W on AC.
 - Updated local direct-worker fallback tasks: 07:00 battery 25 W / AC 45 W,
-  23:00 battery 8 W / AC 45 W. Removed the old 22:30 task. Updated both Codex
+  23:00 battery 8 W / AC 45 W. Removed the old 22:30 task. Updated both app
   heartbeats to the same boundaries.
 - Re-registered and actually ran the updated 07:00 direct task with current
   25/45 values: Ready, exit 0, PASS, GUI sync true. Night task next run 23:00.
@@ -64,7 +98,7 @@ not authoritative.
 
 2026-11-16 (local schedule fallback verified):
 
-- The 07:00 Codex heartbeat did not apply the day policy. At 07:05 both lines
+- The 07:00 app heartbeat did not apply the day policy. At 07:05 both lines
   were still 8 W; the manual helper restored battery 10 W / AC 45 W with PASS.
 - Added `native/apply-power-policy-direct.ps1`, which talks directly to the
   worker pipe, skips unchanged targets, verifies all six limits, mirrors policy
@@ -72,7 +106,7 @@ not authoritative.
 - Registered local daily Windows tasks with battery-start enabled:
   `AmdMobilePower DirectNightPolicy 2230` (8/8 W) and
   `AmdMobilePower DirectDayPolicy 0700` (10/45 W). The day task was actually
-  started: Ready, exit code 0, PASS, GUI sync true. Codex heartbeats remain as
+  started: Ready, exit code 0, PASS, GUI sync true. App heartbeats remain as
   a second idempotent layer.
 - Current policy at verification: battery 10 W / AC 45 W on battery.
   Evidence: `evidence/hardware/local-night-day-policy-2026-11-15.json`.
@@ -85,7 +119,7 @@ not authoritative.
 - Set battery and AC targets to 8 W, persisted through the GUI, and verified
   all six worker read-back limits at 8 W on AC. Ran the Windows PowerShell 5.1
   helper with 8/8 and received PASS.
-- Updated the 22:30 Codex automation to call the helper with AC 8 W and require
+- Updated the 22:30 app automation to call the helper with AC 8 W and require
   all six limits. Day automation remains 07:00 battery 10 W / AC 45 W.
 - Evidence updated:
   `evidence/hardware/local-night-day-policy-2026-11-15.json`.
@@ -97,7 +131,7 @@ not authoritative.
 - Added `native/restore-day-policy.ps1`, which updates the hidden GUI policy,
   waits for worker application, reads back all six limits, and writes a PASS/FAIL
   log. Tested with current 8/45 values under Windows PowerShell 5.1; PASS.
-- Created daily Codex automations: 22:30 -> battery 8 W/AC 45 W; 07:00 ->
+- Created daily app automations: 22:30 -> battery 8 W/AC 45 W; 07:00 ->
   battery 10 W/AC 45 W. Both invoke the tested helper and require read-back.
   Their first real time-fire is still pending.
 - Windows Scheduled Tasks were attempted but could not provide reliable,

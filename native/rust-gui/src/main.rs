@@ -879,9 +879,9 @@ fn short_processor_name(snapshot: Option<&SnapshotPayload>) -> String {
         .unwrap_or_else(|| "正在检测处理器".to_owned())
 }
 
-fn platform_subtitle(app: &GuiApp) -> String {
-    let Some(snapshot) = app.latest_snapshot.as_ref() else {
-        if app.worker_error.is_some() {
+fn platform_subtitle_for(snapshot: Option<&SnapshotPayload>, worker_error: bool) -> String {
+    let Some(snapshot) = snapshot else {
+        if worker_error {
             return "worker 状态异常 · 写入控制不可用".to_owned();
         }
         return "正在连接硬件 worker".to_owned();
@@ -893,6 +893,42 @@ fn platform_subtitle(app: &GuiApp) -> String {
         .as_deref()
         .unwrap_or("AMD 移动平台");
     format!("{} · {}", short_processor_name(Some(snapshot)), family)
+}
+
+fn platform_subtitle(app: &GuiApp) -> String {
+    platform_subtitle_for(app.latest_snapshot.as_ref(), app.worker_error.is_some())
+}
+
+fn fitted_header_subtitle_for(
+    snapshot: Option<&SnapshotPayload>,
+    worker_error: bool,
+    available_width: i32,
+    measure: impl Fn(&str) -> i32,
+) -> String {
+    let full = platform_subtitle_for(snapshot, worker_error);
+    if measure(&full) <= available_width {
+        return full;
+    }
+    if snapshot.is_some() {
+        let processor = short_processor_name(snapshot);
+        if measure(&processor) <= available_width {
+            return processor;
+        }
+    }
+    String::new()
+}
+
+fn fitted_header_subtitle(
+    app: &GuiApp,
+    available_width: i32,
+    measure: impl Fn(&str) -> i32,
+) -> String {
+    fitted_header_subtitle_for(
+        app.latest_snapshot.as_ref(),
+        app.worker_error.is_some(),
+        available_width,
+        measure,
+    )
 }
 
 fn current_power(app: &GuiApp) -> String {
@@ -1119,9 +1155,13 @@ unsafe fn paint_header(
         DT_LEFT,
     );
     let subtitle_left = 24 + text_width(hdc, title, fonts.title) + 14;
+    let subtitle_available = (text_right - subtitle_left).max(0);
+    let subtitle = fitted_header_subtitle(app, subtitle_available, |text| {
+        text_width(hdc, text, fonts.caption)
+    });
     draw_text_in(
         hdc,
-        &platform_subtitle(app),
+        &subtitle,
         fonts.caption,
         palette().header_muted,
         RECT {
@@ -6316,11 +6356,12 @@ mod tests {
     }
 
     use super::{
-        clamp_preset_values, clamp_to_ceiling, diagnostics_document, fixture_snapshot,
-        fixture_worker_error, format_policy_state, format_snapshot, format_snapshot_simple,
-        format_writable_fields, parse_arguments, parse_ui_fixture, preset_menu_label,
-        restart_delay, rgb, state, terminate_process_bounded, uniform_power_policy,
-        watchdog_should_restart, UiDiagnostics, UiFixture, HIGH_CONTRAST_PALETTE,
+        clamp_preset_values, clamp_to_ceiling, diagnostics_document, fitted_header_subtitle_for,
+        fixture_snapshot, fixture_worker_error, format_policy_state, format_snapshot,
+        format_snapshot_simple, format_writable_fields, parse_arguments, parse_ui_fixture,
+        platform_subtitle_for, preset_menu_label, restart_delay, rgb, state,
+        terminate_process_bounded, uniform_power_policy, watchdog_should_restart, UiDiagnostics,
+        UiFixture, HIGH_CONTRAST_PALETTE,
     };
     use amd_mobile_power_gui::worker::{
         CpuPayload, LimitsPayload, PlatformPayload, PowerLimitTarget, PowerLineState,
@@ -6372,6 +6413,31 @@ mod tests {
                 has_firmware_clamp: false,
             },
         }
+    }
+
+    #[test]
+    fn header_subtitle_falls_back_to_processor_name_before_ellipsis() {
+        let snapshot = sample_snapshot();
+        let full = platform_subtitle_for(Some(&snapshot), false);
+        let measure = |text: &str| text.chars().count() as i32;
+
+        assert_eq!(
+            fitted_header_subtitle_for(
+                Some(&snapshot),
+                false,
+                full.chars().count() as i32,
+                measure
+            ),
+            full
+        );
+        assert_eq!(
+            fitted_header_subtitle_for(Some(&snapshot), false, 18, measure),
+            "Ryzen 7 8845HS"
+        );
+        assert_eq!(
+            fitted_header_subtitle_for(Some(&snapshot), false, 8, measure),
+            ""
+        );
     }
 
     #[test]
