@@ -21,6 +21,18 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-17 (night changed to 12 W on both power lines):
+
+- At 01:24 the system was inside the night window but still had battery 8 W /
+  AC 45 W. User clarified both lines should be 12 W overnight.
+- Applied battery 12 W / AC 12 W through the direct worker helper. Persisted
+  state and GUI sync PASS; all six STAPM/Fast/Slow read-back values are 12 W.
+- Updated `AmdMobilePower DirectNightPolicy 2300` to 12/12 and actually started
+  it: Ready, exit 0, PASS, GUI sync true. Updated the Codex night heartbeat to
+  the same values. Day policy remains 07:00 battery 25 W / AC 45 W.
+- Evidence updated:
+  `evidence/hardware/local-night-day-policy-2026-11-15.json`.
+
 2026-11-16 (day 25/45 and night boundary corrected to 23:00):
 
 - User clarified external power remains 45 W and night battery 8 W starts
