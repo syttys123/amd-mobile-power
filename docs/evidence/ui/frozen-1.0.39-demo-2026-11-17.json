@@ -1,0 +1,36 @@
+{
+  "Verification": "PASS",
+  "Clip": "artifacts\\media\\frozen-1.0.39-demo\\presets-demo.mp4",
+  "ClipSha256": "00a84797fde1d43bdd53541ee9a8f72295e15390de845e1ba56fa8fc5a81e366",
+  "GuiSha256": "6e9b688b9732b7be4decbea4019f02353aa7f08c4f6701aaf9f4501791466def",
+  "SimulatedData": true,
+  "DurationSeconds": 13.5,
+  "Frames": 115,
+  "Timing": "Per-frame monotonic timestamps; no uniform redistribution",
+  "Events": [
+    {
+      "Action": "command",
+      "Command": 102,
+      "ScheduledAt": 1.6,
+      "ActualAt": 1.6917233,
+      "Completed": true
+    },
+    {
+      "Action": "command",
+      "Command": 103,
+      "ScheduledAt": 4.6,
+      "ActualAt": 4.6957815,
+      "Completed": true
+    },
+    {
+      "Action": "command",
+      "Command": 101,
+      "ScheduledAt": 7.6,
+      "ActualAt": 7.6342554,
+      "Completed": true
+    }
+  ],
+  "Fixture": "firmware-clamp",
+  "DpiFixture": 125,
+  "RecordedAt": "2026-11-17T02:38:19.3111616+08:00"
+}

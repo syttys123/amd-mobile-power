@@ -1,0 +1,58 @@
+{
+  "SchemaVersion": 1,
+  "Version": "1.0.39",
+  "Status": "DRAFT_FOR_HUMAN_REVIEW",
+  "Video": "artifacts\\media\\promo-1.0.39-review\\amd-mobile-power-1.0.39-review-silent.mp4",
+  "VideoSHA256": "16376c332a9a944bf0e951beeed7ee163462393b727494990e6ce2cd470e4944",
+  "VideoBytes": 3435299,
+  "DurationSeconds": 42.5,
+  "Width": 1920,
+  "Height": 1080,
+  "FrameRate": 30,
+  "VideoCodec": "h264",
+  "Audio": "none",
+  "Scenes": 7,
+  "FullDecode": "PASS",
+  "KeyframeReview": {
+    "Path": "artifacts\\media\\review-1.0.39-scenes",
+    "OutOfBounds": [],
+    "MissingImages": [],
+    "Result": "PASS"
+  },
+  "LuminanceReview": {
+    "Path": "artifacts\\media\\promo-1.0.39-review\\luminance-review.json",
+    "Frames": 1275,
+    "IsolatedSpikes": [],
+    "BrightFrames": [],
+    "Minimum": 29.03,
+    "Maximum": 72.7125,
+    "Result": "PASS"
+  },
+  "DemoClip": {
+    "Path": "artifacts\\media\\frozen-1.0.39-demo\\presets-demo.mp4",
+    "SHA256": "00a84797fde1d43bdd53541ee9a8f72295e15390de845e1ba56fa8fc5a81e366",
+    "GuiSHA256": "6e9b688b9732b7be4decbea4019f02353aa7f08c4f6701aaf9f4501791466def",
+    "SimulatedData": true
+  },
+  "Assets": {
+    "AdvancedPolicyPanel": {
+      "Path": "media\\promo-html\\assets\\advanced-left-panel-1.0.39-fixture.png",
+      "SHA256": "1f4347a2846b52fd503e0f753ab0c560e2a7ec72432b4684c4d8a53d5725615a"
+    },
+    "DevicePanel": {
+      "Path": "media\\promo-html\\assets\\device-panel-1.0.39-fixture.png",
+      "SHA256": "16dddad668e51d7e5b1dc3646ee668f73b577dc5513bc2c660cf8b157f7daf4b"
+    },
+    "UnlockDialog": {
+      "Path": "media\\promo-html\\assets\\unlock-dialog-1.0.39-fixture.png",
+      "SHA256": "4b27afe9604172181102614da12a857788803b6ea66126b6f783d779b63e856b"
+    }
+  },
+  "Notes": [
+    "The GUI, consent, policy and device panels are 1.0.39 isolated-fixture captures.",
+    "The preset interaction clip is a simulated firmware-clamp fixture; it is not a hardware 45 W test.",
+    "The video is silent and uses burned-in Simplified Chinese captions.",
+    "No publication or upload was performed."
+  ],
+  "RecordedAt": "2026-11-17T03:24:00+08:00"
+}
