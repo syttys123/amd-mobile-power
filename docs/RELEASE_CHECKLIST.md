@@ -2,7 +2,7 @@
 
 ## Current Candidate Override (2026-11-17)
 
-Current target: **1.0.39**, status **FROZEN_WRITE_HANG_DPI_AND_MEDIA_REVIEW_PASS_PENDING_PUBLICATION**.
+Current target: **1.0.39**, status **DEPLOYED_PENDING_HUMAN_MEDIA_AND_PUBLICATION**.
 1.0.38 was superseded before freezing by a narrow-header text-fit fix. 1.0.39
 falls back from `processor · family` to processor-only before hiding the header
 line, so the 752x489 simple fixture no longer shows `...`.
