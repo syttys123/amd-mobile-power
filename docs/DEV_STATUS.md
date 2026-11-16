@@ -48,6 +48,10 @@ not authoritative.
 - Hosted Windows CI PASS for docs head `5582af2`: run `43942623854`,
   conclusion `success`. Evidence:
   `evidence/build/hosted-ci-1.0.39-2026-11-17.json`.
+- A later CI run caught a personal desktop path in the deployment evidence.
+  Replaced it with `%USERPROFILE%`; the post-deployment rerun `43947440054`
+  passed for `a9596f5`. Evidence:
+  `evidence/build/hosted-ci-post-deployment-2026-11-17.json`.
 - Re-captured 1.0.39 simple/advanced/consent and preset demo; rendered a
   42.5-second, 1920x1080, 30 fps silent review with 1275 frames. Seven scene
   keyframes, full decode and luminance screening PASS. Evidence:

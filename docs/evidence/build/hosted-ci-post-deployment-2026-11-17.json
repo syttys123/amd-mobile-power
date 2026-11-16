@@ -1,0 +1,17 @@
+{
+  "SchemaVersion": 1,
+  "Verification": "PASS",
+  "Repository": "syttys123/amd-mobile-power",
+  "Branch": "release/1.0.33",
+  "Commit": "a9596f5142c324972340ebca4560000ee7936451",
+  "Workflow": "build",
+  "RunId": 43947440054,
+  "Job": "windows-native",
+  "Status": "completed",
+  "Conclusion": "success",
+  "StartedAt": "2026-11-16T20:13:03Z",
+  "CompletedAt": "2026-11-16T20:17:36Z",
+  "Url": "https://github.com/syttys123/amd-mobile-power/actions/runs/43947440054",
+  "Note": "The preceding run 43945812671 correctly failed public sanitization because a deployment evidence file contained a personal desktop path. The path was replaced with %USERPROFILE% and the rerun passed.",
+  "RecordedAt": "2026-11-17T04:18:00+08:00"
+}
