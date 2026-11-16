@@ -1,0 +1,58 @@
+{
+  "SchemaVersion": 1,
+  "Verification": "PASS_WITH_FIRMWARE_STAPM_CLAMP_REPORTED",
+  "Version": "1.0.39",
+  "Package": "amd-mobile-power-v1.0.39-win-x64-native-preview.zip",
+  "PackageSHA256": "06efdcff2584b9fd50856a34084957241c7966f7a21189c2db7e316db5193d53",
+  "WorkerSHA256": "537a53ed8f8221878ef95af8314ac3a5a71b159a92ec5db99faaa2b8afa9c85d",
+  "ProbeSHA256": "d80fe52c6f10ddc71ac0884ba540bc449e95dfd00503a49b3a40951e6d2a0e84",
+  "Processor": "AMD Ryzen 7 8845HS w/ Radeon 780M Graphics",
+  "RyzenAdjFamily": 10,
+  "RyzenAdjFamilyName": "Hawk Point",
+  "PmTableVersion": "4c0009",
+  "PowerLine": "ac",
+  "TargetWatts": {
+    "stapm": 15,
+    "fast": 15,
+    "slow": 15
+  },
+  "ApplyResult": {
+    "isSuccessful": true,
+    "hasFirmwareClamp": true,
+    "hasStapmWarning": true,
+    "restoreAttempted": false,
+    "readbacks": [
+      {
+        "kind": 0,
+        "requestedWatts": 15,
+        "effectiveWatts": 25,
+        "driverResultCode": 0
+      },
+      {
+        "kind": 1,
+        "requestedWatts": 15,
+        "effectiveWatts": 15,
+        "driverResultCode": 0
+      },
+      {
+        "kind": 2,
+        "requestedWatts": 15,
+        "effectiveWatts": 15,
+        "driverResultCode": 0
+      }
+    ]
+  },
+  "AfterLimitsWatts": {
+    "stapm": 25,
+    "fast": 15,
+    "slow": 15
+  },
+  "AfterValuesWatts": {
+    "stapm": 15.0071,
+    "fast": 15.0089,
+    "slow": 15.0015
+  },
+  "Interpretation": "The firmware did not accept the 15 W STAPM field and reported 25 W, but PPT Fast and PPT Slow both held 15 W and measured package power stayed at approximately 15 W. The worker reported the clamp through hasFirmwareClamp and hasStapmWarning.",
+  "ShutdownConfirmed": true,
+  "RecordedAt": "2026-11-17T03:16:51+08:00"
+}

@@ -1,33 +1,34 @@
 # Release Checklist
 
-## Current Candidate Override (2026-11-14)
+## Current Candidate Override (2026-11-17)
 
-Current target: **1.0.37**, status **READONLY_AND_PATTERN_SCAN_PASS_PENDING_FULL_GATES**.
-1.0.36 remains held for embedded personal Cargo paths. 1.0.37 remaps build
-paths and passes ZIP text plus ASCII/UTF-16LE binary pattern inspection.
+Current target: **1.0.39**, status **FROZEN_WRITE_HANG_DPI_AND_MEDIA_REVIEW_PASS_PENDING_PUBLICATION**.
+1.0.38 was superseded before freezing by a narrow-header text-fit fix. 1.0.39
+falls back from `processor · family` to processor-only before hiding the header
+line, so the 752x489 simple fixture no longer shows `...`.
 The checklist below is historical and mixes 1.0.31-1.0.33 evidence. Its
 checked boxes must not be used as current release approval.
 
-The frozen clean 1.0.37 ZIP comes from `18aaa56`, SHA256
-`2a7f0545cb1144d504628abbb94642f754d90b5ca76c10d95ea3854131404e1a`.
-Exact binary identities: `evidence/release/candidate-1.0.37-frozen-2026-11-15.json`.
-It includes fixture IPC isolation and first-line firmware warnings.
-1.0.34 is held for its fixture IPC defect; 1.0.35 lacks the warning correction.
-C:\RyzenAdj remains 1.0.33. Current readiness is:
+The frozen clean 1.0.39 ZIP comes from `a6d8eed`, SHA256
+`06efdcff2584b9fd50856a34084957241c7966f7a21189c2db7e316db5193d53`.
+Exact binary identities: `evidence/release/candidate-1.0.39-frozen-2026-11-17.json`.
+It includes fixture IPC isolation, first-line firmware warnings and corrected
+consent wording. C:\RyzenAdj remains 1.0.33. Current readiness is:
 
-- [x] Native source build: GUI 60 tests, probe 7 tests, C++ policy tests.
+- [x] Native source build: GUI 61 tests, probe 7 tests, C++ policy tests.
 - [x] No-driver destructor cleanup and transport resource regression pass.
 - [x] Current ZIP read-only runtime, diagnostics and install flow pass.
 - [x] Current GUI/probe match independent mapped builds; frozen ZIP repack matches exactly.
 - [x] New clean candidate built after worker cleanup changes.
-- [ ] Final candidate formatting, Clippy and hosted CI refreshed.
-- [ ] Final source-to-package reproducibility and sanitization refreshed.
-- [ ] Final current-value write/read-back and worker-hang recovery gates pass.
+- [x] Final candidate formatting, Clippy and local release refresh pass.
+- [ ] Hosted CI refreshed for `a6d8eed`.
+- [x] Final source-to-package reproducibility and sanitization refreshed.
+- [x] Final current-value 15 W write/read-back and worker-hang recovery gates pass.
 - [ ] Final package battery/AC transition and driver lifecycle evidence recorded.
-- [ ] Final packaged DPI/work-area/resize/resource and regional visual review pass.
+- [x] Final packaged DPI/work-area/resource and regional visual review pass.
 - [ ] Real OS DPI transitions, second AMD device and clean Windows baseline recorded.
 - [ ] Exact gated ZIP promoted with rollback and deployed hashes/read-back verified.
-- [ ] Media refreshed to final UI; 30-40+ second video reviewed with licensed audio.
+- [x] Media refreshed to final UI; 42.5-second silent review rendered and inspected.
 - [ ] Owner approves final GitHub Release and Bilibili publication.
 
 Older PASS records establish historical behavior only. Missing current gates

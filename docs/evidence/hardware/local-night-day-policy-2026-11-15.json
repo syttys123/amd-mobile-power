@@ -1,18 +1,23 @@
 {
   "Verification": "PASS",
-  "Scope": "Local policy, Codex automations, and tested Windows Task Scheduler direct-worker fallback",
+  "Scope": "Local policy, app automations, and tested Windows Task Scheduler direct-worker fallback",
   "CurrentPolicy": {
     "enabled": true,
-    "batteryTargetWatts": 12,
-    "acTargetWatts": 12,
-    "powerLine": "battery",
-    "lastAppliedTargetWatts": 12,
+    "batteryTargetWatts": 15,
+    "acTargetWatts": 15,
+    "powerLine": "ac",
+    "lastAppliedTargetWatts": 15,
+    "readBackLimitsWatts": {
+      "stapm": 22.919,
+      "fast": 15,
+      "slow": 15
+    },
     "readBackCommand": "getPowerPolicy"
   },
   "Schedule": {
     "Day": "07:00 battery 25 W / AC 45 W",
-    "Night": "23:00 battery 12 W / AC 12 W (all six limits)",
-    "Owner": "Codex app automations plus Windows Task Scheduler direct-worker fallback",
+    "Night": "23:00 battery 15 W / AC 15 W (all six limits)",
+    "Owner": "App automations plus Windows Task Scheduler direct-worker fallback",
     "DayAutomationId": "amd-mobile-power-day-policy-07-00",
     "NightAutomationId": "amd-mobile-power-night-policy-22-30"
   },
@@ -32,5 +37,5 @@
     "DayRuntimeTest": "Exit 0, PASS, GUI sync true",
     "AllowStartOnBattery": true
   },
-  "RecordedAt": "2026-11-17T01:26:30+08:00"
+  "RecordedAt": "2026-11-17T02:34:05+08:00"
 }

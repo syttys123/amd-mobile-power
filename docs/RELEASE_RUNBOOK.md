@@ -1,14 +1,17 @@
 # Release Runbook
 
-## Current Candidate Override (2026-11-14)
+## Current Candidate Override (2026-11-17)
 
-Current work targets 1.0.37, while C:\RyzenAdj remains 1.0.33. The steps below
+Current work targets 1.0.39, while C:\RyzenAdj remains 1.0.33. The steps below
 describe historical 1.0.33/1.0.31 promotion, not the current release procedure.
 `RELEASE_CHECKLIST.md` and `DEV_STATUS.md` define pending gates. Source is
-aligned with frozen `18aaa56` 1.0.37, qualified for read-only runtime and
-text/binary pattern scanning. See `evidence/release/candidate-1.0.37-frozen-2026-11-15.json`.
-Complete final write/hang and other checklist gates, then refresh the commands
-below before promotion or public release. This file implies no release approval.
+aligned with frozen `a6d8eed` 1.0.39, qualified for read-only runtime,
+text/binary pattern scanning, safe 15 W write/read-back with the firmware STAPM
+clamp reported, worker-hang replacement, DPI/work-area/resource checks and a
+42.5-second review render. See
+`evidence/release/candidate-1.0.39-frozen-2026-11-17.json`.
+Hosted CI, a fresh physical battery/AC transition, owner media review and
+publication approval remain pending. This file implies no release approval.
 
 ## Historical Procedure
 

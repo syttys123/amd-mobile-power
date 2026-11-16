@@ -21,6 +21,38 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-17 (1.0.39 frozen candidate, hardware gates and final review media):
+
+- Packaged clean source `a6d8eed` with the narrow-header fit. ZIP
+  `amd-mobile-power-v1.0.39-win-x64-native-preview.zip`, 778584 bytes,
+  SHA256 `06efdcff2584b9fd50856a34084957241c7966f7a21189c2db7e316db5193d53`.
+  GUI `6e9b688b`, worker `537a53ed`, probe `d80fe52c`. Rust 61 tests, probe
+  7 tests, Clippy/Release, C++ tests, read-only runtime, collector, probe,
+  install flow, independent rebuilds, double ZIP hashing and sanitization PASS.
+- Safe 15 W packaged-worker write gate PASS: `applyTarget` 15/15/15 returned
+  `isSuccessful=true`, with the firmware rejecting the 15 W STAPM field at
+  25 W while Fast/Slow both held 15 W; measured package power stayed about
+  15.0 W and the clamp warning was explicit. Evidence:
+  `evidence/hardware/mechrevo-wujie15-8845hs-1.0.39-15w-write-2026-11-17.json`.
+- Worker-hang replacement PASS in 34.4 s with 25 GUI-responsive checks and no
+  failures; policy restored afterwards. DPI 100/125/150 and the 200%
+  1366x728 work area PASS; 480 mode switches/repaints stayed within the
+  resource budget. Evidence:
+  `evidence/hardware/v1.0.39-worker-hang-2026-11-17.json`,
+  `evidence/ui/native-dpi-1.0.39-2026-11-17.json`,
+  `evidence/ui/native-workarea-200-1.0.39-2026-11-17.json`,
+  `evidence/ui/native-resource-1.0.39-2026-11-17.json`.
+- Frozen candidate identity PASS:
+  `evidence/release/candidate-1.0.39-frozen-2026-11-17.json`,
+  `evidence/release/candidate-1.0.39-identity-2026-11-17.json`.
+- Re-captured 1.0.39 simple/advanced/consent and preset demo; rendered a
+  42.5-second, 1920x1080, 30 fps silent review with 1275 frames. Seven scene
+  keyframes, full decode and luminance screening PASS. Evidence:
+  `evidence/media/native-promo-1.0.39-review-2026-11-17.json`.
+- Still pending: hosted CI, a fresh physical battery/AC transition, owner media
+  review, publication approval, and rollback-backed replacement of
+  `C:\RyzenAdj` 1.0.33.
+
 2026-11-17 (1.0.39 simple-header fit; 1.0.38 build evidence recorded):
 
 - The 1.0.38 read-only simple fixture still ellipsized the header subtitle to
@@ -32,8 +64,11 @@ not authoritative.
   PASS. Source changed after 1.0.38, so the next package must be 1.0.39 and
   must not reuse 1.0.38 hashes as current.
 - Stable `C:\RyzenAdj` 1.0.33 GUI/worker were restored after fixture capture.
-  Worker read-back at 02:00 was STAPM/Fast/Slow 12 W on battery, matching the
-  23:00-07:00 12 W policy. Day/night tasks remain 07:00 25/45 and 23:00 12/12.
+  Night was subsequently raised to 15 W on both power lines; read-back shows
+  Fast/Slow 15 W and actual STAPM 15.03 W on AC. The firmware-reported STAPM
+  limit is dynamic (observed 22.9-25 W), while Fast/Slow remain the effective
+  15 W caps.
+  Day/night tasks remain 07:00 25/45 and 23:00 15/15.
 
 2026-11-17 (1.0.38 candidate build and read-only evidence):
 
@@ -70,6 +105,16 @@ not authoritative.
   no longer contains the corrected consent copy, so a 1.0.38 candidate must be
   built before final media capture. Full video rerender remains pending.
 - No real worker started by the fixture captures; stable session restored.
+
+2026-11-17 (night changed to 15 W on both power lines):
+
+- User raised the overnight limit from 12 W to 15 W. Applied battery 15 W /
+  AC 15 W through the direct worker helper; policy write, GUI sync and the
+  Windows night task all PASS. Task exit 0, next run 23:00.
+- Read-back: Fast 15 W, Slow 15 W, actual STAPM 15.03 W on AC. Firmware STAPM
+  limit reads 22.92 W dynamically, so Fast/Slow are the effective package caps.
+- Updated the app night automation and
+  `evidence/hardware/local-night-day-policy-2026-11-15.json`.
 
 2026-11-17 (night changed to 12 W on both power lines):
 
