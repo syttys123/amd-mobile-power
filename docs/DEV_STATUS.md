@@ -48,7 +48,10 @@ not authoritative.
   25 W / AC 45 W; otherwise 15/15), probes `enabled=true` plus current
   Fast/Slow limits, and preserves an original gate exception when recovery
   also fails. The initial GUI state and recovery result are appended to gate
-  evidence; `native/test-release-gui-recovery-contract.ps1` locks the contract.
+  evidence; `native/test-release-gui-recovery-contract.ps1` locks the contract
+  with AST checks plus extracted `catch`/`finally` failure injection for body
+  failure, composite recovery failure, and success-path evidence, without
+  touching hardware or the stable processes.
 - `C:\RyzenAdj` remains the stable 1.0.40 deployment. The user restored the
   current night policy to battery 15 W / AC 15 W (all six limits at 15 W) on
   2026-11-18; the night task action now runs `-BatteryWatts 15 -AcWatts 15`

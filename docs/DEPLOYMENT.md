@@ -188,7 +188,10 @@ the full post-1.0.39 safety remediation and the pipe-stall supervision fix.
   failure, or interruption, the stable tray is restored from `finally` and
   re-applies 07:00-23:00 battery 25 W / AC 45 W or night 15/15 W. The gate
   records the initial GUI state and uses the helper's opt-in auto-start path;
-  it does not leave the package verifier as a second hardware owner.
+  it does not leave the package verifier as a second hardware owner. The
+  isolated `native/test-release-gui-recovery-contract.ps1` harness injects body
+  and recovery failures into the extracted gate blocks and checks success-path
+  evidence without starting the wrapper or touching `C:\RyzenAdj`.
 - Still pending: real OS DPI transitions, a second AMD device, a clean
   Windows WinRing0 baseline, owner media review and publication approval. The
   packaged worker still caches its last applied target and does not re-verify

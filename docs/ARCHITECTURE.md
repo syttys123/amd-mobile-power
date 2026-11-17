@@ -157,6 +157,9 @@ stable `C:\RyzenAdj` tray from `finally`. The recovery uses
 current 07:00-23:00 (`25/45 W`) or night (`15/15 W`) policy, and independently
 probes `enabled=true` and the current Fast/Slow limits. A failed recovery is
 reported as a composite error; it does not replace the original gate failure.
+The contract test parses this structure and injects body/recovery failures into
+the extracted `catch`/`finally` blocks; it never touches the stable processes
+or hardware.
 
 ## Capability Detection
 
