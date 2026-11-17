@@ -536,14 +536,10 @@ catch {
             Restore-ShortcutTargets -Shortcuts $shortcutSnapshots
         }
         if (Test-Path -LiteralPath $resolvedTarget) {
-            $installedPrefix = $resolvedTarget.TrimEnd(
-                [System.IO.Path]::DirectorySeparatorChar) +
-                [System.IO.Path]::DirectorySeparatorChar
             $resolvedInstall = [System.IO.Path]::GetFullPath($resolvedTarget)
-            if (-not $resolvedInstall.StartsWith(
-                $installedPrefix.TrimEnd(
-                    [System.IO.Path]::DirectorySeparatorChar) +
-                    [System.IO.Path]::DirectorySeparatorChar,
+            if (-not [string]::Equals(
+                $resolvedInstall,
+                $resolvedTarget,
                 [System.StringComparison]::OrdinalIgnoreCase)) {
                 throw "Refusing to remove an unexpected target: $resolvedInstall"
             }
@@ -556,6 +552,7 @@ catch {
     catch {
         Write-Error "Rollback encountered an error: $($_.Exception.Message)"
     }
+    Write-Error "Deployment failed before rollback: $($failure.Exception.Message)"
     throw $failure
 }
 finally {
