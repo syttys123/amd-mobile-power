@@ -6327,7 +6327,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let class_name = wide(WINDOW_CLASS);
-    let window_title = wide(APP_TITLE);
+    let window_title = wide(&match options.ui_fixture {
+        Some(_) => format!("{APP_TITLE} · {}", options.pipe_name),
+        None => APP_TITLE.to_owned(),
+    });
     let window_class = WNDCLASSEXW {
         cbSize: size_of::<WNDCLASSEXW>() as u32,
         style: CS_HREDRAW | CS_VREDRAW,
@@ -6350,7 +6353,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     // with the stable tray GUI's single-instance mutex, or the fixture would
     // silently wake the stable window and exit before creating its own.
     let mutex_name = if options.ui_fixture.is_some() {
-        wide(&format!("{MUTEX_NAME}.Fixture.{}", std::process::id()))
+        wide(&format!(
+            "{MUTEX_NAME}.Fixture.{}",
+            options.pipe_name.replace('\\', "_")
+        ))
     } else {
         wide(MUTEX_NAME)
     };
@@ -6360,7 +6366,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     if unsafe { GetLastError() } == ERROR_ALREADY_EXISTS {
         let class_name = wide(WINDOW_CLASS);
-        let existing = unsafe { FindWindowW(class_name.as_ptr(), std::ptr::null()) };
+        let fixture_title = wide(&format!("{APP_TITLE} · {}", options.pipe_name));
+        let existing = unsafe {
+            if options.ui_fixture.is_some() {
+                FindWindowW(class_name.as_ptr(), fixture_title.as_ptr())
+            } else {
+                FindWindowW(class_name.as_ptr(), std::ptr::null())
+            }
+        };
         if !existing.is_null() {
             unsafe {
                 PostMessageW(existing, WM_APP_WAKE, 0, 0);
