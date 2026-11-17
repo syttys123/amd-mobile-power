@@ -21,6 +21,41 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-18 (1.0.42 gate PASS and stable-local deployment):
+
+- The policy-line semantic fix, maintenance-script fail-closed checks, and
+  identity-bound promotion hardening are now packaged and deployed. The GUI
+  distinguishes the automatic policy target from the most recent manual write;
+  workers expose observed, attempt, and applied supply lines separately.
+- Two real gate failures were fixed instead of bypassed: the GUI verifier now
+  checks the current `最近写入目标` label, and the installer accepts a direct
+  child of a drive root without asking PowerShell 5.1 to create `C:\`.
+  Promotion failures now write audit evidence after rollback. New contracts
+  cover the status label, drive-root-parent install/uninstall, and failure
+  evidence; the promotion contract passes 16/16 in PowerShell 5.1 and 7.
+- The final clean package is
+  `amd-mobile-power-v1.0.42-win-x64-native-preview.zip` (795,340 bytes,
+  SHA256
+  `35384501e2cf4b5808ba8796d212fb4b7394d49455153e817fefed1c11b44998`),
+  source `927a1bbf74e78b061eafb6088e807f4fc5ff365b`. Rust GUI 74 tests, probe
+  7 tests, C++ suites, request bounds, formatting/Clippy, reproducibility,
+  shell integration, current-value policy, worker-hang replacement, DPI/work-
+  area/maximize fixtures, sanitization, and hosted Windows CI all PASS.
+- `C:\RyzenAdj` now contains 1.0.42. All 19 payload checksums match. The
+  previous-stable rollback is
+  `C:\RyzenAdj.before-20261118-054742205-v1.0.41-6bf8144`. Deployed GUI/worker/
+  probe hashes are `612a883e` / `ffec2afc` / `00369735`.
+- Final live state after deployed-GUI verification: GUI PID `39180`, worker
+  PID `48132`, policy enabled, battery and AC targets all six limits at 15 W;
+  the current battery STAPM/Fast/Slow read-back is 15/15/15 W. Night remains
+  23:00-07:00 at 15/15 W; day remains 07:00-23:00 battery 25 W / AC 45 W.
+- Publication readiness is `LocalReadiness=PASS`,
+  `PublicReleaseReadiness=READY_FOR_HUMAN_REVIEW`. The review bundle includes
+  the historical silent 39.5-second fixture-based draft, explicitly not a live
+  1.0.42 capture. Second AMD device, real OS DPI sessions, clean-Windows
+  WinRing0 baseline, owner media review, GitHub Release approval, and Bilibili
+  upload remain open. No public release or upload occurred.
+
 2026-11-18 (1.0.42 source candidate: policy-line semantics and promotion hardening):
 
 - The native `getPowerPolicy` / `setPowerPolicy` state now distinguishes

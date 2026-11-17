@@ -1,0 +1,64 @@
+{
+  "Verification": "PASS",
+  "Package": "D:\\amd-mobile-power\\artifacts\\native-packages\\amd-mobile-power-v1.0.42-win-x64-native-preview.zip",
+  "PackageSize": 795340,
+  "PackageSHA256": "35384501e2cf4b5808ba8796d212fb4b7394d49455153e817fefed1c11b44998",
+  "PackageVersion": "1.0.42",
+  "SourceCommit": "927a1bbf74e78b061eafb6088e807f4fc5ff365b",
+  "Target": "C:\\RyzenAdj",
+  "PromotionEvidence": "D:\\amd-mobile-power\\artifacts\\deployment-backups\\promote-amd-mobile-power-v1.0.42-win-x64-native-preview-20261118-054742295.json",
+  "PreviousStableBackup": "C:\\RyzenAdj.before-20261118-054742205-v1.0.41-6bf8144",
+  "PreviousStableVersion": "1.0.41",
+  "PreviousStableCommit": "6bf8144ebdfbf1805eaac8a4472ee2f939560e2d",
+  "BackupKind": "PreviousStable",
+  "GuiArguments": "--simple-mode --max-target-watts 45",
+  "ShortcutsUpdated": [
+    "%USERPROFILE%\\Desktop\\功耗设置 5-60W.lnk"
+  ],
+  "ShortcutArguments": [
+    {
+      "Path": "%USERPROFILE%\\Desktop\\功耗设置 5-60W.lnk",
+      "Before": "--simple-mode --max-target-watts 45",
+      "After": "--simple-mode --max-target-watts 45",
+      "Dropped": []
+    }
+  ],
+  "InstalledBuildInfo": {
+    "Version": "1.0.42",
+    "Commit": "927a1bbf74e78b061eafb6088e807f4fc5ff365b",
+    "WorkingTree": "Clean",
+    "Platform": "win-x64",
+    "Native": true
+  },
+  "DeployedBinaries": {
+    "GuiSHA256": "612a883e89bb33cb2ef538cb86a833f3073c8f6144a54ecd2efe1bc35a1d0baf",
+    "WorkerSHA256": "ffec2afc798ba39026857cd1cc287dcdbb2a268e5b53314756b35bef83a8cf0d",
+    "ProbeSHA256": "00369735f7d3623592ad4806973a115161744e42c304ca3cbd52d322300ec353"
+  },
+  "DeployedHashes": {
+    "gui": "612a883e89bb33cb2ef538cb86a833f3073c8f6144a54ecd2efe1bc35a1d0baf",
+    "worker": "ffec2afc798ba39026857cd1cc287dcdbb2a268e5b53314756b35bef83a8cf0d",
+    "probe": "00369735f7d3623592ad4806973a115161744e42c304ca3cbd52d322300ec353"
+  },
+  "PayloadChecksumEntries": 19,
+  "UiVerification": "PASS",
+  "UiEvidence": "docs/evidence/ui/native-packaged-1.0.42-ui-2026-11-18.json",
+  "LiveState": {
+    "GuiProcessId": 39180,
+    "WorkerProcessId": 48132,
+    "PolicyEnabled": true,
+    "PowerLine": "battery",
+    "BatteryTarget": "15/15/15",
+    "AcTarget": "15/15/15",
+    "BatteryReadBack": "15/15/15",
+    "LastAttemptPowerLine": "battery",
+    "LastAppliedPowerLine": "battery",
+    "LastAttemptSucceeded": true
+  },
+  "PolicySchedule": {
+    "Night": "23:00-07:00 battery and AC targets 15/15 W",
+    "Day": "07:00-23:00 battery 25 W / AC 45 W"
+  },
+  "PublicReleaseApproved": false,
+  "RecordedAt": "2026-11-18T05:54:47+08:00"
+}

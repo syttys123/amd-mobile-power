@@ -7,8 +7,8 @@ The current implementation is the native line: a Rust GUI
 (`amd-mobile-power-gui.exe`) and a separate C++ worker
 (`amdmobilepower_native_worker.exe`). The earlier .NET WinForms GUI / worker /
 Core stack is legacy and is no longer deployed. The deployed `C:\RyzenAdj`
-package is `1.0.41` (source `6bf8144`); it includes the safety remediation and
-limits-aware drift repair described below. Its full gate and deployment passed
+package is `1.0.42` (source `927a1bb`); it includes the safety remediation,
+limits-aware drift repair, and explicit policy-line semantics described below. Its full gate and deployment passed
 on 2026-11-18. See `NATIVE_RC_STATUS.md` for the exact evidence set.
 
 ## Processes
@@ -142,17 +142,16 @@ Future service or machine-wide deployment may use:
 
 ```text
 D:\amd-mobile-power    source, tests, CI, experimental builds
-C:\RyzenAdj            current stable-local native deployment (1.0.41)
+C:\RyzenAdj            current stable-local native deployment (1.0.42)
 ```
 
 Promotion is one-way through `native/promote-stable-deployment.ps1` and requires
 the verified package, a recoverable timestamped backup, and the hardware and
 runtime gates in `DEPLOYMENT.md` and `RELEASE_CHECKLIST.md`. Stable deployment
 files are never edited as source. The current stable-local deployment is
-`1.0.41`; public release remains unapproved. The rollback to the previous
-stable `1.0.40` tree is `C:\RyzenAdj.before-20261118-032150`. The later
-`C:\RyzenAdj.before-20261118-032310` directory is a same-version promotion
-backup and also contains `1.0.41`.
+`1.0.42`; public release remains unapproved. The rollback to the previous
+stable `1.0.41` tree is
+`C:\RyzenAdj.before-20261118-054742205-v1.0.41-6bf8144`.
 
 `native/verify-release.ps1` is the release-gate wrapper for this ownership
 boundary. It records the initial stable GUI/arguments, clears only test

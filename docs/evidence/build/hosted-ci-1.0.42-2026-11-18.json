@@ -1,0 +1,15 @@
+{
+  "SchemaVersion": 1,
+  "Verification": "PASS",
+  "Repository": "syttys123/amd-mobile-power",
+  "Branch": "release/1.0.33",
+  "Commit": "927a1bbf74e78b061eafb6088e807f4fc5ff365b",
+  "Workflow": "build",
+  "RunId": 44181123711,
+  "Job": "windows-native",
+  "Status": "completed",
+  "Conclusion": "success",
+  "Url": "https://github.com/syttys123/amd-mobile-power/actions/runs/44181123711",
+  "EvidenceSource": "Authenticated GitHub web run page showed the exact commit, release/1.0.33 branch, windows-native job, and completed-successfully status. The public API was rate-limited, so no API-only claim is made.",
+  "RecordedAt": "2026-11-18T05:43:00+08:00"
+}

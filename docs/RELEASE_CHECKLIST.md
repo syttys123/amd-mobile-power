@@ -1,10 +1,12 @@
 # Release Checklist
 
-## Source Candidate 1.0.42 (2026-11-18)
+## Deployed Stable 1.0.42 (2026-11-18)
 
-Current source candidate: **1.0.42**, status **SOURCE_READY_PENDING_PACKAGE_AND_GATE**.
-The deployed stable target remains **1.0.41**. Do not reuse 1.0.41 hashes or
-promotion evidence for this candidate.
+Current target: **1.0.42**, status **STABLE_LOCAL_DEPLOYED_PENDING_PUBLICATION**.
+The exact gated ZIP comes from `927a1bb`, SHA256
+`35384501e2cf4b5808ba8796d212fb4b7394d49455153e817fefed1c11b44998`
+(795,340 bytes). Binary identities: GUI `612a883e`, worker `ffec2afc`, probe
+`00369735`.
 
 - [x] Policy state exposes separate observed, attempt, and applied power lines;
       GUI text uses the attempt/applied line and labels manual write targets.
@@ -18,16 +20,42 @@ promotion evidence for this candidate.
       promotion contract 16/16 in PowerShell 5.1 and 7, request bounds,
       helper/recovery/install-scope contracts, formatting, Clippy, docs, and
       `git diff --check`.
-- [ ] Clean commit and exact `build-package.ps1 -Version 1.0.42` package.
-- [ ] Formal release gate with reproducibility, shell integration, no-change
+- [x] Clean commit and exact `build-package.ps1 -Version 1.0.42` package.
+- [x] Formal release gate with reproducibility, shell integration, no-change
       policy, worker-hang, DPI/work-area/maximize fixtures, and sanitization.
-- [ ] Reversible promotion with a new previous-stable backup and live read-back.
-- [ ] Hosted Windows CI, second AMD device, real OS DPI sessions, clean-Windows
-      WinRing0 baseline, owner media review, and explicit publication approval.
+- [x] Reversible promotion with a new previous-stable backup and live read-back:
+      `C:\RyzenAdj.before-20261118-054742205-v1.0.41-6bf8144`.
+- [x] Hosted Windows CI run `44181123711` for `927a1bb` completed successfully.
+- [x] Deployed GUI/tray/mode/write-control regression and publication-readiness
+      local checks PASS. Current battery read-back is 15/15/15 W.
+- [ ] Second AMD device, real OS DPI sessions, clean-Windows WinRing0 baseline,
+      owner media review, and explicit publication approval.
 
-## Deployed Stable 1.0.41 (2026-11-18)
+Current package gates:
 
-Current target: **1.0.41**, status **STABLE_LOCAL_DEPLOYED_PENDING_PUBLICATION**.
+- [x] Formal release gate:
+      `evidence/packaging/v1.0.42-release-gate-2026-11-18.json`.
+- [x] Clean package, fixture isolation, shell integration, reproducibility:
+      `evidence/packaging/v1.0.42-clean-2026-11-18.json`,
+      `evidence/packaging/v1.0.42-fixture-policy-isolation-2026-11-18.json`,
+      `evidence/packaging/v1.0.42-shell-integration-2026-11-18.json`,
+      `evidence/build/reproducibility-1.0.42-2026-11-18.json`.
+- [x] Current-value policy and worker-hang replacement:
+      `evidence/hardware/v1.0.42-power-policy-no-change-2026-11-18.json`,
+      `evidence/hardware/v1.0.42-worker-hang-2026-11-18.json`.
+- [x] Deployment, night restore, packaged UI, hosted CI, sanitization, and
+      publication readiness:
+      `evidence/packaging/v1.0.42-deployment-2026-11-18.json`,
+      `evidence/hardware/v1.0.42-night-policy-restore-2026-11-18.json`,
+      `evidence/ui/native-packaged-1.0.42-ui-2026-11-18.json`,
+      `evidence/build/hosted-ci-1.0.42-2026-11-18.json`,
+      `evidence/release/public-sanitization-1.0.42-2026-11-18.json`,
+      `evidence/release/native-publication-readiness-1.0.42-2026-11-18.json`.
+
+## Previous Stable 1.0.41 (Rollback)
+
+Previous target: **1.0.41**, preserved at
+`C:\RyzenAdj.before-20261118-054742205-v1.0.41-6bf8144`.
 It adds high-side Fast/Slow drift correction while ignoring lower firmware
 clamps, STAPM-only movement, and missing/non-finite samples. The exact gated ZIP
 comes from `6bf8144`, SHA256
