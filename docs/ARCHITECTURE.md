@@ -8,7 +8,9 @@ The current implementation is the native line: a Rust GUI
 (`amdmobilepower_native_worker.exe`). The earlier .NET WinForms GUI / worker /
 Core stack is legacy and is no longer deployed. The deployed `C:\RyzenAdj`
 package is `1.0.40` (source `ca64f37`); it includes the safety remediation
-described below. See `NATIVE_RC_STATUS.md` for the exact evidence set.
+described below. Candidate `1.0.41` adds limits-aware drift repair and remains
+pending until its full gate passes. See `NATIVE_RC_STATUS.md` for the exact
+evidence set.
 
 ## Processes
 
@@ -48,8 +50,11 @@ described below. See `NATIVE_RC_STATUS.md` for the exact evidence set.
   `--enable-hardware` and `--enable-write-controls` are present.
 - Monitors the battery/AC power line when a policy is enabled and applies the
   validated target for that line when the line is enabled, with duplicate-write
-  suppression and a five-second failure backoff. Battery-only policy leaves the
-  AC/external line untouched.
+  suppression and a five-second failure backoff. Once a line/target is applied,
+  the controller re-asserts only when the observed Fast or Slow limit is above
+  the configured ceiling plus the read-back tolerance. Lower values are treated
+  as firmware clamps; STAPM-only movement and missing/non-finite readings do not
+  trigger writes. Battery-only policy leaves the AC/external line untouched.
 - Publishes telemetry snapshots to the GUI; filters non-finite (NaN/Inf) reads
   to null and reports the firmware-clamp flag against the persistent
   last-applied target.
@@ -134,14 +139,15 @@ Future service or machine-wide deployment may use:
 
 ```text
 D:\amd-mobile-power    source, tests, CI, experimental builds
-C:\RyzenAdj            current stable-local native deployment (1.0.39)
+C:\RyzenAdj            current stable-local native deployment (1.0.40)
 ```
 
 Promotion is one-way through `native/promote-stable-deployment.ps1` and requires
 the verified package, a recoverable timestamped backup, and the hardware and
 runtime gates in `DEPLOYMENT.md` and `RELEASE_CHECKLIST.md`. Stable deployment
 files are never edited as source. The current stable-local deployment is
-`1.0.39`; public release remains unapproved.
+`1.0.40`; candidate `1.0.41` is pending its release gate, and public release
+remains unapproved.
 
 ## Capability Detection
 

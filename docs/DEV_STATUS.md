@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-11-17
+Last updated: 2026-11-18
 
 ## Objective
 
@@ -20,6 +20,34 @@ after each meaningful change. Conversation history and compacted summaries are
 not authoritative.
 
 ## Latest Maintenance Milestone
+
+2026-11-18 (1.0.41 candidate source: limits-aware drift repair):
+
+- The C++ policy controller now observes STAPM, Fast, and Slow read-back on
+  every enabled-policy tick. After a successful apply of the same line and
+  target, it re-applies only when Fast or Slow is above the configured ceiling
+  plus the existing read-back tolerance. This closes the 1.0.40 residual risk
+  where an external firmware/EC widening could remain in effect until a
+  power-line change or scheduled policy run.
+- Lower Fast/Slow values are treated as legitimate firmware clamps and do not
+  trigger writes. STAPM-only movement, missing values, and non-finite samples
+  are ignored; a failed drift repair still honors the five-second failure
+  backoff. Power-line changes immediately apply the new line target.
+- Driver-free `power_policy_tests` cover Fast drift, Slow drift, matching and
+  in-tolerance values, lower clamps, STAPM-only drift, missing/NaN values,
+  failure backoff, and power-line switching.
+- Source checks are PASS: Rust GUI 69 tests, probe 7 tests, formatting, Clippy,
+  C++ 4 tests, worker request bounds, helper contract, document links, and
+  `git diff --check`. Candidate status remains pending the clean commit, exact
+  1.0.41 package build, and the formal hardware gate. No 1.0.41 package has
+  been promoted.
+- `C:\RyzenAdj` remains the stable 1.0.40 deployment. The user restored the
+  current night policy to battery 15 W / AC 15 W (all six limits at 15 W) on
+  2026-11-18; the night task action now runs `-BatteryWatts 15 -AcWatts 15`
+  and a manual trigger returned exit 0 with a PASS log. The day policy stays
+  at 07:00 battery 25 W / AC 45 W.
+  The next step is to record the complete 1.0.41 gate and promote only after
+  PASS, with a rollback and a final live read-back.
 
 2026-11-18 (1.0.40 hardware gate PASS, deployed; night policy is 10/10):
 

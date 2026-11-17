@@ -547,6 +547,9 @@ public:
             return false;
         }
         observation.power_line = ParsePowerLineState(telemetry.power_line);
+        observation.stapm_limit_watts = telemetry.stapm_limit_watts;
+        observation.fast_limit_watts = telemetry.fast_limit_watts;
+        observation.slow_limit_watts = telemetry.slow_limit_watts;
         return true;
     }
 

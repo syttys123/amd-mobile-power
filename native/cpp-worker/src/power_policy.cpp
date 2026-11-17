@@ -1,10 +1,30 @@
 #include "power_policy.hpp"
 
+#include <cmath>
+
 namespace amd_mobile_power {
 
 namespace {
 
 constexpr auto kFailureBackoff = std::chrono::seconds(5);
+
+bool IsAboveTarget(
+    const std::optional<double>& observed_watts,
+    int target_watts) {
+    return observed_watts &&
+        std::isfinite(*observed_watts) &&
+        *observed_watts >
+            static_cast<double>(target_watts) + kReadbackToleranceWatts;
+}
+
+bool IsUpperLimitWidened(
+    const PowerPolicyObservation& observation,
+    const PowerLimitTarget& target) {
+    // STAPM is intentionally excluded because firmware may manage it
+    // dynamically. Fast and Slow are the ceiling-enforcing PPT limits.
+    return IsAboveTarget(observation.fast_limit_watts, target.fast_watts) ||
+        IsAboveTarget(observation.slow_limit_watts, target.slow_watts);
+}
 
 }  // namespace
 
@@ -85,7 +105,7 @@ void PowerPolicyController::Tick(
         observation.power_line == PowerLineState::Ac
         ? settings_->ac_target
         : settings_->battery_target;
-    if (!ShouldAttempt(observation.power_line, target, now)) {
+    if (!ShouldAttempt(observation, target, now)) {
         return;
     }
 
@@ -101,11 +121,18 @@ void PowerPolicyController::Tick(
 }
 
 bool PowerPolicyController::ShouldAttempt(
-    PowerLineState power_line,
+    const PowerPolicyObservation& observation,
     const PowerLimitTarget& target,
     std::chrono::steady_clock::time_point now) {
-    if (last_applied_power_line_ == power_line &&
-        last_applied_target_ == target) {
+    const PowerLineState power_line = observation.power_line;
+    const bool matches_applied_state =
+        last_applied_power_line_ == power_line &&
+        last_applied_target_ == target;
+    // A successful state is sticky until an external EC widens Fast or Slow
+    // above the configured ceiling. Lower values may be legitimate firmware
+    // clamps, while missing or non-finite samples are not evidence of drift;
+    // both must avoid creating a write loop. STAPM-only movement is ignored.
+    if (matches_applied_state && !IsUpperLimitWidened(observation, target)) {
         return false;
     }
 

@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <limits>
 #include <optional>
 #include <string>
 
@@ -19,6 +20,9 @@ using amd_mobile_power::PowerPolicySettings;
 struct FakePolicyBackend final : IPowerPolicyBackend {
     PlatformCapability capability;
     PowerLineState power_line = PowerLineState::Battery;
+    std::optional<double> stapm_limit_watts;
+    std::optional<double> fast_limit_watts;
+    std::optional<double> slow_limit_watts;
     bool observe_failure = false;
     bool apply_failure = false;
     int observe_count = 0;
@@ -35,6 +39,9 @@ struct FakePolicyBackend final : IPowerPolicyBackend {
         }
         observation.platform = capability;
         observation.power_line = power_line;
+        observation.stapm_limit_watts = stapm_limit_watts;
+        observation.fast_limit_watts = fast_limit_watts;
+        observation.slow_limit_watts = slow_limit_watts;
         return true;
     }
 
@@ -74,6 +81,17 @@ PlatformCapability SupportedCapability() {
     capability.limits.supports_fast = true;
     capability.limits.supports_slow = true;
     return capability;
+}
+
+void TickAt(
+    FakePolicyBackend& backend,
+    PowerPolicyController& controller,
+    std::chrono::steady_clock::time_point start,
+    int seconds) {
+    controller.Tick(
+        backend,
+        start + std::chrono::seconds(seconds),
+        "2026-11-18T00:00:00Z");
 }
 
 bool AppliesBatteryThenAcWhenPowerLineChanges() {
@@ -229,6 +247,200 @@ bool BatteryOnlyPolicySkipsAcAndAppliesOnBattery() {
             "battery-only policy should still apply on battery");
 }
 
+bool HighFastDriftIsReapplied() {
+    FakePolicyBackend backend;
+    backend.capability = SupportedCapability();
+    backend.stapm_limit_watts = 12;
+    backend.fast_limit_watts = 20;
+    backend.slow_limit_watts = 30;
+    PowerPolicyController controller;
+    const PowerLimitTarget battery_target{12, 20, 30};
+    controller.SetSettings(PowerPolicySettings{
+        true,
+        battery_target,
+        PowerLimitTarget::uniform(45)});
+
+    const auto start = std::chrono::steady_clock::now();
+    TickAt(backend, controller, start, 0);
+    backend.fast_limit_watts = 20.8;
+    TickAt(backend, controller, start, 1);
+
+    return Expect(backend.apply_count == 2, "upper Fast drift should reapply the target") &&
+        Expect(
+            backend.last_target == std::optional<PowerLimitTarget>(battery_target),
+            "Fast drift should reapply the same line target");
+}
+
+bool HighSlowDriftIsReapplied() {
+    FakePolicyBackend backend;
+    backend.capability = SupportedCapability();
+    backend.stapm_limit_watts = 12;
+    backend.fast_limit_watts = 20;
+    backend.slow_limit_watts = 30;
+    PowerPolicyController controller;
+    const PowerLimitTarget battery_target{12, 20, 30};
+    controller.SetSettings(PowerPolicySettings{
+        true,
+        battery_target,
+        PowerLimitTarget::uniform(45)});
+
+    const auto start = std::chrono::steady_clock::now();
+    TickAt(backend, controller, start, 0);
+    backend.slow_limit_watts = 30.8;
+    TickAt(backend, controller, start, 1);
+
+    return Expect(backend.apply_count == 2, "upper Slow drift should reapply the target") &&
+        Expect(
+            backend.last_target == std::optional<PowerLimitTarget>(battery_target),
+            "Slow drift should reapply the same line target");
+}
+
+bool MatchingLimitsDoNotReapply() {
+    FakePolicyBackend backend;
+    backend.capability = SupportedCapability();
+    backend.stapm_limit_watts = 12;
+    backend.fast_limit_watts = 20;
+    backend.slow_limit_watts = 30;
+    PowerPolicyController controller;
+    controller.SetSettings(PowerPolicySettings{
+        true,
+        PowerLimitTarget{12, 20, 30},
+        PowerLimitTarget::uniform(45)});
+
+    const auto start = std::chrono::steady_clock::now();
+    TickAt(backend, controller, start, 0);
+    TickAt(backend, controller, start, 1);
+    backend.fast_limit_watts = 20.5;
+    backend.slow_limit_watts = 30.5;
+    TickAt(backend, controller, start, 2);
+
+    return Expect(
+        backend.apply_count == 1,
+        "matching limits and values within tolerance should not reapply");
+}
+
+bool LowerFastAndSlowClampsDoNotReapply() {
+    FakePolicyBackend backend;
+    backend.capability = SupportedCapability();
+    backend.stapm_limit_watts = 12;
+    backend.fast_limit_watts = 20;
+    backend.slow_limit_watts = 30;
+    PowerPolicyController controller;
+    controller.SetSettings(PowerPolicySettings{
+        true,
+        PowerLimitTarget{12, 20, 30},
+        PowerLimitTarget::uniform(45)});
+
+    const auto start = std::chrono::steady_clock::now();
+    TickAt(backend, controller, start, 0);
+    backend.fast_limit_watts = 18;
+    backend.slow_limit_watts = 28;
+    TickAt(backend, controller, start, 1);
+
+    return Expect(
+        backend.apply_count == 1,
+        "firmware Fast and Slow clamps below target should not reapply");
+}
+
+bool StapmOnlyDriftDoesNotReapply() {
+    FakePolicyBackend backend;
+    backend.capability = SupportedCapability();
+    backend.stapm_limit_watts = 12;
+    backend.fast_limit_watts = 20;
+    backend.slow_limit_watts = 30;
+    PowerPolicyController controller;
+    controller.SetSettings(PowerPolicySettings{
+        true,
+        PowerLimitTarget{12, 20, 30},
+        PowerLimitTarget::uniform(45)});
+
+    const auto start = std::chrono::steady_clock::now();
+    TickAt(backend, controller, start, 0);
+    backend.stapm_limit_watts = 55;
+    TickAt(backend, controller, start, 1);
+
+    return Expect(
+        backend.apply_count == 1,
+        "STAPM-only drift should not reapply Fast or Slow targets");
+}
+
+bool MissingAndNonFiniteLimitsDoNotReapply() {
+    FakePolicyBackend backend;
+    backend.capability = SupportedCapability();
+    backend.stapm_limit_watts = 12;
+    backend.fast_limit_watts = 20;
+    backend.slow_limit_watts = 30;
+    PowerPolicyController controller;
+    controller.SetSettings(PowerPolicySettings{
+        true,
+        PowerLimitTarget{12, 20, 30},
+        PowerLimitTarget::uniform(45)});
+
+    const auto start = std::chrono::steady_clock::now();
+    TickAt(backend, controller, start, 0);
+    backend.fast_limit_watts.reset();
+    backend.slow_limit_watts = std::numeric_limits<double>::quiet_NaN();
+    TickAt(backend, controller, start, 1);
+
+    return Expect(
+        backend.apply_count == 1,
+        "missing or non-finite limits should not trigger a reapply");
+}
+
+bool DriftRetryUsesFailureBackoff() {
+    FakePolicyBackend backend;
+    backend.capability = SupportedCapability();
+    backend.stapm_limit_watts = 12;
+    backend.fast_limit_watts = 20;
+    backend.slow_limit_watts = 30;
+    PowerPolicyController controller;
+    controller.SetSettings(PowerPolicySettings{
+        true,
+        PowerLimitTarget{12, 20, 30},
+        PowerLimitTarget::uniform(45)});
+
+    const auto start = std::chrono::steady_clock::now();
+    TickAt(backend, controller, start, 0);
+    backend.apply_failure = true;
+    backend.fast_limit_watts = 21;
+    TickAt(backend, controller, start, 1);
+    const bool drift_attempt_failed =
+        backend.apply_count == 2 &&
+        controller.state().last_attempt_succeeded == std::optional<bool>(false);
+
+    TickAt(backend, controller, start, 5);
+    const bool backoff_skips_retry = backend.apply_count == 2;
+    TickAt(backend, controller, start, 6);
+
+    return Expect(drift_attempt_failed, "drift repair failure should be reported") &&
+        Expect(backoff_skips_retry, "drift repair should honor the five-second backoff") &&
+        Expect(backend.apply_count == 3, "drift repair should retry after five seconds");
+}
+
+bool LineSwitchStillAppliesTheNewTarget() {
+    FakePolicyBackend backend;
+    backend.capability = SupportedCapability();
+    backend.stapm_limit_watts = 12;
+    backend.fast_limit_watts = 12;
+    backend.slow_limit_watts = 12;
+    PowerPolicyController controller;
+    controller.SetSettings(PowerPolicySettings{
+        true,
+        PowerLimitTarget::uniform(12),
+        PowerLimitTarget::uniform(45)});
+
+    const auto start = std::chrono::steady_clock::now();
+    TickAt(backend, controller, start, 0);
+    backend.power_line = PowerLineState::Ac;
+    TickAt(backend, controller, start, 1);
+
+    return Expect(backend.apply_count == 2, "a power-line switch should always apply") &&
+        Expect(
+            backend.last_target ==
+                std::optional<PowerLimitTarget>(PowerLimitTarget::uniform(45)),
+            "a power-line switch should apply the new line target immediately");
+}
+
 }  // namespace
 
 int main() {
@@ -237,7 +449,15 @@ int main() {
         RetriesFailedPolicyAfterBackoff() &&
         DisabledPolicyDoesNotTouchHardware() &&
         UnknownPowerLineIsRejected() &&
-        BatteryOnlyPolicySkipsAcAndAppliesOnBattery();
+        BatteryOnlyPolicySkipsAcAndAppliesOnBattery() &&
+        HighFastDriftIsReapplied() &&
+        HighSlowDriftIsReapplied() &&
+        MatchingLimitsDoNotReapply() &&
+        LowerFastAndSlowClampsDoNotReapply() &&
+        StapmOnlyDriftDoesNotReapply() &&
+        MissingAndNonFiniteLimitsDoNotReapply() &&
+        DriftRetryUsesFailureBackoff() &&
+        LineSwitchStillAppliesTheNewTarget();
     if (!passed) {
         return 1;
     }

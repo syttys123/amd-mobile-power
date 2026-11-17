@@ -37,6 +37,9 @@ struct PowerPolicyState {
 struct PowerPolicyObservation {
     PlatformCapability platform;
     PowerLineState power_line = PowerLineState::Unknown;
+    std::optional<double> stapm_limit_watts;
+    std::optional<double> fast_limit_watts;
+    std::optional<double> slow_limit_watts;
 };
 
 class IPowerPolicyBackend {
@@ -64,7 +67,7 @@ public:
 
 private:
     bool ShouldAttempt(
-        PowerLineState power_line,
+        const PowerPolicyObservation& observation,
         const PowerLimitTarget& target,
         std::chrono::steady_clock::time_point now);
     void RecordAttempt(

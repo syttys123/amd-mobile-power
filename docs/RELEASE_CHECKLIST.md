@@ -1,6 +1,27 @@
 # Release Checklist
 
-## Current Candidate Override (2026-11-18)
+## Pending Candidate 1.0.41 (2026-11-18)
+
+Current source candidate: **1.0.41**, status **SOURCE_READY_PENDING_GATE**.
+It adds high-side Fast/Slow drift correction while ignoring lower firmware
+clamps, STAPM-only movement, and missing/non-finite samples. The stable
+deployment remains **1.0.40**; README remains on 1.0.40 until a 1.0.41 gate
+PASS is promoted.
+
+- [x] Rust GUI 69 tests, probe 7 tests, formatting, and Clippy pass.
+- [x] C++ 4 policy/cleanup/worker-safety tests and worker request bounds pass.
+- [x] Helper contract and Markdown/document links pass; `verify-docs.ps1`
+      checked 53 files and 40 relative links, and `git diff --check` is clean.
+- [ ] Four source files and related documentation are committed from a clean
+      tree; unrelated untracked demo assets stay out.
+- [ ] Clean `build-package.ps1 -Version 1.0.41` produces the exact candidate
+      ZIP and records its SHA256, source commit, and binary identities.
+- [ ] Formal native gate passes with reproducibility, shell integration,
+      no-change policy, and worker-hang checks.
+- [ ] Exact ZIP promotes with rollback and live probe read-back; current-stable
+      documentation is updated to real 1.0.41 evidence.
+
+## Deployed Candidate Override (2026-11-18)
 
 Current target: **1.0.40**, status **DEPLOYED_PENDING_HOSTED_CI_AND_PUBLICATION**.
 The exact gated ZIP comes from `ca64f37`, SHA256

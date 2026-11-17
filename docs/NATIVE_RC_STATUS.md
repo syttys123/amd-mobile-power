@@ -1,6 +1,6 @@
 # Native Release Candidate Status
 
-Status: `STABLE_LOCAL_DEPLOYED`
+Status: `STABLE_LOCAL_DEPLOYED_1.0.40_CANDIDATE_1.0.41_PENDING`
 
 This document tracks the native Rust GUI + C++ worker package and its
 stable-local deployment. `C:\RyzenAdj` currently holds `1.0.40`
@@ -105,7 +105,23 @@ fixture renders the complete shell with black surfaces, white text, yellow
 structure, and black text on yellow primary actions without changing Windows
 accessibility settings.
 
-## Current Candidate
+## Pending Candidate 1.0.41
+
+Candidate `1.0.41` is source-complete and awaiting its clean commit, package
+build, and formal hardware gate. It adds limits-aware drift repair to the C++
+worker policy controller:
+
+- After a successful apply, Fast or Slow above the configured ceiling plus the
+  read-back tolerance re-applies the same line target.
+- Lower Fast/Slow values are treated as firmware clamps and do not reapply.
+- STAPM-only movement, missing values, and non-finite samples do not trigger
+  writes; failed repairs retain the five-second backoff.
+- A power-line change still applies the new line target immediately.
+
+The stable deployment remains `1.0.40`; no 1.0.41 ZIP, deployment hash, or
+hardware PASS is claimed until the release gate records them.
+
+## Stable Candidate 1.0.40
 
 ```text
 artifacts/native-packages/amd-mobile-power-v1.0.40-win-x64-native-preview.zip
@@ -190,11 +206,11 @@ the 1.0.39 freeze:
   `power_policy`, `hardware_cleanup`, and `worker_safety` tests all PASS
   (driver-free).
 
-Residual risk: the packaged policy controller caches `last_applied_target` and
-does not re-read the actual limits on every tick, so an external firmware/EC
-reset can drift until the next power-line change or scheduled policy run. A
-limits-aware re-assert is the next source candidate and must not reuse the
-1.0.40 hashes.
+Residual risk in deployed 1.0.40: the packaged policy controller caches
+`last_applied_target` and does not re-read the actual limits on every tick, so
+an external firmware/EC reset can drift until the next power-line change or
+scheduled policy run. Source candidate 1.0.41 implements the limits-aware
+re-assert and must not reuse the 1.0.40 hashes.
 
 Historical candidate `1.0.7-native` remains recorded with package SHA256
 `a018e1af1a82a5be1dc1cee4fa54cf419d35a778cd056a16a5a35a34262635c4`
