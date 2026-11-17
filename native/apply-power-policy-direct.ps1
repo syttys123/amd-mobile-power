@@ -28,8 +28,14 @@ function Invoke-WorkerRequest([string]$Command, $Payload) {
         }
         $bytes = [Text.Encoding]::UTF8.GetBytes(
             ($request | ConvertTo-Json -Compress -Depth 10) + "`n")
-        $client.Write($bytes, 0, $bytes.Length)
-        $client.Flush()
+        $writeTask = $client.WriteAsync($bytes, 0, $bytes.Length)
+        if (-not $writeTask.Wait(8000)) {
+            throw "Worker write timed out for $Command."
+        }
+        $flushTask = $client.FlushAsync()
+        if (-not $flushTask.Wait(8000)) {
+            throw "Worker flush timed out for $Command."
+        }
         $reader = [IO.StreamReader]::new($client, [Text.Encoding]::UTF8, $false, 1024, $true)
         try {
             # NamedPipeClientStream rejects ReadTimeout, so bound the read with

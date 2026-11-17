@@ -138,7 +138,7 @@ static class FakeAmdGui
 
     static void SendSetPolicy(Dictionary<string, object> settings)
     {
-        using (NamedPipeClientStream client = new NamedPipeClientStream(".", _pipe, PipeDirection.InOut))
+        using (NamedPipeClientStream client = new NamedPipeClientStream(".", _pipe, PipeDirection.InOut, PipeOptions.Asynchronous))
         {
             client.Connect(5000);
             JavaScriptSerializer ser = new JavaScriptSerializer();
@@ -148,27 +148,29 @@ static class FakeAmdGui
                 { "payload", new Dictionary<string, object> { { "settings", settings } } }
             };
             byte[] bytes = Encoding.UTF8.GetBytes(ser.Serialize(req) + "\n");
-            client.Write(bytes, 0, bytes.Length);
-            client.Flush();
+            var write = client.WriteAsync(bytes, 0, bytes.Length);
+            if (!write.Wait(8000)) { throw new Exception("fake worker write timed out"); }
+            var flush = client.FlushAsync();
+            if (!flush.Wait(8000)) { throw new Exception("fake worker flush timed out"); }
             StreamReader reader = new StreamReader(client, Encoding.UTF8);
             System.Threading.Tasks.Task<string> read = reader.ReadLineAsync();
             if (!read.Wait(8000)) { throw new Exception("fake worker did not answer setPowerPolicy"); }
         }
     }
 
-    static void ServerLoop()
+    static async void ServerLoop()
     {
         JavaScriptSerializer ser = new JavaScriptSerializer();
         using (NamedPipeServerStream server = new NamedPipeServerStream(_pipe, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous))
         {
             while (true)
             {
-                server.WaitForConnection();
+                await server.WaitForConnectionAsync();
                 try
                 {
                     StreamReader reader = new StreamReader(server, Encoding.UTF8);
                     StreamWriter writer = new StreamWriter(server, Encoding.UTF8); writer.AutoFlush = true;
-                    string line = reader.ReadLine();
+                    string line = await reader.ReadLineAsync();
                     if (line != null)
                     {
                         Dictionary<string, object> req = ser.Deserialize<Dictionary<string, object>>(line);
@@ -210,7 +212,8 @@ static class FakeAmdGui
                             { "protocolVersion", 1 }, { "requestId", rid }, { "success", success },
                             { "payload", payload }, { "error", null }
                         };
-                        writer.WriteLine(ser.Serialize(resp));
+                        await writer.WriteLineAsync(ser.Serialize(resp));
+                        await writer.FlushAsync();
                     }
                 }
                 catch { }
@@ -240,7 +243,7 @@ static class FakeAmdProbe
         }
         try
         {
-            using (NamedPipeClientStream client = new NamedPipeClientStream(".", pipe, PipeDirection.InOut))
+            using (NamedPipeClientStream client = new NamedPipeClientStream(".", pipe, PipeDirection.InOut, PipeOptions.Asynchronous))
             {
                 client.Connect(4000);
                 JavaScriptSerializer ser = new JavaScriptSerializer();
@@ -249,9 +252,12 @@ static class FakeAmdProbe
                     { "protocolVersion", 1 }, { "requestId", rid }, { "command", cmd }, { "payload", null }
                 };
                 byte[] bytes = Encoding.UTF8.GetBytes(ser.Serialize(req) + "\n");
-                client.Write(bytes, 0, bytes.Length);
+                var write = client.WriteAsync(bytes, 0, bytes.Length);
+                if (!write.Wait(8000)) { Console.Error.WriteLine("write timeout"); return 1; }
                 StreamReader reader = new StreamReader(client, Encoding.UTF8);
-                Dictionary<string, object> resp = ser.Deserialize<Dictionary<string, object>>(reader.ReadLine());
+                var read = reader.ReadLineAsync();
+                if (!read.Wait(8000)) { Console.Error.WriteLine("read timeout"); return 1; }
+                Dictionary<string, object> resp = ser.Deserialize<Dictionary<string, object>>(read.Result);
                 if (!(bool)resp["success"]) { Console.Error.WriteLine("worker error"); return 1; }
                 Console.WriteLine(ser.Serialize(resp["payload"]));
                 return 0;
@@ -396,7 +402,8 @@ try {
     $argCommon = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $applyScript, '-BatteryWatts', '10', '-AcWatts', '45', '-PipeName', $pipeF, '-GuiPath', $bogusGuiF, '-StatePath', $stateF)
     $p1 = Start-Process -FilePath 'powershell.exe' -ArgumentList ($argCommon + @('-LogPath', (Join-Path $work 'f1.log'))) -WindowStyle Hidden -PassThru
     $p2 = Start-Process -FilePath 'powershell.exe' -ArgumentList ($argCommon + @('-LogPath', (Join-Path $work 'f2.log'))) -WindowStyle Hidden -PassThru
-    $p1.WaitForExit(); $p2.WaitForExit()
+    if (-not $p1.WaitForExit(90000)) { try { $p1.Kill() | Out-Null; $p1.WaitForExit(5000) | Out-Null } catch { } }
+    if (-not $p2.WaitForExit(90000)) { try { $p2.Kill() | Out-Null; $p2.WaitForExit(5000) | Out-Null } catch { } }
     $stateValid = $false; $stateEnabled = $false
     try {
         $stateFobj = Get-Content -LiteralPath $stateF -Raw | ConvertFrom-Json

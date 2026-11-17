@@ -27,7 +27,8 @@ function Invoke-WorkerPipeRequest {
             $client = New-Object System.IO.Pipes.NamedPipeClientStream(
                 ".",
                 $name,
-                [System.IO.Pipes.PipeDirection]::InOut)
+                [System.IO.Pipes.PipeDirection]::InOut,
+                [System.IO.Pipes.PipeOptions]::Asynchronous)
             $client.Connect(1000)
             break
         }
@@ -57,7 +58,10 @@ function Invoke-WorkerPipeRequest {
         $writer = New-Object System.IO.StreamWriter($client)
         $writer.AutoFlush = $true
         $reader = New-Object System.IO.StreamReader($client)
-        $writer.WriteLine($request)
+        $writeTask = $writer.WriteLineAsync($request)
+        if (-not $writeTask.Wait($ReadTimeoutMilliseconds)) {
+            throw "worker write timed out for $Command within $ReadTimeoutMilliseconds ms"
+        }
         # NamedPipeClientStream does not support ReadTimeout, so bound the read
         # with ReadLineAsync + Wait; a hung worker must not block the caller
         # indefinitely. Existing callers keep the generous 30s default.

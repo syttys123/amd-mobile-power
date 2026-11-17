@@ -57,12 +57,15 @@ not authoritative.
   hardware_cleanup/worker_safety suites PASS, worker request-bounds PASS
   (handles 54->54, threads 4->4, private bytes unchanged), consent dialog
   high-contrast and normal isolated captures PASS, `verify-docs.ps1` PASS
-  (53 Markdown / 41 links). Real worker read-only read-back remained
-  battery 25 W / AC 45 W, current AC applied 45 W; no hardware write, deployment,
-  or publication was performed.
-- Known incomplete: the isolated `test-policy-script-contract.ps1` harness can
-  still stall in the fake-GUI apply path and is not a passing gate yet; the
-  publication-readiness run for 1.0.39 correctly reports
+  (53 Markdown / 41 links). A current-value no-change policy gate through
+  `apply-power-policy-direct.ps1` PASSed against the deployed worker
+  (`battery=25 ac=45 guiSynced=True line=ac fastSlow=45/45`); the day/night
+  policy was unchanged. Evidence:
+  `evidence/hardware/remediation-apply-nochange-2026-11-17.json`.
+- Known incomplete: the isolated `test-policy-script-contract.ps1` fake-GUI
+  pipe harness still fails with a fake-worker write timeout and is not a
+  passing gate; the real current-value no-change gate above is the authoritative
+  script evidence. The publication-readiness run for 1.0.39 correctly reports
   `BLOCKED_BY_LOCAL_CHECKS` because formal release-gate/no-change/packaged-ui
   evidence is absent. Next task: repair the contract harness, rebuild a new
   candidate from clean source, run the full release gate and supervised

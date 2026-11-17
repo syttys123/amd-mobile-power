@@ -1,0 +1,23 @@
+{
+  "SchemaVersion": 1,
+  "Verification": "PASS",
+  "Method": "current-value no-change policy gate through apply-power-policy-direct.ps1",
+  "Version": "1.0.39-deployed-worker",
+  "Requested": { "batteryWatts": 25, "acWatts": 45 },
+  "InitialPolicy": { "batteryWatts": 25, "acWatts": 45, "enabled": true },
+  "FinalPolicy": { "batteryWatts": 25, "acWatts": 45, "enabled": true },
+  "ForcedWrite": true,
+  "GuiSynced": true,
+  "PowerLine": "ac",
+  "FastLimitWatts": 45,
+  "SlowLimitWatts": 45,
+  "StapmLimitWatts": 25.1536,
+  "StapmValueWatts": 21.7505,
+  "FirmwareClamp": false,
+  "RestoreAttempted": false,
+  "PolicyChanged": false,
+  "HardwareEnabled": true,
+  "Note": "Same-value write/read-back against the deployed 1.0.39 worker; day/night policy unchanged. Deployed worker predates last-target telemetry clamp, so targetWatts is null.",
+  "Log": "artifacts/verify/remediation-apply-nochange-2026-11-17.log",
+  "RecordedAt": "2026-11-17T19:59:01+08:00"
+}
