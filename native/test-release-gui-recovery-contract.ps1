@@ -62,6 +62,10 @@ Assert-True ($hardwarePauseIndex -ge 0 -and
     $stopStableIndex -gt $hardwarePauseIndex -and
     $verifyNativeIndex -gt $hardwarePauseIndex) `
     'the stable owner pause must precede verify-native'
+Assert-Contains $source '$nonPackagedGatePaths = @(' `
+    'gate-only script drift must be identified explicitly'
+Assert-Contains $source '"native/verify-native.ps1"' `
+    'the native verifier must remain outside packaged-binary drift'
 
 # Parse the real wrapper and isolate the top-level release-gate try statement.
 $tokens = $null

@@ -499,6 +499,7 @@ if ($package.SourceCommit -ne $headCommit) {
     }
     $nonPackagedGatePaths = @(
         "native/verify-release.ps1",
+        "native/verify-native.ps1",
         "native/test-release-gui-recovery-contract.ps1"
     )
     $driftPaths = @(
