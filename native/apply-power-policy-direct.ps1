@@ -43,6 +43,60 @@ function Invoke-WorkerRequest([string]$Command, $Payload) {
         return $response.payload
     } finally { $client.Dispose() }
 }
+function Invoke-WorkerRequestWithRetry([string]$Command, $Payload, [int]$Attempts = 6) {
+    $lastError = $null
+    for ($attempt = 1; $attempt -le $Attempts; $attempt++) {
+        try {
+            return Invoke-WorkerRequest $Command $Payload
+        }
+        catch {
+            $lastError = $_.Exception.Message
+            if ($attempt -eq $Attempts) { break }
+            Start-Sleep -Milliseconds (250 * $attempt)
+        }
+    }
+    throw "Worker $Command failed after $Attempts attempts: $lastError"
+}
+function Wait-PolicyTelemetry([int]$BatteryTarget, [int]$AcTarget) {
+    $deadline = (Get-Date).AddSeconds(12)
+    $last = $null
+    while ((Get-Date) -lt $deadline) {
+        $snapshot = Invoke-WorkerRequestWithRetry 'getSnapshot' $null
+        $telemetry = $snapshot.telemetry
+        $last = $telemetry
+        $expected = if ($telemetry.powerLine -eq 'ac') { $AcTarget } else { $BatteryTarget }
+        if ([Math]::Abs([double]$telemetry.fastLimitWatts - $expected) -le 1.0 -and
+            [Math]::Abs([double]$telemetry.slowLimitWatts - $expected) -le 1.0) {
+            return $telemetry
+        }
+        Start-Sleep -Milliseconds 300
+    }
+    $line = if ($last) { $last.powerLine } else { 'unknown' }
+    $fast = if ($last) { $last.fastLimitWatts } else { '--' }
+    $slow = if ($last) { $last.slowLimitWatts } else { '--' }
+    throw "Telemetry read-back mismatch on ${line}: Fast/Slow ${fast}/${slow} W."
+}
+function Wait-PolicyApplied([int]$BatteryTarget, [int]$AcTarget) {
+    $deadline = (Get-Date).AddSeconds(12)
+    $last = $null
+    while ((Get-Date) -lt $deadline) {
+        $state = Invoke-WorkerRequestWithRetry 'getPowerPolicy' $null
+        $last = $state
+        $line = $state.lastObservedPowerLine
+        $applied = $state.lastAppliedTarget
+        if ($state.lastAttemptSucceeded -eq $true -and $line -and $applied) {
+            $expected = if ($line -eq 'ac') { $AcTarget } else { $BatteryTarget }
+            if ($applied.stapmWatts -eq $expected -and
+                $applied.fastWatts -eq $expected -and
+                $applied.slowWatts -eq $expected) {
+                return
+            }
+        }
+        Start-Sleep -Milliseconds 300
+    }
+    $line = if ($last) { $last.lastObservedPowerLine } else { 'unknown' }
+    throw "Worker did not confirm applied policy on ${line} within 12 seconds."
+}
 function Sync-GuiPolicy {
     Add-Type -TypeDefinition @'
 using System;
@@ -106,19 +160,8 @@ $settings = [ordered]@{
     acTarget = $acTarget
 }
 try {
-    $state = Invoke-WorkerRequest 'getPowerPolicy' $null
-    $current = $state.settings
-    $alreadyApplied = $current -and $current.enabled -and
-        $current.batteryTarget.stapmWatts -eq $BatteryWatts -and
-        $current.batteryTarget.fastWatts -eq $BatteryWatts -and
-        $current.batteryTarget.slowWatts -eq $BatteryWatts -and
-        $current.acTarget.stapmWatts -eq $AcWatts -and
-        $current.acTarget.fastWatts -eq $AcWatts -and
-        $current.acTarget.slowWatts -eq $AcWatts
-    if (-not $alreadyApplied) {
-        $null = Invoke-WorkerRequest 'setPowerPolicy' @{ settings = $settings }
-    }
-    $verified = (Invoke-WorkerRequest 'getPowerPolicy' $null).settings
+    $null = Invoke-WorkerRequestWithRetry 'setPowerPolicy' @{ settings = $settings }
+    $verified = (Invoke-WorkerRequestWithRetry 'getPowerPolicy' $null).settings
     if (-not $verified.enabled -or
         $verified.batteryTarget.stapmWatts -ne $BatteryWatts -or
         $verified.batteryTarget.fastWatts -ne $BatteryWatts -or
@@ -128,6 +171,8 @@ try {
         $verified.acTarget.slowWatts -ne $AcWatts) {
         throw 'Worker policy read-back mismatch.'
     }
+    Wait-PolicyApplied -BatteryTarget $BatteryWatts -AcTarget $AcWatts
+    $telemetry = Wait-PolicyTelemetry -BatteryTarget $BatteryWatts -AcTarget $AcWatts
 
     $ui = Get-Content -LiteralPath $StatePath -Raw | ConvertFrom-Json
     $ui.powerPolicy = [pscustomobject]$settings
@@ -138,7 +183,10 @@ try {
         [Text.UTF8Encoding]::new($false))
     Move-Item -LiteralPath $temporary -Destination $StatePath -Force
     $guiSynced = Sync-GuiPolicy
-    Write-Log "PASS battery=$BatteryWatts ac=$AcWatts skippedWrite=$alreadyApplied guiSynced=$guiSynced"
+    $message = "PASS battery={0} ac={1} forcedWrite=True guiSynced={2} line={3} fastSlow={4}/{5}" -f `
+        $BatteryWatts, $AcWatts, $guiSynced,
+        $telemetry.powerLine, $telemetry.fastLimitWatts, $telemetry.slowLimitWatts
+    Write-Log $message
 } catch {
     Write-Log "FAIL battery=$BatteryWatts ac=$AcWatts $($_.Exception.Message)"
     throw

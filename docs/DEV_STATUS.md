@@ -21,6 +21,21 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-17 (07:00 policy failure and resilient direct-worker helper):
+
+- The `07:00` day task ran but exited 1: the worker pipe broke during the
+  `Write` call, so the saved policy stayed at 15/15 and the battery did not
+  switch to the intended 25 W at that moment.
+- `native/apply-power-policy-direct.ps1` now retries pipe transactions up to
+  six times, always sends the requested policy instead of trusting stale
+  settings, waits for `lastAppliedTarget`, and verifies the active line's
+  Fast/Slow telemetry before logging PASS.
+- Manually reran the day task at 12:42: exit 0, PASS, GUI sync true. On AC the
+  read-back was 45/45 W; the saved battery target is 25 W. The night task
+  remains 23:00 battery/AC 15/15.
+- Evidence updated:
+  `evidence/hardware/local-night-day-policy-2026-11-15.json`.
+
 2026-11-17 (1.0.39 frozen candidate, hardware gates and final review media):
 
 - Packaged clean source `a6d8eed` with the narrow-header fit. ZIP

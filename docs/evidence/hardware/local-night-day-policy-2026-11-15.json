@@ -3,14 +3,14 @@
   "Scope": "Local policy, app automations, and tested Windows Task Scheduler direct-worker fallback",
   "CurrentPolicy": {
     "enabled": true,
-    "batteryTargetWatts": 15,
-    "acTargetWatts": 15,
+    "batteryTargetWatts": 25,
+    "acTargetWatts": 45,
     "powerLine": "ac",
-    "lastAppliedTargetWatts": 15,
+    "lastAppliedTargetWatts": 45,
     "readBackLimitsWatts": {
-      "stapm": 22.919,
-      "fast": 15,
-      "slow": 15
+      "stapm": 43.146,
+      "fast": 45,
+      "slow": 45
     },
     "readBackCommand": "getPowerPolicy"
   },
@@ -34,8 +34,9 @@
     "NightTask": "AmdMobilePower DirectNightPolicy 2300",
     "Helper": "native/apply-power-policy-direct.ps1",
     "Runtime": "Windows PowerShell 5.1",
-    "DayRuntimeTest": "Exit 0, PASS, GUI sync true",
+    "DayRuntimeTest": "Exit 0, PASS, GUI sync true, Fast/Slow 45 W on AC",
+    "PipeResilience": "Helper retries transport failures, forces policy write, and waits for applied-target plus telemetry read-back",
     "AllowStartOnBattery": true
   },
-  "RecordedAt": "2026-11-17T02:34:05+08:00"
+  "RecordedAt": "2026-11-17T12:43:09+08:00"
 }
