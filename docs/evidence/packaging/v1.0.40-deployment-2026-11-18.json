@@ -1,0 +1,52 @@
+{
+  "SchemaVersion": 1,
+  "Verification": "PASS",
+  "Version": "1.0.40",
+  "Package": "D:\\amd-mobile-power\\artifacts\\native-packages\\amd-mobile-power-v1.0.40-win-x64-native-preview.zip",
+  "PackageSHA256": "957f8a56dbf31d9d914d1c6eb1dec75262af8bd38e26b438d565315dbac0da8e",
+  "SourceCommit": "ca64f37e757bb99ffaf3df2572f82841bd8b3ad6",
+  "Target": "C:\\RyzenAdj",
+  "Backup": "C:\\RyzenAdj.before-20261118-001504",
+  "BackupVersion": "1.0.39",
+  "DeployedHashes": {
+    "gui": "27b17ece3b9a313ac0affd911848d79c37a0301a5535c04182cfc58a76715cfc",
+    "worker": "6e9cc6a93ebf74c93f17a4ba1ee5275db2f9ae52db099091e4ad8e500d711e8e",
+    "probe": "00369735f7d3623592ad4806973a115161744e42c304ca3cbd52d322300ec353"
+  },
+  "Shortcut": [
+    {
+      "Path": "C:\\Users\\SYT\\Desktop\\功耗设置 5-60W.lnk",
+      "Before": "--simple-mode --max-target-watts 45",
+      "After": "--simple-mode --max-target-watts 45",
+      "Dropped": []
+    }
+  ],
+  "LaunchVerification": "PASS",
+  "Running": {
+    "Gui": "C:\\RyzenAdj\\amd-mobile-power-gui.exe",
+    "Worker": "C:\\RyzenAdj\\amdmobilepower_native_worker.exe",
+    "LaunchMode": "tray-hidden-simple-mode"
+  },
+  "PolicyAfterDeployment": {
+    "enabled": true,
+    "batteryTargetWatts": "10/10/10",
+    "acTargetWatts": "10/10/10",
+    "lastAttemptSucceeded": true,
+    "powerLine": "ac",
+    "stapmLimitWatts": 10,
+    "fastLimitWatts": 10,
+    "slowLimitWatts": 10,
+    "stapmValueWatts": 9.99791,
+    "fastValueWatts": 9.85928,
+    "slowValueWatts": 9.99716
+  },
+  "NightTask": {
+    "Name": "AmdMobilePower DirectNightPolicy 2300",
+    "Arguments": "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File \"D:\\amd-mobile-power\\native\\apply-power-policy-direct.ps1\" -BatteryWatts 10 -AcWatts 10 -LogPath \"C:\\Users\\SYT\\AppData\\Local\\AmdMobilePower\\maintenance\\direct-policy.log\" -AllowGuiAutoStart -RefreshGui",
+    "LastRunTime": "2026-11-18T00:39:11+08:00",
+    "LastTaskResult": 0,
+    "NextRunTime": "2026-11-18T23:00:00+08:00"
+  },
+  "Rollback": "Stop the promoted GUI/worker, move C:\\RyzenAdj aside and restore C:\\RyzenAdj.before-20261118-001504; then relaunch the desktop shortcut.",
+  "RecordedAt": "2026-11-18T00:45:25.7669610+08:00"
+}

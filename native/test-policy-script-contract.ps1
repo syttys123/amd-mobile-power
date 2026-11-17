@@ -50,6 +50,7 @@ static class FakeAmdGui
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetWindowTextW(IntPtr hWnd, StringBuilder text, int maxCount);
     [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id);
     [DllImport("user32.dll")] public static extern bool GetMessage(out MSG m, IntPtr hWnd, uint a, uint b);
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int command);
     [DllImport("user32.dll")] public static extern bool TranslateMessage(ref MSG m);
     [DllImport("user32.dll")] public static extern IntPtr DispatchMessage(ref MSG m);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr GetModuleHandleW(string name);
@@ -88,13 +89,16 @@ static class FakeAmdGui
         wc.hInstance = GetModuleHandleW(null);
         wc.lpszClassName = "FakeAmdGuiClass";
         RegisterClassW(ref wc);
-        _hwnd = CreateWindowExW(0, "FakeAmdGuiClass", "FakeAmdGui", 0x00CF0000, -2000, -2000, 320, 240, IntPtr.Zero, IntPtr.Zero, wc.hInstance, IntPtr.Zero);
-        uint child = 0x40000000; uint edit = 0x2000; uint ownerdraw = 0x000B;
-        CreateWindowExW(0, "EDIT", "12", child | edit, 0, 0, 60, 22, _hwnd, (IntPtr)312, wc.hInstance, IntPtr.Zero);
-        CreateWindowExW(0, "EDIT", "45", child | edit, 0, 30, 60, 22, _hwnd, (IntPtr)314, wc.hInstance, IntPtr.Zero);
-        CreateWindowExW(0, "BUTTON", "enabled", child | ownerdraw, 0, 60, 90, 22, _hwnd, (IntPtr)315, wc.hInstance, IntPtr.Zero);
-        CreateWindowExW(0, "BUTTON", "batteryonly", child | ownerdraw, 0, 90, 90, 22, _hwnd, (IntPtr)318, wc.hInstance, IntPtr.Zero);
-        CreateWindowExW(0, "BUTTON", "save", child | ownerdraw, 0, 120, 90, 22, _hwnd, (IntPtr)105, wc.hInstance, IntPtr.Zero);
+        _hwnd = CreateWindowExW(0, "FakeAmdGuiClass", "FakeAmdGui", 0x10CF0000, -2000, -2000, 320, 240, IntPtr.Zero, IntPtr.Zero, wc.hInstance, IntPtr.Zero);
+        uint child = 0x40000000; uint visible = 0x10000000; uint edit = 0x2000; uint ownerdraw = 0x000B;
+        IntPtr battery = CreateWindowExW(0, "EDIT", "12", child | visible | edit, 0, 0, 60, 22, _hwnd, (IntPtr)312, wc.hInstance, IntPtr.Zero);
+        IntPtr ac = CreateWindowExW(0, "EDIT", "45", child | visible | edit, 0, 30, 60, 22, _hwnd, (IntPtr)314, wc.hInstance, IntPtr.Zero);
+        CreateWindowExW(0, "BUTTON", "enabled", child | visible | ownerdraw, 0, 60, 90, 22, _hwnd, (IntPtr)315, wc.hInstance, IntPtr.Zero);
+        CreateWindowExW(0, "BUTTON", "batteryonly", child | visible | ownerdraw, 0, 90, 90, 22, _hwnd, (IntPtr)318, wc.hInstance, IntPtr.Zero);
+        CreateWindowExW(0, "BUTTON", "save", child | visible | ownerdraw, 0, 120, 90, 22, _hwnd, (IntPtr)105, wc.hInstance, IntPtr.Zero);
+        ShowWindow(_hwnd, 5);
+        ShowWindow(battery, 5);
+        ShowWindow(ac, 5);
         if (ready != null) { try { File.WriteAllText(ready, "ready"); } catch { } }
         MSG m;
         while (GetMessage(out m, IntPtr.Zero, 0, 0)) { TranslateMessage(ref m); DispatchMessage(ref m); }
@@ -158,19 +162,21 @@ static class FakeAmdGui
         }
     }
 
-    static async void ServerLoop()
+    static void ServerLoop()
     {
         JavaScriptSerializer ser = new JavaScriptSerializer();
-        using (NamedPipeServerStream server = new NamedPipeServerStream(_pipe, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous))
+        using (NamedPipeServerStream server = new NamedPipeServerStream(_pipe, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.None))
         {
             while (true)
             {
-                await server.WaitForConnectionAsync();
+                server.WaitForConnection();
                 try
                 {
-                    StreamReader reader = new StreamReader(server, Encoding.UTF8);
-                    StreamWriter writer = new StreamWriter(server, Encoding.UTF8); writer.AutoFlush = true;
-                    string line = await reader.ReadLineAsync();
+                    byte[] requestBuffer = new byte[8192];
+                    int requestLength = server.Read(requestBuffer, 0, requestBuffer.Length);
+                    string line = requestLength <= 0
+                        ? null
+                        : Encoding.UTF8.GetString(requestBuffer, 0, requestLength).TrimEnd('\r', '\n');
                     if (line != null)
                     {
                         Dictionary<string, object> req = ser.Deserialize<Dictionary<string, object>>(line);
@@ -212,8 +218,9 @@ static class FakeAmdGui
                             { "protocolVersion", 1 }, { "requestId", rid }, { "success", success },
                             { "payload", payload }, { "error", null }
                         };
-                        await writer.WriteLineAsync(ser.Serialize(resp));
-                        await writer.FlushAsync();
+                        byte[] responseBytes = Encoding.UTF8.GetBytes(ser.Serialize(resp) + "\n");
+                        server.Write(responseBytes, 0, responseBytes.Length);
+                        server.Flush();
                     }
                 }
                 catch { }
@@ -311,8 +318,18 @@ function Invoke-ScriptChild([string]$Script, [hashtable]$Params) {
 try {
     $guiExe = Join-Path $work 'fake-gui.exe'
     $probeExe = Join-Path $work 'fake-probe.exe'
-    Add-Type -TypeDefinition $fakeGuiSource -OutputAssembly $guiExe -OutputType ConsoleApplication -ReferencedAssemblies 'System.Web.Extensions'
-    Add-Type -TypeDefinition $fakeProbeSource -OutputAssembly $probeExe -OutputType ConsoleApplication -ReferencedAssemblies 'System.Web.Extensions'
+    $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+    if (-not (Test-Path -LiteralPath $csc -PathType Leaf)) {
+        throw "csc.exe is missing: $csc"
+    }
+    $guiSourcePath = Join-Path $work 'fake-gui.cs'
+    $probeSourcePath = Join-Path $work 'fake-probe.cs'
+    [IO.File]::WriteAllText($guiSourcePath, $fakeGuiSource, [Text.UTF8Encoding]::new($false))
+    [IO.File]::WriteAllText($probeSourcePath, $fakeProbeSource, [Text.UTF8Encoding]::new($false))
+    & $csc /nologo /target:exe /r:System.Web.Extensions.dll "/out:$guiExe" $guiSourcePath
+    if ($LASTEXITCODE -ne 0) { throw "fake GUI compilation failed: $LASTEXITCODE" }
+    & $csc /nologo /target:exe /r:System.Web.Extensions.dll "/out:$probeExe" $probeSourcePath
+    if ($LASTEXITCODE -ne 0) { throw "fake probe compilation failed: $LASTEXITCODE" }
     Add-Result 'compile-fakes' $true 'fake GUI + probe compiled'
 
     $applyScript = Join-Path $native 'apply-power-policy-direct.ps1'
@@ -329,10 +346,13 @@ try {
     $polA = (Invoke-FakeCommand $pipeA 'getPowerPolicy').settings
     $guiA = Invoke-FakeCommand $pipeA 'getGuiState'
     $stateObjA = Get-Content -LiteralPath $stateA -Raw | ConvertFrom-Json
+    $logAText = Get-Content -LiteralPath $logA -Raw
     $passA = ($runA.ExitCode -eq 0) -and $polA.enabled -and $polA.acEnabled -and
         ($polA.batteryTarget.stapmWatts -eq 10) -and ($polA.acTarget.stapmWatts -eq 45) -and
-        $guiA.enabled -and (-not $guiA.batteryOnly) -and ($stateObjA.powerPolicy.enabled -eq $true)
-    Add-Result 'apply-stale-gui-converges' $passA ("exit={0} enabled={1} acEnabled={2} saveCount={3} stateEnabled={4}" -f $runA.ExitCode, $polA.enabled, $polA.acEnabled, $guiA.saveCount, $stateObjA.powerPolicy.enabled)
+        $guiA.enabled -and (-not $guiA.batteryOnly) -and ($guiA.saveCount -ge 1) -and
+        ($logAText -match 'enabled=true gui=in-place') -and
+        ($stateObjA.powerPolicy.enabled -eq $true)
+    Add-Result 'apply-visible-gui-in-place' $passA ("exit={0} enabled={1} acEnabled={2} saveCount={3} guiInPlace={4} stateEnabled={5}" -f $runA.ExitCode, $polA.enabled, $polA.acEnabled, $guiA.saveCount, ($logAText -match 'enabled=true gui=in-place'), $stateObjA.powerPolicy.enabled)
     Stop-FakeGui $guiProc; $guiProc = $null
 
     # Test B: apply with an ALREADY-CORRECT GUI must not toggle unnecessarily.
@@ -345,9 +365,11 @@ try {
     $runB = Invoke-ScriptChild $applyScript @{ BatteryWatts = 8; AcWatts = 8; PipeName = $pipeB; GuiPath = $guiExe; StatePath = $stateB; LogPath = $logB }
     $polB = (Invoke-FakeCommand $pipeB 'getPowerPolicy').settings
     $guiB = Invoke-FakeCommand $pipeB 'getGuiState'
+    $logBText = Get-Content -LiteralPath $logB -Raw
     $passB = ($runB.ExitCode -eq 0) -and $polB.enabled -and $polB.acEnabled -and
-        ($polB.batteryTarget.stapmWatts -eq 8) -and ($polB.acTarget.stapmWatts -eq 8) -and ($guiB.saveCount -eq 1)
-    Add-Result 'apply-correct-gui-single-save' $passB ("exit={0} saveCount={1} battery={2} ac={3}" -f $runB.ExitCode, $guiB.saveCount, $polB.batteryTarget.stapmWatts, $polB.acTarget.stapmWatts)
+        ($polB.batteryTarget.stapmWatts -eq 8) -and ($polB.acTarget.stapmWatts -eq 8) -and
+        ($guiB.saveCount -eq 1) -and ($logBText -match 'enabled=true gui=in-place')
+    Add-Result 'apply-visible-gui-single-save' $passB ("exit={0} saveCount={1} battery={2} ac={3} guiInPlace={4}" -f $runB.ExitCode, $guiB.saveCount, $polB.batteryTarget.stapmWatts, $polB.acTarget.stapmWatts, ($logBText -match 'enabled=true gui=in-place'))
     Stop-FakeGui $guiProc; $guiProc = $null
 
     # Test C: apply with NO GUI still sets + verifies the worker policy.
@@ -361,8 +383,8 @@ try {
     $runC = Invoke-ScriptChild $applyScript @{ BatteryWatts = 12; AcWatts = 45; PipeName = $pipeC; GuiPath = $bogusGui; StatePath = $stateC; LogPath = $logC }
     $polC = (Invoke-FakeCommand $pipeC 'getPowerPolicy').settings
     $logCText = Get-Content -LiteralPath $logC -Raw
-    $passC = ($runC.ExitCode -eq 0) -and $polC.enabled -and ($polC.batteryTarget.stapmWatts -eq 12) -and ($logCText -match 'guiSynced=False')
-    Add-Result 'apply-no-gui-verified' $passC ("exit={0} enabled={1} guiSyncedFalse={2}" -f $runC.ExitCode, $polC.enabled, ($logCText -match 'guiSynced=False'))
+    $passC = ($runC.ExitCode -eq 0) -and $polC.enabled -and ($polC.batteryTarget.stapmWatts -eq 12) -and ($logCText -match 'enabled=true gui=deferred')
+    Add-Result 'apply-no-gui-verified' $passC ("exit={0} enabled={1} guiDeferred={2}" -f $runC.ExitCode, $polC.enabled, ($logCText -match 'enabled=true gui=deferred'))
     Stop-FakeGui $guiProc; $guiProc = $null
 
     # Test D: parameter range validation rejects out-of-range watts at binding.

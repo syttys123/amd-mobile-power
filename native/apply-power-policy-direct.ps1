@@ -4,7 +4,21 @@ param(
     [string]$StatePath = (Join-Path $env:LOCALAPPDATA 'AmdMobilePower\rust-ui-state.json'),
     [string]$PipeName = '\\.\pipe\AmdMobilePower.RustGui.Worker.v1',
     [string]$GuiPath = 'C:\RyzenAdj\amd-mobile-power-gui.exe',
-    [string]$LogPath
+    [string]$LogPath,
+    # The GUI only exposes editable policy controls in advanced mode. In
+    # simple mode the hidden controls still have window handles, so clicking
+    # POLICY_SAVE there saves the GUI's stale in-memory toggles and can turn
+    # the automatic policy off. Callers may also skip GUI synchronization
+    # explicitly after a manual recovery write.
+    [switch]$SkipGuiSync,
+    # Release gates and supervised hardware tests own the hardware mutex. They
+    # must never have this helper spawn a second stable GUI/worker, so automatic
+    # start is opt-in and only the 23:00/07:00 policy tasks pass it.
+    [switch]$AllowGuiAutoStart,
+    # When the GUI has no visible policy controls, reload the saved policy by
+    # gracefully restarting the tray GUI instead of clicking a hidden
+    # POLICY_SAVE control whose in-memory toggles may be stale.
+    [switch]$RefreshGui
 )
 $ErrorActionPreference = 'Stop'
 if (-not $LogPath) { $LogPath = Join-Path $PSScriptRoot 'apply-power-policy-direct.log' }
@@ -178,6 +192,7 @@ public static class AmdDirectPolicyUi {
     [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc callback, IntPtr parameter);
     [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint processId);
     [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hwnd, int id);
+    [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hwnd);
     // Cross-process GetWindowTextW returns the cached creation text of an edit,
     // not its live content; WM_GETTEXT via SendMessage reads the real value.
     [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "SendMessageW")]
@@ -210,6 +225,14 @@ public static class AmdDirectPolicyUi {
         $acEdit = [AmdDirectPolicyUi]::GetDlgItem($window, 314)
         $enabledToggle = [AmdDirectPolicyUi]::GetDlgItem($window, 315)
         $batteryOnlyToggle = [AmdDirectPolicyUi]::GetDlgItem($window, 318)
+        if (-not [AmdDirectPolicyUi]::IsWindowVisible($window) -or
+            -not [AmdDirectPolicyUi]::IsWindowVisible($batteryEdit) -or
+            -not [AmdDirectPolicyUi]::IsWindowVisible($acEdit)) {
+            # Simple mode: the policy controls exist but are hidden. The GUI
+            # cannot display or edit them, so do not synthesize a save that
+            # would persist stale toggle state.
+            return $false
+        }
 
         # POLICY_ENABLED (315) and POLICY_BATTERY_ONLY (318) are BS_OWNERDRAW
         # toggles painted from GUI memory. BM_GETCHECK always returns 0 for
@@ -278,6 +301,132 @@ public static class AmdDirectPolicyUi {
     } finally { $process.Dispose() }
 }
 
+# The 23:00/07:00 tasks run even when a release gate or a manual stop left the
+# tray GUI down. Bring the GUI (and therefore its worker) back instead of
+# failing the policy window, then let the caller verify the actual limits.
+function Ensure-GuiWorker {
+    param(
+        [int]$Attempts = 12,
+        [bool]$AllowStart = $false
+    )
+    for ($attempt = 1; $attempt -le $Attempts; $attempt++) {
+        try {
+            $null = Invoke-WorkerRequestWithRetry 'getPowerPolicy' $null 1
+            return
+        }
+        catch {
+        }
+        if (-not $AllowStart) {
+            throw 'Worker pipe is unavailable and GUI auto-start is disabled for this call.'
+        }
+        $running = Get-Process |
+            Where-Object { $_.Path -eq $GuiPath } |
+            Select-Object -First 1
+        if (-not $running -and (Test-Path -LiteralPath $GuiPath -PathType Leaf)) {
+            $arguments = @(
+                '--tray',
+                '--simple-mode',
+                '--max-target-watts',
+                '45')
+            Start-Process `
+                -FilePath $GuiPath `
+                -WorkingDirectory (Split-Path -Parent $GuiPath) `
+                -ArgumentList $arguments `
+                -WindowStyle Hidden
+            Write-Log 'STARTED GUI because the worker pipe was unavailable'
+        }
+        Start-Sleep -Seconds 5
+    }
+    throw "Worker pipe $PipeName was unavailable for $($Attempts * 5) seconds."
+}
+
+function Stop-GuiForReload {
+    $processes = @(
+        Get-Process |
+            Where-Object { $_.Path -eq $GuiPath })
+    if ($processes.Count -eq 0) {
+        return $false
+    }
+    Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class AmdDirectPolicyStop {
+    public delegate bool EnumProc(IntPtr hwnd, IntPtr parameter);
+    [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc callback, IntPtr parameter);
+    [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint processId);
+    [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr hwnd, uint message, UIntPtr wParam, IntPtr lParam);
+}
+'@
+    foreach ($process in $processes) {
+        $targetPid = $process.Id
+        $script:stopWindow = [IntPtr]::Zero
+        $callback = [AmdDirectPolicyStop+EnumProc] {
+            param($hwnd, $parameter)
+            $owner = 0
+            [AmdDirectPolicyStop]::GetWindowThreadProcessId($hwnd, [ref]$owner) | Out-Null
+            if ($owner -eq $targetPid) {
+                $script:stopWindow = $hwnd
+            }
+            return $true
+        }
+        [AmdDirectPolicyStop]::EnumWindows($callback, [IntPtr]::Zero) | Out-Null
+        if ($script:stopWindow -ne [IntPtr]::Zero) {
+            # WM_COMMAND 2 is the tray Exit command. It stops the GUI and its
+            # owned worker without leaving a second hardware owner behind.
+            [AmdDirectPolicyStop]::PostMessage(
+                $script:stopWindow,
+                0x0111,
+                [UIntPtr]::new([uint64]2),
+                [IntPtr]::Zero) | Out-Null
+        }
+    }
+    $deadline = (Get-Date).AddSeconds(12)
+    while ((Get-Date) -lt $deadline) {
+        $remaining = @(
+            Get-Process |
+                Where-Object { $_.Path -eq $GuiPath })
+        if ($remaining.Count -eq 0) {
+            return $true
+        }
+        Start-Sleep -Milliseconds 250
+    }
+    foreach ($process in $remaining) {
+        Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+    }
+    Start-Sleep -Seconds 2
+    return $true
+}
+
+function Restart-GuiForPolicy([int]$BatteryTarget, [int]$AcTarget, $Settings) {
+    $null = Stop-GuiForReload
+    $arguments = @(
+        '--tray',
+        '--simple-mode',
+        '--max-target-watts',
+        '45')
+    Start-Process `
+        -FilePath $GuiPath `
+        -WorkingDirectory (Split-Path -Parent $GuiPath) `
+        -ArgumentList $arguments `
+        -WindowStyle Hidden
+    Write-Log 'RESTARTED GUI to reload the saved policy'
+    $deadline = (Get-Date).AddSeconds(30)
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $state = Invoke-WorkerRequestWithRetry 'getPowerPolicy' $null 1
+            if ((Test-PolicySettingsMatch $state.settings $BatteryTarget $AcTarget) -and
+                $state.lastAttemptSucceeded -eq $true) {
+                $null = Wait-PolicyTelemetry -BatteryTarget $BatteryTarget -AcTarget $AcTarget
+                return $true
+            }
+        }
+        catch {
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    throw 'GUI restart did not reload the saved policy within 30 seconds.'
+}
+
 $target = [ordered]@{
     stapmWatts = $BatteryWatts
     fastWatts = $BatteryWatts
@@ -296,6 +445,7 @@ $settings = [ordered]@{
     acTarget = $acTarget
 }
 try {
+    Ensure-GuiWorker -AllowStart ([bool]$AllowGuiAutoStart)
     $null = Invoke-WorkerRequestWithRetry 'setPowerPolicy' @{ settings = $settings }
     $verified = (Invoke-WorkerRequestWithRetry 'getPowerPolicy' $null).settings
     if (-not (Test-PolicySettingsMatch $verified $BatteryWatts $AcWatts)) {
@@ -305,14 +455,24 @@ try {
     $telemetry = Wait-PolicyTelemetry -BatteryTarget $BatteryWatts -AcTarget $AcWatts
 
     Update-UiStatePolicy -Path $StatePath -Settings $settings
-    $guiSynced = Sync-GuiPolicy -BatteryTarget $BatteryWatts -AcTarget $AcWatts -Settings $settings
-    # Independent final read-back: never trust guiSynced alone.
+    $guiMode = 'deferred'
+    if ($SkipGuiSync) {
+        $guiMode = 'skipped'
+    }
+    elseif (Sync-GuiPolicy -BatteryTarget $BatteryWatts -AcTarget $AcWatts -Settings $settings) {
+        $guiMode = 'in-place'
+    }
+    elseif ($RefreshGui) {
+        $null = Restart-GuiForPolicy -BatteryTarget $BatteryWatts -AcTarget $AcWatts -Settings $settings
+        $guiMode = 'restarted'
+    }
+    # Independent final read-back: never trust the GUI path alone.
     $final = Invoke-WorkerRequestWithRetry 'getPowerPolicy' $null
     if (-not (Test-PolicySettingsMatch $final.settings $BatteryWatts $AcWatts)) {
-        throw 'Final worker policy read-back mismatch after GUI sync.'
+        throw "Final worker policy read-back mismatch after gui=$guiMode."
     }
-    $message = "PASS battery={0} ac={1} forcedWrite=True guiSynced={2} line={3} fastSlow={4}/{5}" -f `
-        $BatteryWatts, $AcWatts, $guiSynced,
+    $message = "PASS battery={0} ac={1} forcedWrite=True enabled=true gui={2} line={3} fastSlow={4}/{5}" -f `
+        $BatteryWatts, $AcWatts, $guiMode,
         $telemetry.powerLine, $telemetry.fastLimitWatts, $telemetry.slowLimitWatts
     Write-Log $message
 } catch {

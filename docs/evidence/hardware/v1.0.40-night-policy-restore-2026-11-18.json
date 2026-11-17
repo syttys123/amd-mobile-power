@@ -1,0 +1,50 @@
+{
+  "SchemaVersion": 1,
+  "Verification": "PASS",
+  "Date": "2026-11-18",
+  "Policy": {
+    "DayBatteryWatts": 25,
+    "DayAcWatts": 45,
+    "NightBatteryWatts": 10,
+    "NightAcWatts": 10,
+    "NightWindow": "23:00-07:00"
+  },
+  "Incident": {
+    "Summary": "The 23:00 night task failed while the release gate owned the hardware worker; the GUI restarted later, applied the saved day policy, and the actual limits stayed at 10 W from the gate test. A recovery helper call then clicked a hidden POLICY_SAVE control and left enabled=false.",
+    "NightTaskExitCode": 1,
+    "NightTaskError": "worker pipe connect timeout",
+    "ObservedActualLimits": "10/10/10 on AC while policy reported 25/45"
+  },
+  "RootCauses": [
+    "Night task ran while the release gate had stopped the stable GUI/worker, so the helper could not reach the pipe.",
+    "The recovery helper clicked POLICY_SAVE even when the policy controls were hidden, saving stale in-memory toggles and disabling the automatic policy.",
+    "When the GUI restarted, it re-applied the saved day policy; the worker policy controller caches last_applied_target and does not re-verify actual limits after an external/firmware reset."
+  ],
+  "Fixes": [
+    "Ensure-GuiWorker auto-start is now opt-in via -AllowGuiAutoStart; release gates and manual runs cannot spawn a second hardware owner.",
+    "Hidden policy controls are detected with IsWindowVisible before any save; simple/tray mode never posts POLICY_SAVE.",
+    "Hidden-control paths can reload the saved policy by gracefully restarting the tray GUI via -RefreshGui.",
+    "The PASS log now records gui=in-place|restarted|deferred|skipped instead of a boolean guiSynced state."
+  ],
+  "Regressions": {
+    "HiddenGuiContract": "PASS (docs/evidence/hardware/remediation-policy-script-contract-2026-11-18.json, 6/6)",
+    "AutoStartRefusalWithoutSwitch": "PASS (worker pipe unavailable and GUI auto-start is disabled for this call)",
+    "AutoStartWithSwitch": "PASS (STARTED GUI, then RESTARTED GUI to reload the saved policy)",
+    "TaskExecution": "PASS (AmdMobilePower DirectNightPolicy 2300 exit 0)"
+  },
+  "FinalReadBack": {
+    "enabled": true,
+    "lastAttemptSucceeded": true,
+    "batteryTargetWatts": "10/10/10",
+    "acTargetWatts": "10/10/10",
+    "powerLine": "ac",
+    "stapmLimitWatts": 10,
+    "fastLimitWatts": 10,
+    "slowLimitWatts": 10,
+    "stapmValueWatts": 9.99978,
+    "fastValueWatts": 9.99592,
+    "slowValueWatts": 9.99728
+  },
+  "ResidualRisk": "The packaged 1.0.40 worker still re-applies only after a power-line change or task run; a firmware/EC reset can drift limits until the next event. A limits-aware re-assert is the next source candidate.",
+  "RecordedAt": "2026-11-18T00:46:25.9351532+08:00"
+}

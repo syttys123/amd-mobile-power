@@ -1,51 +1,50 @@
 # Release Checklist
 
-## Current Candidate Override (2026-11-17)
+## Current Candidate Override (2026-11-18)
 
-Current target: **1.0.39**, status **DEPLOYED_PENDING_HUMAN_MEDIA_AND_PUBLICATION**.
-1.0.38 was superseded before freezing by a narrow-header text-fit fix. 1.0.39
-falls back from `processor · family` to processor-only before hiding the header
-line, so the 752x489 simple fixture no longer shows `...`.
-The checklist below is historical and mixes 1.0.31-1.0.33 evidence. Its
-checked boxes must not be used as current release approval.
+Current target: **1.0.40**, status **DEPLOYED_PENDING_HOSTED_CI_AND_PUBLICATION**.
+The exact gated ZIP comes from `ca64f37`, SHA256
+`957f8a56dbf31d9d914d1c6eb1dec75262af8bd38e26b438d565315dbac0da8e`
+(793,042 bytes). Binary identities: GUI `27b17ece`, worker `6e9cc6a9`,
+probe `00369735`. It is deployed to `C:\RyzenAdj`; the previous 1.0.39 tree is
+preserved at `C:\RyzenAdj.before-20261118-001504`.
 
-The frozen clean 1.0.39 ZIP comes from `a6d8eed`, SHA256
-`06efdcff2584b9fd50856a34084957241c7966f7a21189c2db7e316db5193d53`.
-Exact binary identities: `evidence/release/candidate-1.0.39-frozen-2026-11-17.json`.
-It includes fixture IPC isolation, first-line firmware warnings and corrected
-consent wording. The exact ZIP is deployed to `C:\RyzenAdj`; the previous
-1.0.33 tree remains at `C:\RyzenAdj.before-20261117-035509`. Current readiness
-is:
+Current package gates:
 
-Current review media (v2, `DRAFT_FOR_HUMAN_REVIEW`, not approved for upload):
-`artifacts/media/promo-review-20261117-v2/amd-mobile-power-review-v2-silent.mp4`
-(SHA256 `99d618749ac31b965681b3d964cc37b0b9ff4255ffc67838d0a713ac5760d82c`,
-3,382,806 bytes, 1920x1080, 30 fps, 1185 frames, 39.5 s). Evidence:
-`evidence/media/native-promo-review-v2-2026-11-17.json`. This v2 cut supersedes
-the 42.5-second v1 render that mixed firmware-clamp data into the main preset
-demo. The main preset demo uses the hardware-free `preset-success` fixture; GUI
-captures use an isolated development fixture build, not the deployed package.
-See `PROMO_VIDEO.md`.
-
-- [x] Native source build: GUI 61 tests, probe 7 tests, C++ policy tests.
-- [x] No-driver destructor cleanup and transport resource regression pass.
-- [x] Current ZIP read-only runtime, diagnostics and install flow pass.
-- [x] Current GUI/probe match independent mapped builds; frozen ZIP repack matches exactly.
-- [x] New clean candidate built after worker cleanup changes.
-- [x] Final candidate formatting, Clippy and local release refresh pass.
-- [x] Hosted CI refreshed: run `43942623854` succeeded for docs head `5582af2`.
-- [x] Final source-to-package reproducibility and sanitization refreshed.
-- [x] Final current-value 15 W write/read-back and worker-hang recovery gates pass.
-- [ ] Final package battery/AC transition and driver lifecycle evidence recorded.
-- [x] Final packaged DPI/work-area/resource and regional visual review pass.
-- [ ] Real OS DPI transitions, second AMD device and clean Windows baseline recorded.
-- [x] Exact gated ZIP promoted with rollback and deployed hashes/read-back verified.
-- [x] Media refreshed to final UI; 39.5-second silent v2 review rendered and
-      inspected (supersedes the 42.5-second v1 cut).
+- [x] Formal release gate PASS:
+      `evidence/packaging/v1.0.40-release-gate-2026-11-17.json`.
+- [x] Rust tests: `69` (`37` library + `32` GUI); probe `7/7`; Clippy
+      `-D warnings`; C++ policy/cleanup/worker-safety suites; worker
+      request-bounds handles/threads unchanged.
+- [x] Clean package runtime, compatibility collector/markdown, headless probe,
+      install flow, shell integration, and byte reproducibility.
+- [x] Current-value no-change policy gate at 10 W:
+      `evidence/hardware/v1.0.40-power-policy-no-change-2026-11-17.json`.
+- [x] Worker-hang replacement PASS: `34.6 s`, 16 responsive samples, 0
+      failures, policy restored:
+      `evidence/hardware/v1.0.40-worker-hang-2026-11-17.json`.
+- [x] Logical DPI 100/125/150 fixture PASS and 1366x768/200% work-area /
+      maximize-scroll fixture PASS. These are test-only logical overrides, not
+      real OS DPI transitions.
+- [x] Exact ZIP promoted with rollback; deployed hashes and live read-back
+      verified:
+      `evidence/packaging/v1.0.40-deployment-2026-11-18.json`.
+- [x] Night policy changed to 10 W on both lines; night task action is
+      battery 10 / AC 10 with `-AllowGuiAutoStart -RefreshGui`, last result 0;
+      day task remains 07:00 battery 25 / AC 45:
+      `evidence/hardware/v1.0.40-night-policy-restore-2026-11-18.json`.
+- [x] Contract harness PASS `6/6`:
+      `evidence/hardware/remediation-policy-script-contract-2026-11-18.json`.
+- [ ] Hosted Windows CI for `ca64f37` has not been run for 1.0.40; do not reuse
+      the old 1.0.39 runs.
+- [ ] Real OS 100%/150% DPI transitions, second AMD device, and clean-Windows
+      WinRing0 baseline remain pending.
 - [ ] Owner approves final GitHub Release and Bilibili publication.
 
-Older PASS records establish historical behavior only. Missing current gates
-remain pending even when an earlier binary passed the same test.
+Current review media is historical 1.0.39 fixture material, not a live 1.0.40
+package capture: `artifacts/media/promo-review-20261117-v2/amd-mobile-power-review-v2-silent.mp4`
+(39.5 s, `DRAFT_FOR_HUMAN_REVIEW`). Its preset demo uses the hardware-free
+`preset-success` fixture. See `PROMO_VIDEO.md`.
 
 ## Historical Checklist
 

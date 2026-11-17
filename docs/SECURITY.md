@@ -13,15 +13,13 @@ is not legal advice.
 
 ## Deployment Note
 
-The deployed `C:\RyzenAdj` package is `1.0.39` (frozen source `a6d8eed`). It
-predates the post-freeze safety remediation. The explicit pipe DACL, the
-legacy-mutex and known-process conflict detection, the five-consecutive-failure
-terminal-fault latch, the kill-on-close Job Object, the expanded NaN/Inf
-telemetry filtering, the persistent last-target clamp, and the UI-state mutex
-are implemented and locally tested in the current source tree but are not in the
-deployed package; they must be rebuilt and release-gated as a new candidate
-before deployment. The own-mutex single-owner guard, the first-pipe-instance
-flag, and worker supervision/watchdog were already present in 1.0.39.
+The deployed `C:\RyzenAdj` package is `1.0.40` (source `ca64f37`). It includes
+the explicit pipe DACL, legacy-mutex and known-process conflict detection, the
+five-consecutive-`refresh_failed` terminal-fault latch, the kill-on-close Job
+Object, expanded NaN/Inf telemetry filtering, the persistent last-target clamp,
+the UI-state mutex, overlapped pipe I/O with deadlines, and the pipe-stall
+watchdog fix. The own-mutex single-owner guard, the first-pipe-instance flag,
+and worker supervision/watchdog were already present in 1.0.39.
 
 ## Default Read-Only Mode
 
@@ -75,12 +73,14 @@ On the development laptop both services restarted successfully, but
 `ryzenadj.exe --info` still hung in SMU polling.
 
 The GUI latches a terminal worker fault after five consecutive hardware read
-failures (`refresh_failed` or pipe I/O timeout) for the current application
-session. It stops the monitor, terminates the unresponsive worker, and does not
+failures where a responsive worker returns `refresh_failed` for the current
+application session. It stops the monitor, terminates the worker, and does not
 automatically relaunch it, preventing a crash/restart loop; the status asks the
-user to close other RyzenAdj tools and reboot Windows. A hung worker that stops
-answering is still replaced by the heartbeat watchdog after 30 s, but the
-terminal-fault latch disables both respawn paths until the app is restarted.
+user to close other RyzenAdj tools and reboot Windows. A worker that stops
+answering, holds the pipe busy, or times out is not treated as a hardware read
+failure: those transport stalls suppress the watchdog heartbeat and the worker
+is replaced after 30 s. The terminal fault is reserved for a worker that keeps
+answering while hardware refresh fails.
 
 The GUI binds the worker to a kill-on-close Job Object, so if the GUI dies
 without running its cleanup the worker is killed instead of left as an orphan

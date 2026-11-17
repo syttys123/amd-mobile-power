@@ -21,6 +21,63 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-18 (1.0.40 hardware gate PASS, deployed; night policy is 10/10):
+
+- The formal 1.0.40 gate recorded `Verification=PASS` for source `ca64f37`
+  with ZIP `amd-mobile-power-v1.0.40-win-x64-native-preview.zip` (793,042
+  bytes, SHA256
+  `957f8a56dbf31d9d914d1c6eb1dec75262af8bd38e26b438d565315dbac0da8e`).
+  Package runtime/compatibility/headless/install, shell integration, the
+  current-value no-change policy gate, worker-hang replacement, DPI/
+  work-area/maximize fixtures, and byte reproducibility all PASS. Evidence:
+  `evidence/packaging/v1.0.40-release-gate-2026-11-17.json`.
+- Promoted the exact ZIP to `C:\RyzenAdj` with rollback at
+  `C:\RyzenAdj.before-20261118-001504` (1.0.39). Deployed identities: GUI
+  `27b17ece`, worker `6e9cc6a9`, probe `00369735`; `BUILD-INFO.txt` says
+  1.0.40 / `ca64f37` / clean. The tray runs
+  `--simple-mode --max-target-watts 45`, and the desktop shortcut keeps the
+  same supported arguments. Evidence:
+  `evidence/packaging/v1.0.40-deployment-2026-11-18.json`,
+  `evidence/packaging/v1.0.40-promotion-2026-11-18.json`.
+- The user changed the night policy to 10 W on both power lines. Current live
+  state at 00:40: policy `enabled=true`, `lastAttemptSucceeded=true`, AC
+  STAPM/Fast/Slow limits `10/10/10`, measured `9.999/10.004/9.997 W`. Day
+  policy remains 07:00 battery 25 W / AC 45 W. The night task
+  `AmdMobilePower DirectNightPolicy 2300` now runs battery 10 / AC 10 with
+  `-AllowGuiAutoStart -RefreshGui`; a manual trigger returned exit 0 and a
+  PASS log. Evidence:
+  `evidence/hardware/v1.0.40-night-policy-restore-2026-11-18.json`.
+- Diagnosed the 23:00 failure: the release gate had stopped the stable
+  GUI/worker, so the night task timed out; the later GUI restart re-applied
+  the saved day policy while the actual limits were still the gate's 10 W.
+  A recovery helper call also exposed a real bug: it posted `POLICY_SAVE` to
+  hidden policy controls, saving stale in-memory toggles and leaving
+  `enabled=false`.
+- Hardened `native/apply-power-policy-direct.ps1`: GUI auto-start is opt-in
+  (`-AllowGuiAutoStart`, used only by the day/night tasks), hidden policy
+  controls are detected with `IsWindowVisible` and never clicked, and
+  `-RefreshGui` reloads the saved policy by gracefully restarting the tray
+  GUI. Logs now report `enabled=true gui=in-place|restarted|deferred|skipped`
+  instead of a boolean `guiSynced`. Regressions verified: no-switch run
+  refuses to spawn a second owner; with the switch the helper starts the GUI;
+  a healthy tray run restarts and ends `enabled=true`.
+- Repaired the isolated contract harness: `csc.exe` compilation for
+  PowerShell 7, a real visible/hidden control split, synchronous fake-pipe
+  I/O, and new `gui=in-place` / `gui=deferred` assertions. It now passes
+  `6/6` checks including visible-control in-place convergence, single-save,
+  no-GUI deferral, range validation, restore convergence, and concurrent
+  UI-state locking. Evidence:
+  `evidence/hardware/remediation-policy-script-contract-2026-11-18.json`;
+  static helper/task contract: `native/test-policy-helper-contract.ps1`.
+- Residual risk: the packaged worker's policy controller caches
+  `last_applied_target` and does not re-verify the actual STAPM/Fast/Slow
+  limits on every tick. A firmware/EC reset can therefore drift until the
+  next power-line change or scheduled policy run. A limits-aware re-assert is
+  the next source candidate; it must not reuse the 1.0.40 hashes.
+- Still open: second AMD device, real OS 100%/150% DPI sessions, clean
+  Windows WinRing0 baseline, human media review, and explicit approval for a
+  GitHub Release or Bilibili upload. No public release or upload occurred.
+
 2026-11-17 (1.0.40 candidate built; read-only gates PASS, hardware gate pending):
 
 - Built candidate `amd-mobile-power-v1.0.40-win-x64-native-preview.zip` from

@@ -1,0 +1,37 @@
+{
+  "Verification": "PASS",
+  "HardwareEnabled": false,
+  "RealWorkerContacted": false,
+  "Checks": {
+    "compile-fakes": {
+      "pass": true,
+      "detail": "fake GUI + probe compiled"
+    },
+    "apply-visible-gui-in-place": {
+      "pass": true,
+      "detail": "exit=0 enabled=True acEnabled=True saveCount=2 guiInPlace=True stateEnabled=True"
+    },
+    "apply-visible-gui-single-save": {
+      "pass": true,
+      "detail": "exit=0 saveCount=1 battery=8 ac=8 guiInPlace=True"
+    },
+    "apply-no-gui-verified": {
+      "pass": true,
+      "detail": "exit=0 enabled=True guiDeferred=True"
+    },
+    "param-range-validation": {
+      "pass": true,
+      "detail": "apply-power-policy-direct.ps1:4=True; apply-power-policy-direct.ps1:61=True; restore-day-policy.ps1:4=True; restore-day-policy.ps1:61=True"
+    },
+    "restore-stale-gui-converges": {
+      "pass": true,
+      "detail": "exit=0 enabled=True acEnabled=True saveCount=2"
+    },
+    "mutex-concurrent-state": {
+      "pass": true,
+      "detail": "exit1=0 exit2=0 validJson=True enabled=True"
+    }
+  },
+  "Failed": [],
+  "RecordedAt": "2026-11-18T00:45:05.2150120+08:00"
+}

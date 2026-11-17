@@ -7,9 +7,8 @@ The current implementation is the native line: a Rust GUI
 (`amd-mobile-power-gui.exe`) and a separate C++ worker
 (`amdmobilepower_native_worker.exe`). The earlier .NET WinForms GUI / worker /
 Core stack is legacy and is no longer deployed. The deployed `C:\RyzenAdj`
-package is `1.0.39`; it predates the post-freeze safety remediation described
-below. See `NATIVE_RC_STATUS.md` for which mechanisms are source-only versus
-deployed.
+package is `1.0.40` (source `ca64f37`); it includes the safety remediation
+described below. See `NATIVE_RC_STATUS.md` for the exact evidence set.
 
 ## Processes
 
@@ -27,11 +26,14 @@ deployed.
   cannot leave an orphan hardware owner or policy ticker behind.
 - Supervises the worker: bounded-backoff respawn on exit (5/10/20/40/60 s),
   heartbeat-watchdog replacement of a hung worker after 30 s without a completed
-  sample, and saved-policy re-push after replacement.
-- Uses fail-closed recovery for sustained hardware read failures: after five
-  consecutive failures it latches a terminal fault, stops the monitor,
-  terminates the worker, blocks automatic restart for the current session, and
-  asks for a Windows reboot.
+  sample, and saved-policy re-push after replacement. Pipe timeouts, busy-pipe
+  (`ERROR_PIPE_BUSY`) and other transport stalls suppress the heartbeat instead
+  of feeding it, so a worker that stops reading is still replaced.
+- Uses fail-closed recovery only for a worker that keeps answering with
+  `refresh_failed`: after five consecutive hardware read failures it latches a
+  terminal fault, stops the monitor, terminates the worker, blocks automatic
+  restart for the current session, and asks for a Windows reboot. Transport
+  stalls do not latch this terminal fault; they are handled by the watchdog.
 - Holds the single-instance mutex `Local\AmdMobilePower.RustGui.Migration.v1`;
   UI fixtures use an isolated `.Fixture.<pid>` mutex so captures do not wake the
   stable tray GUI.

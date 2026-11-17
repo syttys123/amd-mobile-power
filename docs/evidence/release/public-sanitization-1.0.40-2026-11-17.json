@@ -10,8 +10,8 @@
     "Untracked files",
     "Scanner source"
   ],
-  "SourceCommit": "cdb91b598b48eb47b5e6b96e6950806bba1f9ba1",
-  "TrackedFilesScanned": 745,
+  "SourceCommit": "ca64f37e757bb99ffaf3df2572f82841bd8b3ad6",
+  "TrackedFilesScanned": 753,
   "PackageEntriesScanned": 13,
   "PackageBinariesScanned": 7,
   "BinaryEncodings": [
@@ -28,6 +28,6 @@
     "private_key_header"
   ],
   "PackagePath": "D:\\amd-mobile-power\\artifacts\\native-packages\\amd-mobile-power-v1.0.40-win-x64-native-preview.zip",
-  "PackageSHA256": "033748fdfcb829d871e27cbee41312dee82fa71734f723399cc98247c702121c",
-  "RecordedAt": "2026-11-17T20:20:20.4848093+08:00"
+  "PackageSHA256": "957f8a56dbf31d9d914d1c6eb1dec75262af8bd38e26b438d565315dbac0da8e",
+  "RecordedAt": "2026-11-17T21:29:25.8421420+08:00"
 }

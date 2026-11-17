@@ -6,9 +6,9 @@ AMD thin-and-light laptops. It uses a Rust GUI and a separate C++ worker so the
 UI and hardware access stay behind a narrow named-pipe contract.
 
 > Status: no public release yet. The current stable-local deployment is
-> `1.0.39` (frozen source `a6d8eed`), validated on one MECHREVO WUJIE15 PRO with
+> `1.0.40` (source `ca64f37`), validated on one MECHREVO WUJIE15 PRO with
 > a Ryzen 7 8845HS. Its GUI, probe, worker, and portable ZIP rebuild
-> byte-identically from the same commit. Local release gates pass for the frozen
+> byte-identically from the same commit. Local release gates pass for this
 > candidate; the release remains `READY_FOR_HUMAN_REVIEW` and is not approved for
 > publication.
 > Broader AMD generation support remains experimental until each device has
@@ -18,9 +18,10 @@ UI and hardware access stay behind a narrow named-pipe contract.
 
 ![Native advanced mode (1.0.28 reference capture)](assets/native-gui-1.0.28-advanced-2026-11-14.png)
 
-The reference captures above are from 1.0.28. Current 1.0.39
-simple/advanced/consent captures are recorded under
-`artifacts/media/frozen-1.0.39-*` and `docs/evidence/ui/frozen-1.0.39-*`; see
+The reference captures above are from 1.0.28. The newest saved
+simple/advanced/consent captures are 1.0.39 fixture captures under
+`artifacts/media/frozen-1.0.39-*` and `docs/evidence/ui/frozen-1.0.39-*`; they
+are not live captures of the deployed 1.0.40 package. See
 [docs/UI_SCREENSHOT_EVIDENCE.md](docs/UI_SCREENSHOT_EVIDENCE.md).
 
 ## Current Capabilities
@@ -54,13 +55,12 @@ simple/advanced/consent captures are recorded under
 - Portable ZIP, isolated install/overwrite/uninstall helpers, checksums,
   diagnostics export, and byte-reproducible binaries and packages.
 
-The current source tree also carries a post-freeze safety remediation (worker
-pipe I/O timeout and 1 MiB response cap, a kill-on-close Job Object orphan
-guard, a five-consecutive-failure terminal-fault latch, an explicit pipe DACL,
-hardware-owner conflict detection, NaN/Inf telemetry filtering, and safe
-integer parsing). It is not part of the deployed 1.0.39 package and must be
-rebuilt and release-gated as a new candidate; see
-[docs/NATIVE_RC_STATUS.md](docs/NATIVE_RC_STATUS.md).
+The deployed 1.0.40 package includes the safety remediation: bounded overlapped
+pipe I/O and a 1 MiB response cap, a kill-on-close Job Object orphan guard, a
+terminal-fault latch only for repeated `refresh_failed` from a responsive
+worker, an explicit pipe DACL, hardware-owner conflict detection, NaN/Inf
+telemetry filtering, safe integer parsing, and pipe-stall suppression so a
+hung worker is replaced by the watchdog.
 
 ## Safety
 
@@ -87,12 +87,12 @@ portable build's read-only default.
 Current review candidate:
 
 ```text
-artifacts/native-packages/amd-mobile-power-v1.0.39-win-x64-native-preview.zip
+artifacts/native-packages/amd-mobile-power-v1.0.40-win-x64-native-preview.zip
 ```
 
-- Size: `778,584` bytes
+- Size: `793,042` bytes
 - SHA256:
-  `06efdcff2584b9fd50856a34084957241c7966f7a21189c2db7e316db5193d53`
+  `957f8a56dbf31d9d914d1c6eb1dec75262af8bd38e26b438d565315dbac0da8e`
 
 1. Extract the complete ZIP to a writable directory.
 2. On a fresh Windows host, open an elevated PowerShell in the extracted
@@ -165,7 +165,7 @@ git submodule update --init --recursive
 .\native\verify-native.ps1 -NoBuild -VerifyHardware -VerifyRustGui `
   -VerifyRustWorker -VerifyWriteGuard
 .\native\verify-release.ps1 `
-  -Version 1.0.39 `
+  -Version 1.0.40 `
   -VerifyReproducibility `
   -VerifyShellIntegration `
   -ExecuteNoChangePolicy `
@@ -189,7 +189,7 @@ conservative values and restore the previous state.
 - [docs/BUILDING.md](docs/BUILDING.md): build and verification commands.
 - [docs/SECURITY.md](docs/SECURITY.md): hardware and driver safety boundaries.
 - [docs/NATIVE_RELEASE_CANDIDATE_1.0.31_ZH.md](docs/NATIVE_RELEASE_CANDIDATE_1.0.31_ZH.md):
-  latest prepared Chinese review dossier (1.0.31; no 1.0.39 dossier has been
+  latest prepared Chinese review dossier (1.0.31; no 1.0.40 dossier has been
   prepared yet). Current candidate facts live in
   [docs/NATIVE_RC_STATUS.md](docs/NATIVE_RC_STATUS.md) and
   [docs/DEV_STATUS.md](docs/DEV_STATUS.md).
