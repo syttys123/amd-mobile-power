@@ -364,6 +364,14 @@ $nativeArguments = @{
 if ($AllowBatteryWriteGuard) {
     $nativeArguments.AllowBatteryWriteGuard = $true
 }
+
+# Hardware verification starts its own worker with an isolated pipe name, but
+# the worker still takes the process-wide RyzenAdj owner mutex. Pause the
+# supervised tray for the exclusive hardware section; finally restores it.
+if ($nativeArguments.VerifyHardware) {
+    Stop-TestOwnerProcesses
+    Stop-StableGui
+}
 & (Join-Path $root "verify-native.ps1") @nativeArguments
 
 & (Join-Path $root "verify-power-policy.ps1") -NoBuild
@@ -489,12 +497,21 @@ if ($package.SourceCommit -ne $headCommit) {
     if ($LASTEXITCODE -ne 0) {
         throw "Package source commit is not an ancestor of HEAD: $($package.SourceCommit)"
     }
+    $nonPackagedGatePaths = @(
+        "native/verify-release.ps1",
+        "native/test-release-gui-recovery-contract.ps1"
+    )
     $driftPaths = @(
         & git -C $repositoryRoot diff `
             --name-only `
             $package.SourceCommit `
             $headCommit |
-            Where-Object { $_ -and $_ -notmatch "^docs/" -and $_ -notmatch "^[^/]+\.md$" }
+            Where-Object {
+                $_ -and
+                $_ -notmatch "^docs/" -and
+                $_ -notmatch "^[^/]+\.md$" -and
+                $nonPackagedGatePaths -notcontains $_
+            }
     )
     if ($driftPaths.Count -gt 0) {
         throw ("Package evidence is stale: HEAD changed non-documentation " +
@@ -598,9 +615,67 @@ finally {
                 ConvertTo-Json -Depth 10 |
                 Set-Content -LiteralPath $EvidencePath -Encoding UTF8
         }
+        elseif ($null -ne $verificationFailure) {
+            $evidenceDirectory = Split-Path -Parent $EvidencePath
+            if ($evidenceDirectory) {
+                New-Item -ItemType Directory -Path $evidenceDirectory -Force | Out-Null
+            }
+            [ordered]@{
+                Version = $Version
+                Verification = "FAIL"
+                Error = $verificationFailure.Exception.Message
+                InitialStableGui = [pscustomobject]@{
+                    Running = $stableRecoveryResult.InitialGuiRunning
+                    ProcessId = $stableRecoveryResult.InitialGuiPid
+                    Arguments = $stableRecoveryResult.InitialGuiArguments
+                }
+                StableGuiRecovery = $stableRecoveryResult
+                RecordedAt = (Get-Date).ToString("o")
+            } |
+                ConvertTo-Json -Depth 10 |
+                Set-Content -LiteralPath $EvidencePath -Encoding UTF8
+        }
     }
     catch {
         $recoveryError = $_
+        if (-not (Test-Path -LiteralPath $EvidencePath -PathType Leaf)) {
+            $evidenceDirectory = Split-Path -Parent $EvidencePath
+            if ($evidenceDirectory) {
+                New-Item -ItemType Directory -Path $evidenceDirectory -Force | Out-Null
+            }
+            [ordered]@{
+                Version = $Version
+                Verification = "FAIL"
+                Error = if ($null -ne $verificationFailure) {
+                    $verificationFailure.Exception.Message
+                }
+                else {
+                    $null
+                }
+                InitialStableGui = [pscustomobject]@{
+                    Running = $script:stableGuiSnapshot.Count -gt 0
+                    ProcessId = if ($script:stableGuiSnapshot.Count -gt 0) {
+                        $script:stableGuiSnapshot[0].Id
+                    }
+                    else {
+                        $null
+                    }
+                    Arguments = if ($script:stableGuiSnapshot.Count -gt 0) {
+                        $script:stableGuiSnapshot[0].Arguments
+                    }
+                    else {
+                        $null
+                    }
+                }
+                StableGuiRecovery = [pscustomobject]@{
+                    Status = "FAIL"
+                    Error = $recoveryError.Exception.Message
+                }
+                RecordedAt = (Get-Date).ToString("o")
+            } |
+                ConvertTo-Json -Depth 8 |
+                Set-Content -LiteralPath $EvidencePath -Encoding UTF8
+        }
         if ($null -ne $verificationFailure) {
             throw [System.InvalidOperationException]::new(
                 ("Release verification failed: {0}; stable GUI recovery also failed: {1}" -f `

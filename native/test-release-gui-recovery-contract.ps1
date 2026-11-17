@@ -51,6 +51,18 @@ Assert-Contains $source 'stable GUI recovery also failed' `
 Assert-Contains $source 'InitialStableGui' `
     'gate evidence must record the initial stable GUI state'
 
+$hardwarePauseIndex = $source.IndexOf(
+    'if ($nativeArguments.VerifyHardware) {')
+$stopStableIndex = $source.IndexOf(
+    'Stop-StableGui',
+    [Math]::Max(0, $hardwarePauseIndex))
+$verifyNativeIndex = $source.IndexOf(
+    '& (Join-Path $root "verify-native.ps1") @nativeArguments')
+Assert-True ($hardwarePauseIndex -ge 0 -and
+    $stopStableIndex -gt $hardwarePauseIndex -and
+    $verifyNativeIndex -gt $hardwarePauseIndex) `
+    'the stable owner pause must precede verify-native'
+
 # Parse the real wrapper and isolate the top-level release-gate try statement.
 $tokens = $null
 $parseErrors = $null
@@ -148,7 +160,11 @@ $allowedFinallyCommands = @(
     'ConvertFrom-Json',
     'Add-Member',
     'ConvertTo-Json',
-    'Set-Content'
+    'Set-Content',
+    'New-Item',
+    'Split-Path',
+    'Out-Null',
+    'Get-Date'
 )
 $unexpectedFinallyCommands = @($finallyBlock.FindAll({
             param($node)
