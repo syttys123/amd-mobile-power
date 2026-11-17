@@ -5,17 +5,23 @@ supervised validation, controlling firmware package-power limits on supported
 AMD thin-and-light laptops. It uses a Rust GUI and a separate C++ worker so the
 UI and hardware access stay behind a narrow named-pipe contract.
 
-> Status: no public release yet. The current stable-local candidate is
-> `1.0.30-native`, validated on one MECHREVO WUJIE15 PRO with a Ryzen 7 8845HS.
-> Its GUI, probe, worker, and portable ZIP rebuild byte-identically from the
-> same commit. Local publication readiness is `PASS`; the release remains
-> `READY_FOR_HUMAN_REVIEW`.
+> Status: no public release yet. The current stable-local deployment is
+> `1.0.39` (frozen source `a6d8eed`), validated on one MECHREVO WUJIE15 PRO with
+> a Ryzen 7 8845HS. Its GUI, probe, worker, and portable ZIP rebuild
+> byte-identically from the same commit. Local release gates pass for the frozen
+> candidate; the release remains `READY_FOR_HUMAN_REVIEW` and is not approved for
+> publication.
 > Broader AMD generation support remains experimental until each device has
 > read-only and supervised write evidence.
 
-![Native simple mode](assets/native-gui-1.0.28-simple-2026-11-14.png)
+![Native simple mode (1.0.28 reference capture)](assets/native-gui-1.0.28-simple-2026-11-14.png)
 
-![Native advanced mode](assets/native-gui-1.0.28-advanced-2026-11-14.png)
+![Native advanced mode (1.0.28 reference capture)](assets/native-gui-1.0.28-advanced-2026-11-14.png)
+
+The reference captures above are from 1.0.28. Current 1.0.39
+simple/advanced/consent captures are recorded under
+`artifacts/media/frozen-1.0.39-*` and `docs/evidence/ui/frozen-1.0.39-*`; see
+[docs/UI_SCREENSHOT_EVIDENCE.md](docs/UI_SCREENSHOT_EVIDENCE.md).
 
 ## Current Capabilities
 
@@ -48,6 +54,14 @@ UI and hardware access stay behind a narrow named-pipe contract.
 - Portable ZIP, isolated install/overwrite/uninstall helpers, checksums,
   diagnostics export, and byte-reproducible binaries and packages.
 
+The current source tree also carries a post-freeze safety remediation (worker
+pipe I/O timeout and 1 MiB response cap, a kill-on-close Job Object orphan
+guard, a five-consecutive-failure terminal-fault latch, an explicit pipe DACL,
+hardware-owner conflict detection, NaN/Inf telemetry filtering, and safe
+integer parsing). It is not part of the deployed 1.0.39 package and must be
+rebuilt and release-gated as a new candidate; see
+[docs/NATIVE_RC_STATUS.md](docs/NATIVE_RC_STATUS.md).
+
 ## Safety
 
 Changing firmware power limits can cause instability, overheating, battery
@@ -73,12 +87,12 @@ portable build's read-only default.
 Current review candidate:
 
 ```text
-artifacts/native-packages/amd-mobile-power-v1.0.30-win-x64-native-preview.zip
+artifacts/native-packages/amd-mobile-power-v1.0.39-win-x64-native-preview.zip
 ```
 
-- Size: `771,049` bytes
+- Size: `778,584` bytes
 - SHA256:
-  `618c01442aac0715dade459f2f1a2e58a0471dcd1688096b0ca8765e7df44c3f`
+  `06efdcff2584b9fd50856a34084957241c7966f7a21189c2db7e316db5193d53`
 
 1. Extract the complete ZIP to a writable directory.
 2. On a fresh Windows host, open an elevated PowerShell in the extracted
@@ -151,7 +165,7 @@ git submodule update --init --recursive
 .\native\verify-native.ps1 -NoBuild -VerifyHardware -VerifyRustGui `
   -VerifyRustWorker -VerifyWriteGuard
 .\native\verify-release.ps1 `
-  -Version 1.0.30 `
+  -Version 1.0.39 `
   -VerifyReproducibility `
   -VerifyShellIntegration `
   -ExecuteNoChangePolicy `
@@ -174,10 +188,14 @@ conservative values and restore the previous state.
 - [docs/PACKAGING.md](docs/PACKAGING.md): package, driver, install, and uninstall.
 - [docs/BUILDING.md](docs/BUILDING.md): build and verification commands.
 - [docs/SECURITY.md](docs/SECURITY.md): hardware and driver safety boundaries.
-- [docs/NATIVE_RELEASE_CANDIDATE_1.0.30_ZH.md](docs/NATIVE_RELEASE_CANDIDATE_1.0.30_ZH.md):
-  current Chinese review dossier.
-- [docs/NATIVE_LAUNCH_COPY_1.0.30_ZH.md](docs/NATIVE_LAUNCH_COPY_1.0.30_ZH.md):
-  current review-only GitHub and Bilibili copy. It is not publication approval.
+- [docs/NATIVE_RELEASE_CANDIDATE_1.0.31_ZH.md](docs/NATIVE_RELEASE_CANDIDATE_1.0.31_ZH.md):
+  latest prepared Chinese review dossier (1.0.31; no 1.0.39 dossier has been
+  prepared yet). Current candidate facts live in
+  [docs/NATIVE_RC_STATUS.md](docs/NATIVE_RC_STATUS.md) and
+  [docs/DEV_STATUS.md](docs/DEV_STATUS.md).
+- [docs/NATIVE_LAUNCH_COPY_1.0.31_ZH.md](docs/NATIVE_LAUNCH_COPY_1.0.31_ZH.md):
+  latest prepared review-only GitHub and Bilibili copy (1.0.31). It is not
+  publication approval.
 
 ## License
 

@@ -11,33 +11,56 @@ the release package includes the reviewed license texts. Public release still
 requires the remaining hardware evidence and project-owner approval; this review
 is not legal advice.
 
+## Deployment Note
+
+The deployed `C:\RyzenAdj` package is `1.0.39` (frozen source `a6d8eed`). It
+predates the post-freeze safety remediation. The explicit pipe DACL, the
+legacy-mutex and known-process conflict detection, the five-consecutive-failure
+terminal-fault latch, the kill-on-close Job Object, the expanded NaN/Inf
+telemetry filtering, the persistent last-target clamp, and the UI-state mutex
+are implemented and locally tested in the current source tree but are not in the
+deployed package; they must be rebuilt and release-gated as a new candidate
+before deployment. The own-mutex single-owner guard, the first-pipe-instance
+flag, and worker supervision/watchdog were already present in 1.0.39.
+
 ## Default Read-Only Mode
 
 The GUI defaults to read-only. Hardware writes require both:
 
-- `AmdMobilePower.Gui.exe --enable-write-controls`
-- The GUI passing `--enable-write-controls` to the worker
+- The user unlocking writes through the in-app consent dialog (or the
+  development-only `amd-mobile-power-gui.exe --enable-write-controls` override).
+- The GUI passing `--enable-write-controls` to the worker it launches.
 
 The worker also requires `--enable-hardware`. A normal package launch passes
-only `--enable-hardware`, so `applyTarget` and policy writes are rejected.
+only `--enable-hardware`, so `applyTarget` and policy writes are rejected. The
+persisted unlock state is handed to the worker at launch exactly like the flag.
 
 This is a deliberate double gate, not a claim that the GUI cannot display
 writable capabilities.
 
 ## Single Hardware Owner
 
-The worker:
+The native worker:
 
-- Detects known owners including `RyzenPower`, `ryzenadj`, and AMD Ryzen Master.
+- Acquires the named mutex `Local\AmdMobilePower.HardwareOwner.v1` and refuses
+  to start when it already exists (`ERROR_ALREADY_EXISTS`), so a second AMD
+  Mobile Power / RyzenAdj hardware owner cannot run. (The legacy .NET worker
+  used a named event for the same purpose; the native worker uses a mutex held
+  for the process lifetime.)
 - Detects the legacy `Local\RyzenAdjPowerWorker` mutex used by the PowerShell
-  worker.
-- Detects running legacy scheduled tasks including `\AMD\RyzenAdjWatch`,
-  `\AMD\RyzenAdj`, `\AMD\RyzenAdjApply`, and `\AMD\RyzenAdjToggle`.
-- Acquires the named process-scoped event
-  `Local\AmdMobilePower.HardwareOwner.v1`. A named event is used instead of a
-  mutex because asynchronous shutdown may resume on another thread, while mutex
-  ownership is thread-affine.
-- Refuses to start when another known owner or AMD Mobile Power worker exists.
+  worker, and fails closed if that mutex cannot be inspected.
+- Enumerates running processes and refuses to start when a known owner is
+  present: `RyzenPower`, `ryzenadj`, and `AMD Ryzen Master` (case-insensitive,
+  with or without a trailing `.exe`).
+- Runs these ownership checks before loading the RyzenAdj/WinRing0/InpOut
+  runtime DLLs, so a known owner never sees a second driver initialization from
+  this process.
+- Creates its pipe with `FILE_FLAG_FIRST_PIPE_INSTANCE`, so a second worker
+  cannot silently share the same pipe name.
+
+The legacy .NET worker also detected running scheduled tasks such as
+`\AMD\RyzenAdjWatch`; the native worker relies on the mutex and process checks
+above rather than scheduled-task enumeration.
 
 Do not bypass this protection. Concurrent RyzenAdj owners have caused an
 uncatchable native access violation during development. Closing the legacy GUI
@@ -45,19 +68,24 @@ is not sufficient when its logon task still has a hidden worker running.
 
 If an owning worker must be force-terminated, treat the WinRing0/inpout/SMU
 state as tainted. Reboot before probing or writing again; repeated calls can
-raise `AccessViolationException` inside `init_ryzenadj`.
+raise an access violation inside `init_ryzenadj`.
 
 Restarting the WinRing0 and inpout services does not reliably clear this state.
 On the development laptop both services restarted successfully, but
 `ryzenadj.exe --info` still hung in SMU polling.
 
-The GUI treats a hardware-read timeout as a terminal worker fault for the
-current application session. It stops the unresponsive worker and does not
-automatically relaunch it, preventing a crash/restart loop.
+The GUI latches a terminal worker fault after five consecutive hardware read
+failures (`refresh_failed` or pipe I/O timeout) for the current application
+session. It stops the monitor, terminates the unresponsive worker, and does not
+automatically relaunch it, preventing a crash/restart loop; the status asks the
+user to close other RyzenAdj tools and reboot Windows. A hung worker that stops
+answering is still replaced by the heartbeat watchdog after 30 s, but the
+terminal-fault latch disables both respawn paths until the app is restarted.
 
-The same startup deadline applies while the worker is beginning to listen on
-its named pipe. A worker that hangs before accepting commands is also stopped
-and enters the terminal fault state.
+The GUI binds the worker to a kill-on-close Job Object, so if the GUI dies
+without running its cleanup the worker is killed instead of left as an orphan
+hardware owner. If the job cannot be created or assigned, the freshly spawned
+worker is terminated (fail-closed).
 
 ## Write Validation
 
@@ -87,10 +115,17 @@ bank.
 ## Process And IPC Model
 
 - The GUI runs at the current user's privilege level.
-- The worker is a hidden child process launched by the GUI.
-- The named pipe uses `PipeOptions.CurrentUserOnly`.
-- Commands are a fixed enum; there is no arbitrary shell execution endpoint.
-- Requests and responses use versioned UTF-8 JSON Lines with request IDs.
+- The worker is a hidden child process launched by the GUI and bound to a
+  kill-on-close Job Object.
+- The worker pipe uses an explicit DACL: the current process user gets
+  `GENERIC_READ | GENERIC_WRITE | SYNCHRONIZE` and `SYSTEM` keeps `GENERIC_ALL`.
+  The worker refuses to start if the descriptor cannot be built; it never falls
+  back to a permissive default DACL. (This explicit least-privilege DACL is part
+  of the post-freeze hardening.)
+- Commands are a fixed set; there is no arbitrary shell execution endpoint.
+- Requests and responses use versioned UTF-8 JSON Lines with request IDs. The
+  GUI client bounds pipe I/O at 5 s and caps responses at 1 MiB; the worker
+  caps requests at 64 KiB and bounds request reads and response sends at 5 s.
 
 The current implementation does not elevate the worker. RyzenAdj still requires
 the WinRing0 kernel driver. The development driver helper installs a small
@@ -100,7 +135,9 @@ driver service with highest privileges. The GUI and worker remain non-elevated.
 ## Data And Diagnostics
 
 - UI presets and policy live in
-  `%LocalAppData%\AmdMobilePower\ui-state.json`.
+  `%LocalAppData%\AmdMobilePower\rust-ui-state.json`, serialized by the
+  `Local\AmdMobilePower.UiState.v1` named mutex and written atomically. (The
+  legacy .NET GUI used `ui-state.json`.)
 - Diagnostics are saved under
   `%LocalAppData%\AmdMobilePower\diagnostics` by default.
 - GUI and worker lifecycle/error logs are stored under

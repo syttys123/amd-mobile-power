@@ -3,19 +3,28 @@
 ## Directory Roles
 
 - `D:\amd-mobile-power`: development repository and source of truth.
-- `C:\RyzenAdj`: current stable-local native deployment (`1.0.30-native`,
-  source commit `2f04605`, BOM-tolerant persisted state loading).
-  Rollback for `1.0.29-native`: `C:\RyzenAdj.before-20261114-072507`.
-  `1.0.30` package SHA256:
-  `618c01442aac0715dade459f2f1a2e58a0471dcd1688096b0ca8765e7df44c3f`;
-  release gate:
-  `docs/evidence/packaging/v1.0.30-release-gate-2026-11-14.json`;
+- `C:\RyzenAdj`: current stable-local native deployment (`1.0.39`,
+  source commit `a6d8eed`, narrow-header processor-name fallback).
+  Rollback for the previous `1.0.33` tree:
+  `C:\RyzenAdj.before-20261117-035509`.
+  `1.0.39` package SHA256:
+  `06efdcff2584b9fd50856a34084957241c7966f7a21189c2db7e316db5193d53`;
   deployment evidence:
-  `docs/evidence/packaging/v1.0.30-native-deployment-2026-11-14.json`.
-  Deployment verification started and ended at `10/10/10 W` on AC with the
-  policy armed, presets `10 / 25 / 45 W`, and ceiling `45 W`. Temporary local
-  user caps are runtime state and are not part of the release package.
+  `docs/evidence/packaging/v1.0.39-deployment-2026-11-17.json`.
+  Deployed GUI/worker/probe SHA256 prefixes: `6e9b688b` / `537a53ed` /
+  `d80fe52c`. The deployed tray session runs
+  `--simple-mode --max-target-watts 45` with editable presets `10 / 25 / 45 W`
+  and a `45 W` ceiling. The armed day/night policy is 07:00 battery `25 W` /
+  AC `45 W` and 23:00 `15/15 W`; policy targets and temporary local user caps
+  are runtime state and are not part of the release package.
   Previous deployment history follows.
+  `1.0.30-native` (source commit `2f04605`, BOM-tolerant persisted state
+  loading) previously held this target; package SHA256
+  `618c01442aac0715dade459f2f1a2e58a0471dcd1688096b0ca8765e7df44c3f`,
+  release gate
+  `docs/evidence/packaging/v1.0.30-release-gate-2026-11-14.json`,
+  deployment evidence
+  `docs/evidence/packaging/v1.0.30-native-deployment-2026-11-14.json`.
   `1.0.29-native` remains at `C:\RyzenAdj.before-20261114-072507`;
   `1.0.28-native` at `C:\RyzenAdj.before-20261114-054523`;
   `1.0.27-native` at `C:\RyzenAdj.before-20261114-025845`.
@@ -63,7 +72,7 @@ The reviewed gate command is:
 
 ```powershell
 .\native\verify-release.ps1 `
-  -Version 1.0.30 `
+  -Version 1.0.39 `
   -VerifyReproducibility `
   -VerifyShellIntegration `
   -ExecuteNoChangePolicy `
@@ -75,12 +84,12 @@ Promotion itself is a dry run followed by an explicit apply:
 
 ```powershell
 .\native\promote-stable-deployment.ps1 `
-  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.30-win-x64-native-preview.zip `
+  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.39-win-x64-native-preview.zip `
   -TargetDirectory C:\RyzenAdj `
   -GuiArguments "--simple-mode --max-target-watts 45"
 
 .\native\promote-stable-deployment.ps1 `
-  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.30-win-x64-native-preview.zip `
+  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.39-win-x64-native-preview.zip `
   -TargetDirectory C:\RyzenAdj `
   -GuiArguments "--simple-mode --max-target-watts 45" `
   -Apply -NoLaunch
@@ -111,9 +120,9 @@ The native Rust GUI + C++ worker line uses the tested reversible helper:
 
 ```powershell
 .\native\promote-stable-deployment.ps1 `
-  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.18-native-win-x64-native-preview.zip `
+  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.39-win-x64-native-preview.zip `
   -TargetDirectory C:\RyzenAdj `
-  -GuiArguments "--enable-write-controls --simple-mode --max-target-watts 45"
+  -GuiArguments "--simple-mode --max-target-watts 45"
 ```
 
 That command is a dry run. Apply only after reviewing the target, backup, and
@@ -121,9 +130,9 @@ shortcut plan:
 
 ```powershell
 .\native\promote-stable-deployment.ps1 `
-  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.18-native-win-x64-native-preview.zip `
+  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.39-win-x64-native-preview.zip `
   -TargetDirectory C:\RyzenAdj `
-  -GuiArguments "--enable-write-controls --simple-mode --max-target-watts 45" `
+  -GuiArguments "--simple-mode --max-target-watts 45" `
   -Apply -NoLaunch
 ```
 
@@ -133,6 +142,53 @@ shortcuts while preserving their arguments, writes deployment evidence, and
 rolls back on failure.
 
 ## Current Deployment Evidence
+
+On 2026-11-17, `1.0.39` replaced the `1.0.33` tree at `C:\RyzenAdj`. It falls
+back from `processor · family` to processor-only before hiding the header
+subtitle, so the 752x489 simple fixture no longer ellipsizes the header line.
+
+- Package SHA256:
+  `06efdcff2584b9fd50856a34084957241c7966f7a21189c2db7e316db5193d53`
+- Package size: `778,584` bytes
+- Package source commit: `a6d8eed6eb7fdfc7f594008e292ac9654cdb4649`
+- Deployed GUI SHA256:
+  `6e9b688b9732b7be4decbea4019f02353aa7f08c4f6701aaf9f4501791466def`
+- Deployed worker SHA256:
+  `537a53ed8f8221878ef95af8314ac3a5a71b159a92ec5db99faaa2b8afa9c85d`
+- Deployed probe SHA256:
+  `d80fe52c6f10ddc71ac0884ba540bc449e95dfd00503a49b3a40951e6d2a0e84`
+- Previous stable rollback directory: `C:\RyzenAdj.before-20261117-035509`
+  (the `1.0.33` tree, 17 files)
+- Frozen candidate identity:
+  `docs\evidence\release\candidate-1.0.39-frozen-2026-11-17.json`,
+  `docs\evidence\release\candidate-1.0.39-identity-2026-11-17.json`
+- Clean/read-only evidence:
+  `docs\evidence\packaging\v1.0.39-clean-2026-11-17.json`
+- Deployment evidence:
+  `docs\evidence\packaging\v1.0.39-deployment-2026-11-17.json`
+- 15 W write/read-back gate (firmware STAPM clamp reported):
+  `docs\evidence\hardware\mechrevo-wujie15-8845hs-1.0.39-15w-write-2026-11-17.json`
+- Worker-hang evidence (`34.4 s`, 25 responsive samples, 0 failures):
+  `docs\evidence\hardware\v1.0.39-worker-hang-2026-11-17.json`
+- DPI / work-area / resource evidence:
+  `docs\evidence\ui\native-dpi-1.0.39-2026-11-17.json`,
+  `docs\evidence\ui\native-workarea-200-1.0.39-2026-11-17.json`,
+  `docs\evidence\ui\native-resource-1.0.39-2026-11-17.json`
+- Reproducibility and hosted CI:
+  `docs\evidence\build\reproducibility-1.0.39-2026-11-17.json`,
+  `docs\evidence\build\hosted-ci-1.0.39-2026-11-17.json` (run `43942623854`),
+  `docs\evidence\build\hosted-ci-post-deployment-2026-11-17.json`
+  (run `43947440054`)
+- Live state after deployment: policy armed, battery and AC `15/15/15 W`
+  (night), measured package power about `15.0 W`, Fast/Slow `15 W`, firmware
+  STAPM limit dynamic (about `24.8 W` at capture). Day/night tasks remain
+  07:00 `25/45 W` and 23:00 `15/15 W`.
+- Desktop shortcut: `--simple-mode --max-target-watts 45`.
+- Still pending: a fresh physical battery/AC transition, owner media review and
+  publication approval. The post-freeze source remediation (worker I/O timeout
+  and 1 MiB cap, Job Object orphan guard, terminal-fault latch, pipe DACL,
+  conflict detection, telemetry filtering, safe integer parsing) is implemented
+  in the source tree but is not part of this deployed package.
 
 On 2026-11-13, `1.0.23-native` replaced `1.0.22-native` at `C:\RyzenAdj`.
 It re-lays out on `SIZE_MAXIMIZED` so a scrolled advanced page clamps its

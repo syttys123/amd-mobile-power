@@ -21,6 +21,53 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-17 (full functional-matrix audit remediation, source-only):
+
+- Rust GUI: worker client now uses overlapped pipe I/O with a 5 s deadline,
+  cancellation reaping before the stack OVERLAPPED is released, and a 1 MiB
+  response bound. Owned workers are bound to a kill-on-close Job Object;
+  creation/assignment failure is fail-closed. Five consecutive hardware read
+  failures latch a terminal fault, stop monitor/watchdog restarts, and ask for
+  a reboot instead of looping. UI state read-modify-write shares
+  `Local\AmdMobilePower.UiState.v1` and accepts an abandoned mutex. The consent
+  dialog gained high-contrast system colors, focus rectangles, hand cursors,
+  parent icon inheritance, work-area fitting, and non-blocking cleanup. Wheel
+  notches forward from focused edits/buttons to the scrollable window; profile
+  clamping refreshes preset visibility; policy saves commit only on worker
+  success and roll back on failure; tray icons re-register on TaskbarCreated.
+- C++ worker: explicit pipe DACL (current user read/write/synchronize, SYSTEM
+  full), fail-closed legacy-mutex/process-snapshot inspection, known-owner
+  names aligned with the .NET detector, NaN/Inf telemetry filtering, persistent
+  last-target clamp reporting, overflow-safe integer extraction, and a
+  `--max-target-watts` user ceiling (5-60, default 60) enforced before
+  applyTarget/setPowerPolicy hardware writes. The GUI now passes its ceiling to
+  the worker it owns.
+- Maintenance scripts: bounded pipe reads, shared UI-state mutex, explicit
+  policy-settings match plus applied-target/telemetry read-back, GUI sync
+  convergence retry with worker re-assertion, restore-day hardening, and
+  ValidateRange watt binding. `verify-publication-readiness.ps1` now discovers
+  versioned evidence instead of today's date and accepts the v2 PascalCase
+  media schema; missing evidence still blocks readiness.
+- Documentation: README/DEPLOYMENT/NATIVE_RC_STATUS/IPC/ARCHITECTURE/SECURITY/
+  PROMO_VIDEO/RELEASE_CHECKLIST aligned to deployed 1.0.39 (`a6d8eed`), native
+  pipe names/commands, current safety mechanisms, and the 39.5 s v2 silent
+  review video. The remediation is explicitly source-only and not in 1.0.39.
+- Verification: Rust GUI 66 tests (37 lib + 29 GUI), probe 7 tests, Clippy
+  `-D warnings` for GUI and probe, C++ power_limit_policy/power_policy/
+  hardware_cleanup/worker_safety suites PASS, worker request-bounds PASS
+  (handles 54->54, threads 4->4, private bytes unchanged), consent dialog
+  high-contrast and normal isolated captures PASS, `verify-docs.ps1` PASS
+  (53 Markdown / 41 links). Real worker read-only read-back remained
+  battery 25 W / AC 45 W, current AC applied 45 W; no hardware write, deployment,
+  or publication was performed.
+- Known incomplete: the isolated `test-policy-script-contract.ps1` harness can
+  still stall in the fake-GUI apply path and is not a passing gate yet; the
+  publication-readiness run for 1.0.39 correctly reports
+  `BLOCKED_BY_LOCAL_CHECKS` because formal release-gate/no-change/packaged-ui
+  evidence is absent. Next task: repair the contract harness, rebuild a new
+  candidate from clean source, run the full release gate and supervised
+  hardware smoke, then promote with rollback.
+
 2026-11-17 (promo content correctness, fixture isolation and timed demo):
 
 - Root cause of the flawed promo: the main preset demo used the

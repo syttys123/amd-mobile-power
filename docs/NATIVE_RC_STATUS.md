@@ -3,8 +3,11 @@
 Status: `STABLE_LOCAL_DEPLOYED`
 
 This document tracks the native Rust GUI + C++ worker package and its
-stable-local deployment. `C:\RyzenAdj` currently holds `1.0.30-native`
-(source commit `2f04605`, BOM-tolerant state loading). `1.0.29-native` is
+stable-local deployment. `C:\RyzenAdj` currently holds `1.0.39`
+(source commit `a6d8eed`, narrow-header processor-name fallback). The previous
+`1.0.33` tree is preserved as `C:\RyzenAdj.before-20261117-035509`.
+`1.0.30-native` (source commit `2f04605`, BOM-tolerant state loading) previously
+held this target. `1.0.29-native` is
 preserved as `C:\RyzenAdj.before-20261114-072507`, `1.0.28-native` as
 `C:\RyzenAdj.before-20261114-054523` and `1.0.27-native` as
 `C:\RyzenAdj.before-20261114-025845`. `1.0.23-native` shipped the maximize
@@ -37,13 +40,20 @@ previous native `1.0.17-native` build is preserved as
 `C:\RyzenAdj.before-20261111-232010`, and the .NET `1.0.4` package as
 `C:\RyzenAdj.before-20261111-223017`.
 
-Decision (2026-11-14): the native line has a hardware-gated stable-local
+Decision (2026-11-17): the native line has a hardware-gated stable-local
 candidate for the verified 8845HS platform, and `C:\RyzenAdj` contains the
-`1.0.30-native` package. Broader AMD generation support remains experimental.
-The current local publication readiness gate is `PASS` with all 13 checks true,
-with `PublicReleaseReadiness=READY_FOR_HUMAN_REVIEW` and no local blockers.
+`1.0.39` package (frozen clean source `a6d8eed`). Broader AMD generation support
+remains experimental. Public release remains `READY_FOR_HUMAN_REVIEW` and is
+not approved; a fresh physical battery/AC transition, real OS DPI transitions,
+a second AMD device, a clean Windows WinRing0 baseline, and owner media review
+are still open. The latest formal publication-readiness record is the
+2026-11-14 gate (`PASS`, 13 checks,
+`PublicReleaseReadiness=READY_FOR_HUMAN_REVIEW`); current per-gate status for
+1.0.39 is tracked in `RELEASE_CHECKLIST.md`.
 Evidence:
-`docs/evidence/release/native-publication-readiness-2026-11-14.json`.
+`docs/evidence/release/native-publication-readiness-2026-11-14.json`,
+`docs/evidence/release/candidate-1.0.39-frozen-2026-11-17.json`,
+`docs/evidence/packaging/v1.0.39-deployment-2026-11-17.json`.
 
 Note (2026-11-12): `1.0.18-native` is the first package gated with
 `-VerifyWorkerHang`, which runs the maintained hang verifier against the
@@ -100,32 +110,78 @@ accessibility settings.
 ## Current Candidate
 
 ```text
-artifacts/native-packages/amd-mobile-power-v1.0.30-win-x64-native-preview.zip
+artifacts/native-packages/amd-mobile-power-v1.0.39-win-x64-native-preview.zip
 ```
 
-- Size: `771,049` bytes.
+- Size: `778,584` bytes.
 - SHA256:
-  `618c01442aac0715dade459f2f1a2e58a0471dcd1688096b0ca8765e7df44c3f`.
-- Source commit: `2f04605d620a84a0c06b3662e99de0e7a8b6fcbd`.
-- Working tree at build time: clean.
-- Reproducibility: GUI `213a96fd`, probe `9750418f`, worker `67af1d41`, and the
-  ZIP itself are byte-identical across two builds.
-- Policy write verification: same-value AC probe at `10/10/10 W`.
-- Worker-hang replacement: PASS on 2026-11-14 (`33.8 s`, 18 responsive
-  samples, 0 failures, policy restored to `10/10/10 W`).
-- Rust tests: `48/48` (`25` library + `23` GUI); probe self-tests: `7/7`.
-- Hosted Windows CI: run `43527570945` on commit `b2e051c` passed every step.
-- Supersedes `1.0.29-native`; the payload change is BOM-tolerant persisted
-  state loading. GUI layout and worker/probe behavior are otherwise unchanged
-  from the 1.0.28/1.0.29 capture set.
+  `06efdcff2584b9fd50856a34084957241c7966f7a21189c2db7e316db5193d53`.
+- Source commit: `a6d8eed6eb7fdfc7f594008e292ac9654cdb4649`.
+- Working tree at build time: clean (frozen candidate).
+- Binary identities: GUI `6e9b688b`, worker `537a53ed`, probe `d80fe52c`;
+  independent mapped rebuilds and the frozen ZIP repack match exactly.
+- Policy write verification: 15 W write/read-back PASS. The firmware rejected
+  the 15 W STAPM field at 25 W while Fast/Slow both held 15 W; the clamp warning
+  was explicit and measured package power stayed about 15.0 W.
+- Worker-hang replacement: PASS on 2026-11-17 (`34.4 s`, 25 responsive
+  samples, 0 failures, policy restored).
+- Rust tests at freeze: `61` (`35` library + `26` GUI); probe self-tests: `7/7`.
+- Hosted Windows CI: run `43942623854` for docs head `5582af2` passed; the
+  post-deployment rerun `43947440054` passed for `a9596f5`.
+- Supersedes `1.0.38`, which was superseded before freezing by the
+  narrow-header text-fit fix. The exact ZIP is deployed to `C:\RyzenAdj`; the
+  previous `1.0.33` tree is preserved at `C:\RyzenAdj.before-20261117-035509`.
 
-Local review bundle:
+Current candidate records:
 
 ```text
-artifacts/native-release-review/v1.0.30
+docs/evidence/release/candidate-1.0.39-frozen-2026-11-17.json
+docs/evidence/release/candidate-1.0.39-identity-2026-11-17.json
 ```
 
-The bundle is `REVIEW_ONLY`, contains 33 files, and is not a public release.
+These are `REVIEW_ONLY` identity records, not a public release. The latest
+prepared review bundle under `artifacts/native-release-review/` is `v1.0.33`
+(historical).
+
+## Post-Freeze Source Remediation (not deployed)
+
+After the 1.0.39 freeze, the source tree gained a safety remediation batch that
+is **not** part of the deployed `C:\RyzenAdj` package and has **not** been
+rebuilt or release-gated as a new candidate. Verified in source and by local
+test runs during the 2026-11-17 documentation pass:
+
+- Rust worker client: 5 s overlapped pipe I/O timeout with cancellation and
+  reap, a 1 MiB response cap, and a 2 s busy-pipe retry.
+- Rust GUI: a kill-on-close Job Object binds the worker so a GUI crash cannot
+  leave an orphan hardware owner (fail-closed if assignment fails); five
+  consecutive hardware read failures latch a terminal fault that stops the
+  monitor, terminates the worker, and disables automatic restart until the app
+  is restarted; restart backoff is bounded at 5/10/20/40/60 s and the heartbeat
+  watchdog forces replacement after 30 s without a completed sample.
+- Rust GUI state: the single-instance mutex is
+  `Local\AmdMobilePower.RustGui.Migration.v1` (fixtures use a `.Fixture.<pid>`
+  suffix); the shared UI-state file lock is `Local\AmdMobilePower.UiState.v1`,
+  with atomic writes, BOM-tolerant loading, and corrupt-state backup.
+- Consent dialog: high-contrast system-color palette, full keyboard navigation
+  (Tab/Esc/Enter, focus rectangle), work-area-aware scaling with a 60% floor,
+  and a confirm button disabled until the consent checkbox is ticked.
+  Read-only high-contrast (150%) and normal (100%) consent captures:
+  `docs/evidence/ui/remediation-consent-hc-2026-11-17.json`,
+  `docs/evidence/ui/remediation-consent-normal-2026-11-17.json`.
+- C++ worker: an explicit pipe DACL (current user read/write/synchronize,
+  SYSTEM full control) that fails closed; `FILE_FLAG_FIRST_PIPE_INSTANCE`;
+  hardware-owner conflict detection (legacy `Local\RyzenAdjPowerWorker` mutex,
+  known-process enumeration, and its own
+  `Local\AmdMobilePower.HardwareOwner.v1` mutex) before any driver load;
+  NaN/Inf telemetry filtering; a persistent last-applied target that drives the
+  firmware-clamp flag (0.5 W STAPM / 0.75 W PPT tolerance); and safe signed
+  32-bit integer request parsing.
+- Local verification on the current tree: Rust `cargo test --release` 66 passed
+  (37 library + 29 GUI); C++ `power_limit_policy`, `power_policy`,
+  `hardware_cleanup`, and `worker_safety` tests all PASS (driver-free).
+
+Any future deployment must rebuild and gate this remediation as a new
+candidate; the 1.0.39 hashes above must not be reused for it.
 
 Historical candidate `1.0.7-native` remains recorded with package SHA256
 `a018e1af1a82a5be1dc1cee4fa54cf419d35a778cd056a16a5a35a34262635c4`
@@ -162,6 +218,10 @@ SHA256
 and source commit `ddb7d9cba3195f4a16df1299215a9e26cd18544f`.
 
 ## Passed Gates
+
+These are accumulated gates from the native release history. The current
+candidate's per-gate status is tracked in `RELEASE_CHECKLIST.md`; older counts
+below (for example the 48/48 Rust figure) are historical, not 1.0.39 figures.
 
 - Rust GUI lifecycle, three Win32 minimize/restore cycles, close-to-tray, tray
   restore, single-instance wake-up, diagnostics export, view switching,
@@ -284,6 +344,24 @@ and source commit `ddb7d9cba3195f4a16df1299215a9e26cd18544f`.
 
 ## Evidence
 
+- `docs/evidence/release/candidate-1.0.39-frozen-2026-11-17.json`
+- `docs/evidence/release/candidate-1.0.39-identity-2026-11-17.json`
+- `docs/evidence/release/public-sanitization-1.0.39-2026-11-17.json`
+- `docs/evidence/packaging/v1.0.39-clean-2026-11-17.json`
+- `docs/evidence/packaging/v1.0.39-deployment-2026-11-17.json`
+- `docs/evidence/packaging/v1.0.39-fixture-policy-isolation-2026-11-17.json`
+- `docs/evidence/hardware/mechrevo-wujie15-8845hs-1.0.39-15w-write-2026-11-17.json`
+- `docs/evidence/hardware/v1.0.39-worker-hang-2026-11-17.json`
+- `docs/evidence/ui/native-dpi-1.0.39-2026-11-17.json`
+- `docs/evidence/ui/native-workarea-200-1.0.39-2026-11-17.json`
+- `docs/evidence/ui/native-resource-1.0.39-2026-11-17.json`
+- `docs/evidence/ui/frozen-1.0.39-consent-2026-11-17.json`
+- `docs/evidence/ui/frozen-1.0.39-demo-2026-11-17.json`
+- `docs/evidence/ui/frozen-1.0.39-panels-2026-11-17.json`
+- `docs/evidence/build/reproducibility-1.0.39-2026-11-17.json`
+- `docs/evidence/build/hosted-ci-1.0.39-2026-11-17.json`
+- `docs/evidence/build/hosted-ci-post-deployment-2026-11-17.json`
+- `docs/evidence/media/native-promo-review-v2-2026-11-17.json`
 - `docs/evidence/packaging/v1.0.30-release-gate-2026-11-14.json`
 - `docs/evidence/packaging/v1.0.30-clean-2026-11-14.json`
 - `docs/evidence/packaging/v1.0.30-shell-integration-2026-11-14.json`
@@ -401,6 +479,9 @@ Superseded candidates keep their exact historical package and evidence.
 - Verify WinRing0 behavior under a clean Windows security baseline.
 - Complete human review of the video, claims, cover, and public-release copy.
 - Obtain explicit owner approval for the GitHub Release and Bilibili upload.
+- Rebuild and release-gate the post-freeze safety remediation as a new
+  candidate before any future deployment; the deployed 1.0.39 package predates
+  it.
 
 ## Promotion Rule
 

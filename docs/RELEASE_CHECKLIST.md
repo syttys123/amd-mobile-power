@@ -17,6 +17,16 @@ consent wording. The exact ZIP is deployed to `C:\RyzenAdj`; the previous
 1.0.33 tree remains at `C:\RyzenAdj.before-20261117-035509`. Current readiness
 is:
 
+Current review media (v2, `DRAFT_FOR_HUMAN_REVIEW`, not approved for upload):
+`artifacts/media/promo-review-20261117-v2/amd-mobile-power-review-v2-silent.mp4`
+(SHA256 `99d618749ac31b965681b3d964cc37b0b9ff4255ffc67838d0a713ac5760d82c`,
+3,382,806 bytes, 1920x1080, 30 fps, 1185 frames, 39.5 s). Evidence:
+`evidence/media/native-promo-review-v2-2026-11-17.json`. This v2 cut supersedes
+the 42.5-second v1 render that mixed firmware-clamp data into the main preset
+demo. The main preset demo uses the hardware-free `preset-success` fixture; GUI
+captures use an isolated development fixture build, not the deployed package.
+See `PROMO_VIDEO.md`.
+
 - [x] Native source build: GUI 61 tests, probe 7 tests, C++ policy tests.
 - [x] No-driver destructor cleanup and transport resource regression pass.
 - [x] Current ZIP read-only runtime, diagnostics and install flow pass.
@@ -30,7 +40,8 @@ is:
 - [x] Final packaged DPI/work-area/resource and regional visual review pass.
 - [ ] Real OS DPI transitions, second AMD device and clean Windows baseline recorded.
 - [x] Exact gated ZIP promoted with rollback and deployed hashes/read-back verified.
-- [x] Media refreshed to final UI; 42.5-second silent review rendered and inspected.
+- [x] Media refreshed to final UI; 39.5-second silent v2 review rendered and
+      inspected (supersedes the 42.5-second v1 cut).
 - [ ] Owner approves final GitHub Release and Bilibili publication.
 
 Older PASS records establish historical behavior only. Missing current gates
