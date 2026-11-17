@@ -41,11 +41,11 @@ use windows_sys::Win32::Graphics::Gdi::{
     BeginPaint, BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateFontW, CreatePen,
     CreateSolidBrush, DeleteDC, DeleteObject, DrawTextW, EndPaint, FillRect, GetMonitorInfoW,
     GetStockObject, InvalidateRect, MonitorFromWindow, RedrawWindow, RoundRect, ScreenToClient,
-    SelectObject, SetBkColor, SetBkMode, SetTextColor, SetViewportOrgEx, UpdateWindow, BLACK_BRUSH,
-    DT_CENTER, DT_END_ELLIPSIS, DT_LEFT, DT_NOPREFIX, DT_SINGLELINE, DT_VCENTER, FW_BOLD,
-    FW_NORMAL, HBRUSH, HGDIOBJ, MONITORINFO, MONITOR_DEFAULTTONEAREST, NULL_BRUSH, PAINTSTRUCT,
-    PS_SOLID, RDW_ALLCHILDREN, RDW_ERASE, RDW_FRAME, RDW_INVALIDATE, SRCCOPY, TRANSPARENT,
-    WHITE_BRUSH,
+    SelectObject, SetBkColor, SetBkMode, SetDCBrushColor, SetTextColor, SetViewportOrgEx,
+    UpdateWindow, DC_BRUSH, DT_CENTER, DT_END_ELLIPSIS, DT_LEFT, DT_NOPREFIX, DT_SINGLELINE,
+    DT_VCENTER, FW_BOLD, FW_NORMAL, HBRUSH, HGDIOBJ, MONITORINFO, MONITOR_DEFAULTTONEAREST,
+    NULL_BRUSH, PAINTSTRUCT, PS_SOLID, RDW_ALLCHILDREN, RDW_ERASE, RDW_FRAME, RDW_INVALIDATE,
+    SRCCOPY, TRANSPARENT,
 };
 use windows_sys::Win32::System::JobObjects::{
     AssignProcessToJobObject, CreateJobObjectW, JobObjectExtendedLimitInformation,
@@ -289,14 +289,12 @@ fn refresh_high_contrast(force: bool) {
     ACTIVE_HIGH_CONTRAST.store(force || system_high_contrast(), Ordering::Relaxed);
 }
 
-fn surface_brush() -> HBRUSH {
-    unsafe {
-        GetStockObject(if ACTIVE_HIGH_CONTRAST.load(Ordering::Relaxed) {
-            BLACK_BRUSH
-        } else {
-            WHITE_BRUSH
-        }) as HBRUSH
-    }
+unsafe fn control_surface_brush(hdc: windows_sys::Win32::Graphics::Gdi::HDC) -> HBRUSH {
+    // The stock WHITE_BRUSH painted a white slab behind edits/labels in the
+    // dark theme. Use the per-DC stock brush so the fill follows the active
+    // palette without allocating a GDI object per message.
+    SetDCBrushColor(hdc, palette().surface);
+    GetStockObject(DC_BRUSH) as HBRUSH
 }
 
 /// All layout constants in this file are expressed in 96-DPI logical units.
@@ -5697,7 +5695,7 @@ unsafe extern "system" fn window_proc(
                 SetBkMode(hdc, 1);
                 SetBkColor(hdc, palette().surface);
                 SetTextColor(hdc, palette().text_muted);
-                return surface_brush() as LRESULT;
+                return control_surface_brush(hdc) as LRESULT;
             }
             SetBkMode(hdc, TRANSPARENT as i32);
             SetTextColor(hdc, static_text_color(control_id));
@@ -5708,7 +5706,7 @@ unsafe extern "system" fn window_proc(
             SetBkMode(hdc, TRANSPARENT as i32);
             SetBkColor(hdc, palette().surface);
             SetTextColor(hdc, palette().text);
-            surface_brush() as LRESULT
+            control_surface_brush(hdc) as LRESULT
         }
         WM_SYSCOLORCHANGE | WM_SETTINGCHANGE => {
             refresh_high_contrast(app.ui_fixture == Some(UiFixture::HighContrast));
