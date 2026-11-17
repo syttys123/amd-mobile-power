@@ -12,6 +12,7 @@ $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSCommandPath
 $repositoryRoot = Split-Path -Parent $root
+. (Join-Path $root "worker-client.ps1")
 $cppBuild = Join-Path $repositoryRoot "artifacts\native-build\cpp-worker"
 $powerLimitTests = Join-Path `
     $cppBuild `
@@ -92,9 +93,12 @@ function Invoke-NativeWorkerProbe {
             if ($process.HasExited) {
                 throw "$Label worker exited before the probe: $($process.ExitCode)"
             }
-            $output = & $rustProbe --pipe-name $pipePath --command getHealth 2>&1
-            if ($LASTEXITCODE -eq 0) {
-                $health = ($output | Out-String).Trim()
+            $probe = Invoke-ProbeProcess `
+                -ProbePath $rustProbe `
+                -PipePath $pipePath `
+                -Command "getHealth"
+            if ($probe.ExitCode -eq 0) {
+                $health = $probe.Output
                 break
             }
             Start-Sleep -Milliseconds 150
@@ -103,11 +107,14 @@ function Invoke-NativeWorkerProbe {
             throw "$Label worker did not answer getHealth."
         }
 
-        $profilesText = & $rustProbe --pipe-name $pipePath --command getProfiles 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            throw "$Label worker profile catalog probe failed: $profilesText"
+        $profilesProbe = Invoke-ProbeProcess `
+            -ProbePath $rustProbe `
+            -PipePath $pipePath `
+            -Command "getProfiles"
+        if ($profilesProbe.ExitCode -ne 0) {
+            throw "$Label worker profile catalog probe failed: $($profilesProbe.Output)"
         }
-        $profileCatalog = ($profilesText | Out-String).Trim() | ConvertFrom-Json
+        $profileCatalog = $profilesProbe.Output | ConvertFrom-Json
         $catalogProfiles = @($profileCatalog.profiles)
         if ($catalogProfiles.Count -lt 10) {
             throw "$Label worker reported an incomplete profile catalog."
@@ -126,9 +133,12 @@ function Invoke-NativeWorkerProbe {
             }
         }
 
-        $shutdown = & $rustProbe --pipe-name $pipePath --command shutdown 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            throw "$Label worker shutdown probe failed: $shutdown"
+        $shutdownProbe = Invoke-ProbeProcess `
+            -ProbePath $rustProbe `
+            -PipePath $pipePath `
+            -Command "shutdown"
+        if ($shutdownProbe.ExitCode -ne 0) {
+            throw "$Label worker shutdown probe failed: $($shutdownProbe.Output)"
         }
         if (-not $process.WaitForExit(5000)) {
             throw "$Label worker did not exit after shutdown."
@@ -138,7 +148,7 @@ function Invoke-NativeWorkerProbe {
             Label = $Label
             Health = $health
             ProfileCatalogCount = $catalogProfiles.Count
-            Shutdown = ($shutdown | Out-String).Trim()
+            Shutdown = $shutdownProbe.Output
             ExitCode = $process.ExitCode
         }
     }
