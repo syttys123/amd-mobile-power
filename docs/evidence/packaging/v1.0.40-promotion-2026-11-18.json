@@ -7,11 +7,11 @@
   "Backup": "C:\\RyzenAdj.before-20261118-001504",
   "GuiArguments": "--simple-mode --max-target-watts 45",
   "ShortcutsUpdated": [
-    "C:\\Users\\SYT\\Desktop\\功耗设置 5-60W.lnk"
+    "%USERPROFILE%\\Desktop\\功耗设置 5-60W.lnk"
   ],
   "ShortcutArguments": [
     {
-      "Path": "C:\\Users\\SYT\\Desktop\\功耗设置 5-60W.lnk",
+      "Path": "%USERPROFILE%\\Desktop\\功耗设置 5-60W.lnk",
       "Before": "--simple-mode --max-target-watts 45",
       "After": "--simple-mode --max-target-watts 45",
       "Dropped": []

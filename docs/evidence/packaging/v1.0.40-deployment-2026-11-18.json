@@ -15,7 +15,7 @@
   },
   "Shortcut": [
     {
-      "Path": "C:\\Users\\SYT\\Desktop\\功耗设置 5-60W.lnk",
+      "Path": "%USERPROFILE%\\Desktop\\功耗设置 5-60W.lnk",
       "Before": "--simple-mode --max-target-watts 45",
       "After": "--simple-mode --max-target-watts 45",
       "Dropped": []
@@ -42,7 +42,7 @@
   },
   "NightTask": {
     "Name": "AmdMobilePower DirectNightPolicy 2300",
-    "Arguments": "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File \"D:\\amd-mobile-power\\native\\apply-power-policy-direct.ps1\" -BatteryWatts 10 -AcWatts 10 -LogPath \"C:\\Users\\SYT\\AppData\\Local\\AmdMobilePower\\maintenance\\direct-policy.log\" -AllowGuiAutoStart -RefreshGui",
+    "Arguments": "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File \"D:\\amd-mobile-power\\native\\apply-power-policy-direct.ps1\" -BatteryWatts 10 -AcWatts 10 -LogPath \"%USERPROFILE%\\AppData\\Local\\AmdMobilePower\\maintenance\\direct-policy.log\" -AllowGuiAutoStart -RefreshGui",
     "LastRunTime": "2026-11-18T00:39:11+08:00",
     "LastTaskResult": 0,
     "NextRunTime": "2026-11-18T23:00:00+08:00"

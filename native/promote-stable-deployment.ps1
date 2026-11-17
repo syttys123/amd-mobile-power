@@ -318,6 +318,16 @@ if (-not $EvidencePath) {
 }
 $resolvedEvidence = Resolve-ArtifactPath $EvidencePath
 
+function Protect-PublicPath([string]$Value) {
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return $Value
+    }
+    return [regex]::Replace(
+        $Value,
+        '(?i)C:[\\/]+Users[\\/]+(?!Public(?:[\\/]|$))[A-Za-z0-9._-]+',
+        '%USERPROFILE%')
+}
+
 $desktopRoots = @(
     [Environment]::GetFolderPath("Desktop"),
     "C:\Users\Public\Desktop"
@@ -409,10 +419,12 @@ $plan = [ordered]@{
     Backup = $resolvedBackup
     Evidence = $resolvedEvidence
     GuiArguments = $GuiArguments
-    LegacyShortcuts = @($shortcutSnapshots | ForEach-Object { $_.Path })
+    LegacyShortcuts = @($shortcutSnapshots | ForEach-Object {
+        Protect-PublicPath $_.Path
+    })
     ShortcutArguments = @($shortcutSnapshots | ForEach-Object {
         [pscustomobject]@{
-            Path = $_.Path
+            Path = Protect-PublicPath $_.Path
             Before = $_.Arguments
             After = $_.ResolvedArguments
             Dropped = @($_.DroppedArguments)
@@ -497,10 +509,12 @@ try {
         Target = $resolvedTarget
         Backup = $resolvedBackup
         GuiArguments = $GuiArguments
-        ShortcutsUpdated = @($shortcutSnapshots | ForEach-Object { $_.Path })
+        ShortcutsUpdated = @($shortcutSnapshots | ForEach-Object {
+            Protect-PublicPath $_.Path
+        })
         ShortcutArguments = @($shortcutSnapshots | ForEach-Object {
             [pscustomobject]@{
-                Path = $_.Path
+                Path = Protect-PublicPath $_.Path
                 Before = $_.Arguments
                 After = $_.ResolvedArguments
                 Dropped = @($_.DroppedArguments)
