@@ -1506,6 +1506,40 @@ catch {
             "Rollback errors: " + ($rollbackErrors -join " | ")) `
             -ErrorAction Continue
     }
+    try {
+        $failureEvidenceDirectory = Split-Path -Parent $resolvedEvidence
+        if ($failureEvidenceDirectory) {
+            New-Item -ItemType Directory -Path $failureEvidenceDirectory -Force | Out-Null
+        }
+        if (-not (Test-Path -LiteralPath $resolvedEvidence)) {
+            $failureEvidence = [ordered]@{
+                Verification = "FAIL"
+                Package = $resolvedPackage
+                PackageSHA256 = $packageIdentity.PackageSHA256
+                ExpectedPackageSHA256 = if ($expectedHashProvided) { $ExpectedPackageSHA256 } else { $null }
+                ExpectedSourceCommit = if ($expectedCommitProvided) { $ExpectedSourceCommit } else { $null }
+                IdentityBound = $packageIdentity.IdentityBound
+                PackageVersion = $packageIdentity.Version
+                SourceCommit = $packageIdentity.SourceCommit
+                Target = $resolvedTarget
+                PreviousVersion = $previousBuildInfo.Version
+                PreviousCommit = $previousBuildInfo.Commit
+                Backup = $resolvedBackup
+                BackupKind = $backupKind
+                Rollback = $failureRollbackState
+                RollbackErrors = @($rollbackErrors)
+                Error = $failure.Exception.Message
+                RecordedAt = (Get-Date).ToString("o")
+            }
+            [System.IO.File]::WriteAllText(
+                $resolvedEvidence,
+                ($failureEvidence | ConvertTo-Json -Depth 8),
+                (New-Object System.Text.UTF8Encoding($false)))
+        }
+    }
+    catch {
+        Write-Warning "Deployment failure evidence could not be written: $($_.Exception.Message)"
+    }
     throw $failure
 }
 finally {

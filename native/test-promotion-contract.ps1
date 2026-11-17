@@ -919,6 +919,12 @@ try {
                 -ErrorAction SilentlyContinue)
         $restoredBuildHash = Get-TestFileSha256 `
             -Path (Join-Path $old.Path "BUILD-INFO.txt")
+        $failureEvidence = $null
+        if (Test-Path -LiteralPath $evidencePath -PathType Leaf) {
+            $failureEvidence = [System.IO.File]::ReadAllText(
+                $evidencePath,
+                [System.Text.Encoding]::UTF8) | ConvertFrom-Json
+        }
         $pass = $run.ExitCode -ne 0 -and
             $run.Output -match "Installed checksum mismatch" -and
             $run.Output -match "Rollback=Completed" -and
@@ -928,14 +934,17 @@ try {
             $restoredBuildHash -eq $oldBuildHash -and
             -not (Test-Path -LiteralPath (Join-Path $old.Path "amd-mobile-power-gui.exe")) -and
             $backupDirectories.Count -eq 0 -and
-            -not (Test-Path -LiteralPath $evidencePath)
+            $null -ne $failureEvidence -and
+            $failureEvidence.Verification -eq "FAIL" -and
+            $failureEvidence.Rollback -eq "Completed" -and
+            $failureEvidence.Error -match "Installed checksum mismatch"
         Add-Result `
             -Name "installed-checksum-mismatch-rolls-back" `
             -Pass $pass `
-            -Detail ("exit={0} backups={1} evidenceExists={2}" -f `
+            -Detail ("exit={0} backups={1} failureEvidence={2}" -f `
                 $run.ExitCode, `
                 $backupDirectories.Count, `
-                (Test-Path -LiteralPath $evidencePath))
+                $(if ($failureEvidence) { $failureEvidence.Rollback } else { "missing" }))
     }
     catch {
         Add-Result `

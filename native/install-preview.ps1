@@ -84,6 +84,28 @@ $installParent = Split-Path -Parent $resolvedInstall
 if ([string]::IsNullOrWhiteSpace($installParent)) {
     throw "InstallDirectory has no parent directory: $resolvedInstall"
 }
+$installParent = [System.IO.Path]::GetFullPath($installParent)
+$installParentRoot = [System.IO.Path]::GetPathRoot($installParent)
+$isFilesystemRootParent = [string]::Equals(
+    $installParent.TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar),
+    $installParentRoot.TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar),
+    [System.StringComparison]::OrdinalIgnoreCase)
+if ($isFilesystemRootParent) {
+    # A drive root already exists. New-Item -Force rejects "C:\" in
+    # Windows PowerShell 5.1, even though a direct child such as
+    # C:\RyzenAdj is a valid installation target.
+    if (-not (Test-Path -LiteralPath $installParent -PathType Container)) {
+        throw "Install parent filesystem root is unavailable: $installParent"
+    }
+    $parentItem = Get-Item -LiteralPath $installParent -Force
+    if (($parentItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "Refusing an install parent that is a reparse point: $installParent"
+    }
+}
 
 function Assert-ExpectedCleanupDirectory {
     param(
@@ -126,7 +148,9 @@ function Assert-ExpectedCleanupDirectory {
     return $resolvedPath
 }
 
-New-Item -ItemType Directory -Path $installParent -Force | Out-Null
+if (-not $isFilesystemRootParent) {
+    New-Item -ItemType Directory -Path $installParent -Force | Out-Null
+}
 
 $operationId = [Guid]::NewGuid().ToString("N")
 $stagingDirectory = Join-Path `
