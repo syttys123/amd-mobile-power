@@ -3300,6 +3300,7 @@ fn start_worker_monitor(
         let mut next_restart = Instant::now();
         while !stop.load(Ordering::SeqCst) {
             let policy = client.get_power_policy().ok();
+            let mut stalled = false;
             let update = match client.snapshot() {
                 Ok(snapshot) => {
                     consecutive_failures = 0;
@@ -3315,8 +3316,8 @@ fn start_worker_monitor(
                     }
                 }
                 Err(error) => {
-                    let hardware_fault =
-                        error.contains("refresh_failed") || error.contains("timed out");
+                    let hardware_fault = terminal_hardware_fault(&error);
+                    stalled = pipe_stall_error(&error);
                     if hardware_fault {
                         hardware_failures = hardware_failures.saturating_add(1);
                         if hardware_failures == 5 {
@@ -3349,18 +3350,32 @@ fn start_worker_monitor(
             unsafe {
                 post_status(hwnd, update);
             }
-            heartbeat.fetch_add(1, Ordering::SeqCst);
+            // A pipe timeout means the worker is unresponsive. Do not feed the
+            // watchdog heartbeat, otherwise the 5 s I/O deadline would keep the
+            // heartbeat alive forever and the hung worker would never be
+            // replaced. Terminal fault is reserved for a responsive worker
+            // whose hardware refresh keeps failing.
+            if !stalled {
+                heartbeat.fetch_add(1, Ordering::SeqCst);
+            }
             thread::sleep(Duration::from_secs(1));
         }
     })
 }
 
-/// A worker that stops answering blocks the monitor inside a pipe read, so the
-/// monitor cannot report its own failure. The watchdog only watches the
-/// heartbeat and asks the UI thread to replace the worker after 30 s without a
-/// single completed sample.
+/// A worker that stops answering times out inside the monitor's pipe read. The
+/// monitor suppresses the heartbeat on those stalls so the watchdog still sees
+/// 30 s without a completed sample and asks the UI thread to replace it.
 fn watchdog_should_restart(stalled_checks: u32) -> bool {
     stalled_checks >= 6
+}
+
+fn terminal_hardware_fault(error: &str) -> bool {
+    error.contains("refresh_failed")
+}
+
+fn pipe_stall_error(error: &str) -> bool {
+    error.contains("timed out")
 }
 
 /// Kill a hung worker without blocking the UI thread indefinitely. A worker
@@ -6810,6 +6825,20 @@ mod tests {
         assert!(!watchdog_should_restart(5));
         assert!(watchdog_should_restart(6));
         assert!(watchdog_should_restart(60));
+    }
+
+    #[test]
+    fn pipe_timeout_stalls_heartbeat_without_terminal_fault() {
+        let error = "worker pipe I/O timed out";
+        assert!(super::pipe_stall_error(error));
+        assert!(!super::terminal_hardware_fault(error));
+    }
+
+    #[test]
+    fn responsive_refresh_failure_is_terminal_not_a_pipe_stall() {
+        let error = "refresh_failed: SMU read rejected";
+        assert!(super::terminal_hardware_fault(error));
+        assert!(!super::pipe_stall_error(error));
     }
 
     #[test]
