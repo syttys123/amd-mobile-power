@@ -62,6 +62,10 @@ The native Rust GUI + C++ worker line may be copied to `C:\RyzenAdj` only when:
 3. `native\verify-release.ps1` produces a PASS release-gate record covering the
    portable package, shell integration, no-change power policy, worker-hang
    recovery, DPI fixtures, work-area fixtures, and byte reproducibility.
+   The wrapper snapshots the initial stable GUI, clears test-owned
+   GUI/worker processes under `artifacts`, and restores the stable
+   `C:\RyzenAdj` tray in `finally` with the current day/night policy. Recovery
+   must probe `enabled=true` and the current Fast/Slow limits.
 4. The package source commit and SHA256 match the clean-package and release-gate
    evidence.
 5. A current-value hardware probe reads and restores a safe power policy and
@@ -180,6 +184,11 @@ the full post-1.0.39 safety remediation and the pipe-stall supervision fix.
   battery 10 / AC 10 with `-AllowGuiAutoStart -RefreshGui`; a manual trigger
   exited 0.
 - Desktop shortcut: `--simple-mode --max-target-watts 45`.
+- Release-gate recovery is now part of the wrapper contract: after success,
+  failure, or interruption, the stable tray is restored from `finally` and
+  re-applies 07:00-23:00 battery 25 W / AC 45 W or night 15/15 W. The gate
+  records the initial GUI state and uses the helper's opt-in auto-start path;
+  it does not leave the package verifier as a second hardware owner.
 - Still pending: real OS DPI transitions, a second AMD device, a clean
   Windows WinRing0 baseline, owner media review and publication approval. The
   packaged worker still caches its last applied target and does not re-verify

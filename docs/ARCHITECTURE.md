@@ -149,6 +149,15 @@ files are never edited as source. The current stable-local deployment is
 `1.0.40`; candidate `1.0.41` is pending its release gate, and public release
 remains unapproved.
 
+`native/verify-release.ps1` is the release-gate wrapper for this ownership
+boundary. It records the initial stable GUI/arguments, clears only test
+GUI/worker processes rooted under repository artifacts, and always restores the
+stable `C:\RyzenAdj` tray from `finally`. The recovery uses
+`apply-power-policy-direct.ps1 -AllowGuiAutoStart -RefreshGui`, applies the
+current 07:00-23:00 (`25/45 W`) or night (`15/15 W`) policy, and independently
+probes `enabled=true` and the current Fast/Slow limits. A failed recovery is
+reported as a composite error; it does not replace the original gate failure.
+
 ## Capability Detection
 
 The worker reports:

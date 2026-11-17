@@ -37,10 +37,18 @@ not authoritative.
   in-tolerance values, lower clamps, STAPM-only drift, missing/NaN values,
   failure backoff, and power-line switching.
 - Source checks are PASS: Rust GUI 69 tests, probe 7 tests, formatting, Clippy,
-  C++ 4 tests, worker request bounds, helper contract, document links, and
-  `git diff --check`. Candidate status remains pending the clean commit, exact
-  1.0.41 package build, and the formal hardware gate. No 1.0.41 package has
-  been promoted.
+  C++ 4 tests, worker request bounds, helper contract, release GUI recovery
+  contract, document links, and `git diff --check`. Candidate status remains
+  pending the clean commit, exact 1.0.41 package build, and the formal hardware
+  gate. No 1.0.41 package has been promoted.
+- `native/verify-release.ps1` now snapshots the stable `C:\RyzenAdj` GUI and
+  launch arguments before build/hardware work, clears only test-owned
+  GUI/worker processes from `artifacts`, and restores the supervised stable
+  tray in `finally`. Recovery applies the current window (07:00-23:00 battery
+  25 W / AC 45 W; otherwise 15/15), probes `enabled=true` plus current
+  Fast/Slow limits, and preserves an original gate exception when recovery
+  also fails. The initial GUI state and recovery result are appended to gate
+  evidence; `native/test-release-gui-recovery-contract.ps1` locks the contract.
 - `C:\RyzenAdj` remains the stable 1.0.40 deployment. The user restored the
   current night policy to battery 15 W / AC 15 W (all six limits at 15 W) on
   2026-11-18; the night task action now runs `-BatteryWatts 15 -AcWatts 15`
