@@ -292,4 +292,48 @@ PowerLimitApplicationResult ApplyPowerLimitTarget(
     return result;
 }
 
+std::optional<int> ParseUserPowerCap(std::wstring_view text) {
+    // At most two digits keeps the accumulation trivially overflow-free.
+    if (text.empty() || text.size() > 2) {
+        return std::nullopt;
+    }
+    int value = 0;
+    for (const wchar_t character : text) {
+        if (character < L'0' || character > L'9') {
+            return std::nullopt;
+        }
+        value = value * 10 + (character - L'0');
+    }
+    if (value < kMinimumUserPowerCapWatts ||
+        value > kMaximumUserPowerCapWatts) {
+        return std::nullopt;
+    }
+    return value;
+}
+
+std::optional<std::string> ValidateUserPowerCap(
+    const PowerLimitTarget& target,
+    int maximum_user_watts) {
+    const auto validate = [maximum_user_watts](
+                              const char* name,
+                              int watts) -> std::optional<std::string> {
+        if (watts <= maximum_user_watts) {
+            return std::nullopt;
+        }
+        return std::string(name) +
+            ": Power must not exceed the user limit of " +
+            std::to_string(maximum_user_watts) + "W.";
+    };
+    if (const auto error = validate("STAPM", target.stapm_watts)) {
+        return error;
+    }
+    if (const auto error = validate("Fast", target.fast_watts)) {
+        return error;
+    }
+    if (const auto error = validate("Slow", target.slow_watts)) {
+        return error;
+    }
+    return std::nullopt;
+}
+
 }  // namespace amd_mobile_power

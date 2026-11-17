@@ -1,0 +1,42 @@
+{
+  "SchemaVersion": 1,
+  "CaptureMode": "read-only-no-write-controls",
+  "Fixture": "high-contrast",
+  "FixtureApplyRequested": false,
+  "Consent": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\verify\\remediation-consent-hc\\remediation-consent-hc-consent-2026-11-17.png",
+    "Width": 974,
+    "Height": 952,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "34973fdcf3def67ff79ec4d3538ac06848dfca733132f322dfc43adc5910fe6d"
+  },
+  "FixtureApplyStatus": null,
+  "DpiFixture": 150,
+  "UniformTargetWatts": null,
+  "PolicyBatteryWatts": null,
+  "PolicyAcWatts": null,
+  "PolicySeeded": false,
+  "BatteryOnly": false,
+  "FocusControlId": null,
+  "ControlChecks": {
+    "TargetAndPresetEnabled": false,
+    "DiagnosticsEnabled": true
+  },
+  "Simple": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\verify\\remediation-consent-hc\\remediation-consent-hc-simple-2026-11-17.png",
+    "Width": 902,
+    "Height": 579,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "a13273c4043b5497beaa08ab6ff1ddc8da3fd461137ff6e3dfb38f828572fb29"
+  },
+  "Advanced": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\verify\\remediation-consent-hc\\remediation-consent-hc-advanced-2026-11-17.png",
+    "Width": 1172,
+    "Height": 1059,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "4752c97e00b77bb1c48efc5ab00788be0e3b49500e0a66235871c663cbb6e420"
+  },
+  "SimpleClientSize": "900x540",
+  "AdvancedClientSize": "1170x1020",
+  "RecordedAt": "2026-11-17T19:09:06.3968343+08:00"
+}

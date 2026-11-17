@@ -1,7 +1,9 @@
 #include <windows.h>
 
+#include "pipe_security.hpp"
 #include "power_policy.hpp"
 #include "profile_catalog.hpp"
+#include "request_json.hpp"
 #include "ryzen_hardware.hpp"
 
 #include <algorithm>
@@ -25,6 +27,8 @@
 #include <vector>
 
 namespace {
+
+using amd_mobile_power::ExtractJsonInt;
 
 constexpr wchar_t kDefaultPipeName[] =
     L"\\\\.\\pipe\\AmdMobilePower.NativeWorker.v1";
@@ -119,44 +123,6 @@ std::string SanitizeJsonString(std::string value) {
         }
     }
     return value.empty() ? "unknown" : value;
-}
-
-std::optional<int> ExtractJsonInt(std::string_view json, std::string_view key) {
-    const std::string needle = "\"" + std::string(key) + "\"";
-    const std::size_t key_position = json.find(needle);
-    if (key_position == std::string_view::npos) {
-        return std::nullopt;
-    }
-    const std::size_t colon_position = json.find(':', key_position + needle.size());
-    if (colon_position == std::string_view::npos) {
-        return std::nullopt;
-    }
-
-    std::size_t position = colon_position + 1;
-    while (position < json.size() &&
-        std::isspace(static_cast<unsigned char>(json[position]))) {
-        ++position;
-    }
-    if (position >= json.size()) {
-        return std::nullopt;
-    }
-
-    const bool negative = json[position] == '-';
-    if (negative) {
-        ++position;
-    }
-    if (position >= json.size() ||
-        !std::isdigit(static_cast<unsigned char>(json[position]))) {
-        return std::nullopt;
-    }
-
-    int value = 0;
-    while (position < json.size() &&
-        std::isdigit(static_cast<unsigned char>(json[position]))) {
-        value = value * 10 + (json[position] - '0');
-        ++position;
-    }
-    return negative ? -value : value;
 }
 
 std::optional<bool> ExtractJsonBool(std::string_view json, std::string_view key) {
@@ -822,6 +788,7 @@ int wmain(int argc, wchar_t* argv[]) {
     std::wstring ryzenadj_directory;
     bool enable_hardware = false;
     bool enable_write_controls = false;
+    int maximum_user_watts = amd_mobile_power::kDefaultUserPowerCapWatts;
     for (int index = 1; index < argc; ++index) {
         const std::wstring_view argument = argv[index];
         if (argument == L"--pipe-name") {
@@ -836,6 +803,19 @@ int wmain(int argc, wchar_t* argv[]) {
                 return 2;
             }
             ryzenadj_directory = argv[++index];
+        } else if (argument == L"--max-target-watts") {
+            if (index + 1 >= argc) {
+                std::wcerr << L"--max-target-watts requires a value\n";
+                return 2;
+            }
+            const auto parsed_cap =
+                amd_mobile_power::ParseUserPowerCap(argv[++index]);
+            if (!parsed_cap) {
+                std::wcerr << L"--max-target-watts must be an integer between "
+                              L"5 and 60\n";
+                return 2;
+            }
+            maximum_user_watts = *parsed_cap;
         } else if (argument == L"--enable-hardware") {
             enable_hardware = true;
         } else if (argument == L"--enable-write-controls") {
@@ -844,7 +824,7 @@ int wmain(int argc, wchar_t* argv[]) {
             std::wcout
                 << L"usage: amdmobilepower_native_worker [--pipe-name NAME] "
                    L"[--ryzenadj-dir DIRECTORY] [--enable-hardware] "
-                   L"[--enable-write-controls]\n";
+                   L"[--enable-write-controls] [--max-target-watts W]\n";
             return 0;
         } else {
             std::wcerr << L"unknown argument\n";
@@ -856,6 +836,16 @@ int wmain(int argc, wchar_t* argv[]) {
     if (enable_write_controls && !enable_hardware) {
         std::wcerr << L"--enable-write-controls requires --enable-hardware\n";
         return 2;
+    }
+
+    // Restrict the pipe to the current user and SYSTEM before touching any
+    // hardware; refuse to start when the descriptor cannot be built instead
+    // of falling back to a permissive default DACL.
+    amd_mobile_power::PipeSecurityDescriptor pipe_security;
+    if (!pipe_security.Initialize()) {
+        std::wcerr << L"Failed to build pipe security descriptor: "
+                   << GetLastError() << L"\n";
+        return 1;
     }
 
     std::unique_ptr<amd_mobile_power::RyzenHardware> hardware;
@@ -876,7 +866,7 @@ int wmain(int argc, wchar_t* argv[]) {
                 : executable.substr(0, separator);
         }
         hardware = std::make_unique<amd_mobile_power::RyzenHardware>(
-            ryzenadj_directory);
+            ryzenadj_directory, maximum_user_watts);
         std::string hardware_error;
         if (!hardware->Initialize(hardware_error)) {
             std::wcerr << L"RyzenAdj initialization failed: ";
@@ -919,7 +909,7 @@ int wmain(int argc, wchar_t* argv[]) {
         8192,
         8192,
         0,
-        nullptr);
+        pipe_security.attributes());
     if (pipe.value == INVALID_HANDLE_VALUE) {
         std::wcerr << L"CreateNamedPipeW failed: " << GetLastError() << L"\n";
         return 1;
@@ -1058,6 +1048,14 @@ int wmain(int argc, wchar_t* argv[]) {
                                 capability.unsupported_reason.value_or(
                                     "The platform does not support power-limit writes."));
                         } else {
+                            const auto battery_cap =
+                                amd_mobile_power::ValidateUserPowerCap(
+                                    payload->settings.battery_target,
+                                    maximum_user_watts);
+                            const auto ac_cap =
+                                amd_mobile_power::ValidateUserPowerCap(
+                                    payload->settings.ac_target,
+                                    maximum_user_watts);
                             const auto battery_validation =
                                 amd_mobile_power::ValidatePowerLimitTarget(
                                     payload->settings.battery_target,
@@ -1072,7 +1070,13 @@ int wmain(int argc, wchar_t* argv[]) {
                                     capability.profile->maximum_watts,
                                     capability.limits.supports_fast,
                                     capability.limits.supports_slow);
-                            if (battery_validation || ac_validation) {
+                            if (battery_cap || ac_cap) {
+                                response = ErrorResponse(
+                                    request.request_id,
+                                    "invalid_policy",
+                                    battery_cap.value_or(
+                                        ac_cap.value_or("Power policy target exceeds the user power limit.")));
+                            } else if (battery_validation || ac_validation) {
                                 response = ErrorResponse(
                                     request.request_id,
                                     "invalid_target",
@@ -1115,13 +1119,18 @@ int wmain(int argc, wchar_t* argv[]) {
                                 capability.unsupported_reason.value_or(
                                     "The platform does not support power-limit writes."));
                         } else {
-                            const auto validation =
-                                amd_mobile_power::ValidatePowerLimitTarget(
-                                    payload->target,
-                                    capability.profile->minimum_watts,
-                                    capability.profile->maximum_watts,
-                                    capability.limits.supports_fast,
-                                    capability.limits.supports_slow);
+                            auto validation =
+                                amd_mobile_power::ValidateUserPowerCap(
+                                    payload->target, maximum_user_watts);
+                            if (!validation) {
+                                validation =
+                                    amd_mobile_power::ValidatePowerLimitTarget(
+                                        payload->target,
+                                        capability.profile->minimum_watts,
+                                        capability.profile->maximum_watts,
+                                        capability.limits.supports_fast,
+                                        capability.limits.supports_slow);
+                            }
                             if (validation) {
                                 response = ErrorResponse(
                                     request.request_id,

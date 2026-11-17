@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace amd_mobile_power {
@@ -10,6 +11,9 @@ namespace amd_mobile_power {
 constexpr int kMinimumRestoreWatts = 1;
 constexpr int kMaximumRestoreWatts = 200;
 constexpr double kReadbackToleranceWatts = 0.75;
+constexpr int kMinimumUserPowerCapWatts = 5;
+constexpr int kMaximumUserPowerCapWatts = 60;
+constexpr int kDefaultUserPowerCapWatts = 60;
 
 struct PowerLimitTarget {
     int stapm_watts = 0;
@@ -71,6 +75,16 @@ std::optional<std::string> ValidatePowerLimitTarget(
     int maximum_watts,
     bool supports_fast,
     bool supports_slow);
+
+// Parses the --max-target-watts argument: one or two ASCII digits whose value
+// lies within [kMinimumUserPowerCapWatts, kMaximumUserPowerCapWatts].
+std::optional<int> ParseUserPowerCap(std::wstring_view text);
+
+// Returns an error when any limit of the target exceeds the user-configured
+// ceiling. Profile min/max validation remains a separate, additional check.
+std::optional<std::string> ValidateUserPowerCap(
+    const PowerLimitTarget& target,
+    int maximum_user_watts);
 
 PowerLimitApplicationResult ApplyPowerLimitTarget(
     IPowerLimitBackend& backend,

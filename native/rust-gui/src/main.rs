@@ -15,10 +15,11 @@ use amd_mobile_power_gui::worker::{
     TelemetryPayload, WorkerClient, DEFAULT_PIPE_NAME,
 };
 use std::mem::size_of;
+use std::os::windows::io::AsRawHandle;
 use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
-use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU32, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -46,6 +47,11 @@ use windows_sys::Win32::Graphics::Gdi::{
     PS_SOLID, RDW_ALLCHILDREN, RDW_ERASE, RDW_FRAME, RDW_INVALIDATE, SRCCOPY, TRANSPARENT,
     WHITE_BRUSH,
 };
+use windows_sys::Win32::System::JobObjects::{
+    AssignProcessToJobObject, CreateJobObjectW, JobObjectExtendedLimitInformation,
+    SetInformationJobObject, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+    JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+};
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows_sys::Win32::System::SystemServices::SS_LEFT;
 use windows_sys::Win32::System::Threading::{
@@ -70,6 +76,7 @@ use windows_sys::Win32::UI::Shell::{
     DefSubclassProc, SetWindowSubclass, Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD,
     NIM_DELETE, NOTIFYICONDATAW,
 };
+use windows_sys::Win32::UI::WindowsAndMessaging::RegisterWindowMessageW;
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CheckMenuItem, CreateIconFromResourceEx, CreatePopupMenu, CreateWindowExW,
     DefWindowProcW, DestroyIcon, DestroyMenu, DestroyWindow, DispatchMessageW, FindWindowW,
@@ -110,6 +117,8 @@ const WM_APP_POLICY_RESULT: u32 = WM_APP + 5;
 const WM_APP_RESTART_WORKER: u32 = WM_APP + 6;
 const WM_APP_FORCE_RESTART_WORKER: u32 = WM_APP + 7;
 const WM_APP_FORCE_RESTART_READY: u32 = WM_APP + 8;
+const WM_APP_TERMINAL_FAULT: u32 = WM_APP + 9;
+static TASKBAR_CREATED_MESSAGE: AtomicU32 = AtomicU32::new(0);
 const MENU_SHOW: usize = 1;
 const MENU_EXIT: usize = 2;
 const MENU_SIMPLE_MODE: usize = 3;
@@ -425,6 +434,7 @@ struct GuiApp {
     monitor_heartbeat: Arc<AtomicU64>,
     force_restart_in_flight: Arc<AtomicBool>,
     worker_child: Option<Child>,
+    job: Option<JobObject>,
     worker_executable: Option<PathBuf>,
     worker_pipe: String,
     write_enabled: bool,
@@ -439,6 +449,8 @@ struct GuiApp {
     policy_controls: Option<PolicyControls>,
     profile: Option<ProfilePayload>,
     saved_policy: Option<PowerPolicySettings>,
+    pending_policy: Option<PowerPolicySettings>,
+    terminal_fault: bool,
     policy_profile_applied: bool,
     latest_snapshot: Option<SnapshotPayload>,
     latest_policy: Option<PowerPolicyState>,
@@ -489,6 +501,7 @@ impl GuiApp {
             monitor_heartbeat: Arc::new(AtomicU64::new(0)),
             force_restart_in_flight: Arc::new(AtomicBool::new(false)),
             worker_child: None,
+            job: None,
             worker_executable: None,
             worker_pipe: String::new(),
             write_enabled: false,
@@ -503,6 +516,8 @@ impl GuiApp {
             policy_controls: None,
             profile: None,
             saved_policy: None,
+            pending_policy: None,
+            terminal_fault: false,
             policy_profile_applied: false,
             latest_snapshot: None,
             latest_policy: None,
@@ -3115,6 +3130,47 @@ fn worker_executable_path(options: &Options) -> Option<PathBuf> {
         .filter(|path| path.is_file())
 }
 
+/// Kernel-level parent/child binding: if the GUI dies without running Drop,
+/// closing the last job handle kills the worker instead of leaving an orphan
+/// hardware owner and policy ticker behind.
+struct JobObject(HANDLE);
+
+impl JobObject {
+    fn new() -> Option<Self> {
+        unsafe {
+            let job = CreateJobObjectW(std::ptr::null(), std::ptr::null());
+            if job.is_null() {
+                return None;
+            }
+            let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
+            info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+            if SetInformationJobObject(
+                job,
+                JobObjectExtendedLimitInformation,
+                &info as *const _ as *const std::ffi::c_void,
+                size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+            ) == 0
+            {
+                CloseHandle(job);
+                return None;
+            }
+            Some(Self(job))
+        }
+    }
+
+    fn assign(&self, child: &Child) -> bool {
+        unsafe { AssignProcessToJobObject(self.0, child.as_raw_handle() as HANDLE) != 0 }
+    }
+}
+
+impl Drop for JobObject {
+    fn drop(&mut self) {
+        if !self.0.is_null() {
+            unsafe { CloseHandle(self.0) };
+        }
+    }
+}
+
 fn start_worker(options: &Options) -> Result<Option<Child>, String> {
     let client = WorkerClient::new(options.pipe_name.clone());
     if client.health().is_ok() {
@@ -3134,6 +3190,12 @@ fn start_worker(options: &Options) -> Result<Option<Child>, String> {
     // must reach it exactly like the launch flag does.
     if options.enable_write_controls || state::load_write_unlocked() {
         command.arg("--enable-write-controls");
+    }
+    let ceiling = options
+        .max_target_watts
+        .or_else(state::load_max_target_watts);
+    if let Some(cap) = ceiling {
+        command.arg("--max-target-watts").arg(cap.to_string());
     }
     let child = command
         .stdin(Stdio::null())
@@ -3155,7 +3217,7 @@ fn restart_delay(consecutive_failures: u32) -> Duration {
 /// was spawned. A worker that is still alive (or was started outside this GUI)
 /// is left alone so two hardware owners can never race.
 fn try_restart_worker(app: &mut GuiApp) -> bool {
-    if app.ui_fixture.is_some() || app.worker_pipe.is_empty() {
+    if app.ui_fixture.is_some() || app.worker_pipe.is_empty() || app.terminal_fault {
         return false;
     }
 
@@ -3184,6 +3246,9 @@ fn try_restart_worker(app: &mut GuiApp) -> bool {
     if app.write_enabled {
         command.arg("--enable-write-controls");
     }
+    if let Some(cap) = app.max_target_watts {
+        command.arg("--max-target-watts").arg(cap.to_string());
+    }
     match command
         .stdin(Stdio::null())
         .stdout(Stdio::null())
@@ -3192,6 +3257,18 @@ fn try_restart_worker(app: &mut GuiApp) -> bool {
         .spawn()
     {
         Ok(child) => {
+            let Some(job) = app.job.as_ref() else {
+                let pid = child.id();
+                drop(child);
+                terminate_process_bounded(pid, Duration::from_secs(5));
+                return false;
+            };
+            if !job.assign(&child) {
+                let pid = child.id();
+                drop(child);
+                terminate_process_bounded(pid, Duration::from_secs(5));
+                return false;
+            }
             app.worker_child = Some(child);
             app.policy_synced = false;
             true
@@ -3221,12 +3298,14 @@ fn start_worker_monitor(
         let hwnd = hwnd_address as HWND;
         let client = WorkerClient::new(pipe_name);
         let mut consecutive_failures: u32 = 0;
+        let mut hardware_failures: u32 = 0;
         let mut next_restart = Instant::now();
         while !stop.load(Ordering::SeqCst) {
             let policy = client.get_power_policy().ok();
             let update = match client.snapshot() {
                 Ok(snapshot) => {
                     consecutive_failures = 0;
+                    hardware_failures = 0;
                     next_restart = Instant::now();
                     let profile = snapshot.platform.matched_profile.clone();
                     StatusUpdate {
@@ -3238,6 +3317,18 @@ fn start_worker_monitor(
                     }
                 }
                 Err(error) => {
+                    let hardware_fault =
+                        error.contains("refresh_failed") || error.contains("timed out");
+                    if hardware_fault {
+                        hardware_failures = hardware_failures.saturating_add(1);
+                        if hardware_failures == 5 {
+                            unsafe {
+                                PostMessageW(hwnd, WM_APP_TERMINAL_FAULT, 0, 0);
+                            }
+                        }
+                    } else {
+                        hardware_failures = 0;
+                    }
                     // Ask the UI thread to respawn a worker that exited. The
                     // check is rate-limited so a driver fault cannot cause a
                     // tight restart loop.
@@ -3989,8 +4080,11 @@ unsafe fn update_write_availability(app: &GuiApp, hwnd: HWND) {
         .as_ref()
         .map(|snapshot| snapshot.platform.is_supported)
         .unwrap_or(false);
-    let available =
-        app.write_enabled && !app.apply_in_flight && app.worker_error.is_none() && supported;
+    let available = app.write_enabled
+        && !app.apply_in_flight
+        && !app.policy_in_flight
+        && app.worker_error.is_none()
+        && supported;
 
     if let Some(controls) = app.simple_controls {
         EnableWindow(controls.target_edit, i32::from(available));
@@ -4371,6 +4465,11 @@ unsafe extern "system" fn button_feedback_proc(
                     TrackMouseEvent(&mut tracking);
                 }
             }
+            WM_MOUSEWHEEL => {
+                // Wheel messages arrive at the focused control. Forward them to
+                // the scrollable main window instead of swallowing the notch.
+                return SendMessageW(parent, message, wparam, lparam);
+            }
             WM_MOUSELEAVE if app.hovered_control == Some(id) => {
                 app.hovered_control = None;
                 InvalidateRect(hwnd, std::ptr::null(), 0);
@@ -4380,6 +4479,23 @@ unsafe extern "system" fn button_feedback_proc(
                 return 1;
             }
             _ => {}
+        }
+    }
+    DefSubclassProc(hwnd, message, wparam, lparam)
+}
+
+unsafe extern "system" fn edit_feedback_proc(
+    hwnd: HWND,
+    message: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+    _subclass_id: usize,
+    _reference: usize,
+) -> LRESULT {
+    if message == WM_MOUSEWHEEL {
+        let parent = GetParent(hwnd);
+        if !parent.is_null() {
+            return SendMessageW(parent, message, wparam, lparam);
         }
     }
     DefSubclassProc(hwnd, message, wparam, lparam)
@@ -4455,6 +4571,19 @@ unsafe fn initialize_control_feedback(app: &mut GuiApp, hwnd: HWND, instance: HI
             ..Default::default()
         };
         SendMessageW(app.tooltip, TTM_ADDTOOLW, 0, &mut tool as *mut _ as isize);
+    }
+    for id in [
+        SIMPLE_TARGET_EDIT,
+        PRESET_EDIT_START,
+        PRESET_EDIT_START + 1,
+        PRESET_EDIT_START + 2,
+        POLICY_BATTERY_EDIT,
+        POLICY_AC_EDIT,
+    ] {
+        let control = GetDlgItem(hwnd, id as i32);
+        if !control.is_null() {
+            SetWindowSubclass(control, Some(edit_feedback_proc), 2, 0);
+        }
     }
 }
 
@@ -4970,7 +5099,11 @@ unsafe fn toggle_write_unlock(app: &mut GuiApp, hwnd: HWND) {
 
     let enabling = !app.write_enabled;
     if enabling {
-        let agreed = unlock_dialog::show_unlock_dialog(hwnd, effective_dpi_percent(hwnd));
+        let agreed = unlock_dialog::show_unlock_dialog(
+            hwnd,
+            effective_dpi_percent(hwnd),
+            ACTIVE_HIGH_CONTRAST.load(Ordering::Relaxed),
+        );
         if !agreed {
             return;
         }
@@ -4982,20 +5115,19 @@ unsafe fn toggle_write_unlock(app: &mut GuiApp, hwnd: HWND) {
     // the flag change takes effect by replacing the worker this GUI owns.
     let mut note = String::new();
     if app.ui_fixture.is_none() && !app.worker_pipe.is_empty() {
-        if app.worker_child.is_some() {
-            if let Some(child) = app.worker_child.as_mut() {
-                let _ = child.kill();
-                let _ = child.wait();
-            }
-            app.worker_child = None;
+        if let Some(child) = app.worker_child.take() {
+            let pid = child.id();
+            drop(child);
             app.worker_error = None;
             app.policy_synced = false;
-            let restarted = try_restart_worker(app);
-            note = if restarted {
-                "后台服务已重启".to_owned()
-            } else {
-                "后台服务重启失败，请重启应用".to_owned()
-            };
+            let hwnd_address = hwnd as usize;
+            thread::spawn(move || {
+                terminate_process_bounded(pid, Duration::from_secs(15));
+                unsafe {
+                    PostMessageW(hwnd_address as HWND, WM_APP_RESTART_WORKER, 0, 0);
+                }
+            });
+            note = "后台服务重启中".to_owned();
         } else {
             note = "后台服务由外部启动，请重启应用后生效".to_owned();
         }
@@ -5058,8 +5190,10 @@ unsafe fn save_preset_edits(app: &mut GuiApp) -> Result<(), String> {
     }
     app.preset_watts = presets;
     refresh_preset_controls(app);
-    if let Some(index) = app.selected_preset {
-        select_preset(app, index);
+    if !app.target_edit_dirty {
+        if let Some(index) = app.selected_preset {
+            select_preset(app, index);
+        }
     }
     state::save_presets(presets)
 }
@@ -5211,7 +5345,18 @@ unsafe fn select_preset(app: &mut GuiApp, index: usize) {
 }
 
 unsafe fn start_preset_apply(app: &mut GuiApp, hwnd: HWND, index: usize) {
-    if !app.write_enabled || app.apply_in_flight || index >= app.preset_watts.len() {
+    let supported = app
+        .latest_snapshot
+        .as_ref()
+        .map(|snapshot| snapshot.platform.is_supported)
+        .unwrap_or(false);
+    if !app.write_enabled
+        || app.apply_in_flight
+        || app.policy_in_flight
+        || app.worker_error.is_some()
+        || !supported
+        || index >= app.preset_watts.len()
+    {
         return;
     }
     select_preset(app, index);
@@ -5274,6 +5419,7 @@ unsafe fn apply_profile_to_presets(app: &mut GuiApp, hwnd: HWND, profile: &Profi
             }
         }
         refresh_preset_controls(app);
+        apply_preset_visibility(app, hwnd);
     }
 
     if !app.policy_profile_applied {
@@ -5433,7 +5579,14 @@ unsafe fn show_tray_menu(hwnd: HWND, app: &GuiApp) {
             MF_UNCHECKED
         },
     );
-    if app.write_enabled {
+    let tray_can_write = app.write_enabled
+        && app.worker_error.is_none()
+        && app
+            .latest_snapshot
+            .as_ref()
+            .map(|snapshot| snapshot.platform.is_supported)
+            .unwrap_or(false);
+    if tray_can_write {
         AppendMenuW(menu, MF_SEPARATOR, 0, std::ptr::null());
         for (index, watts) in app.preset_watts.into_iter().enumerate() {
             let label = wide(&preset_menu_label(index, watts));
@@ -5470,6 +5623,14 @@ unsafe extern "system" fn window_proc(
         return DefWindowProcW(hwnd, message, wparam, lparam);
     }
     let app = &mut *app;
+
+    let taskbar_message = TASKBAR_CREATED_MESSAGE.load(Ordering::Relaxed);
+    if taskbar_message != 0 && message == taskbar_message {
+        if app.state.tray_present() {
+            add_tray_icon(hwnd);
+        }
+        return 0;
+    }
 
     match message {
         WM_PAINT => {
@@ -5551,7 +5712,12 @@ unsafe extern "system" fn window_proc(
         }
         WM_SYSCOLORCHANGE | WM_SETTINGCHANGE => {
             refresh_high_contrast(app.ui_fixture == Some(UiFixture::HighContrast));
-            InvalidateRect(hwnd, std::ptr::null(), 0);
+            RedrawWindow(
+                hwnd,
+                std::ptr::null(),
+                std::ptr::null_mut(),
+                RDW_INVALIDATE | RDW_ERASE | RDW_FRAME | RDW_ALLCHILDREN,
+            );
             0
         }
         WM_CLOSE => {
@@ -5726,6 +5892,9 @@ unsafe extern "system" fn window_proc(
             let pointer = lparam as *mut StatusUpdate;
             if !pointer.is_null() {
                 let update = Box::from_raw(pointer);
+                if app.terminal_fault {
+                    return 0;
+                }
                 let display_text = match (&update.snapshot, app.view_mode) {
                     (Some(snapshot), state::UiMode::Simple) => {
                         format_snapshot_simple(snapshot, update.policy.as_ref())
@@ -5770,6 +5939,9 @@ unsafe extern "system" fn window_proc(
             0
         }
         WM_APP_FORCE_RESTART_WORKER => {
+            if app.terminal_fault {
+                return 0;
+            }
             let live_pid = match app.worker_child.as_mut() {
                 Some(child) => match child.try_wait() {
                     Ok(None) => Some(child.id()),
@@ -5853,11 +6025,51 @@ unsafe extern "system" fn window_proc(
             }
             0
         }
+        WM_APP_TERMINAL_FAULT => {
+            app.terminal_fault = true;
+            app.stop_monitor.store(true, Ordering::SeqCst);
+            if let Some(child) = app.worker_child.take() {
+                let pid = child.id();
+                drop(child);
+                thread::spawn(move || {
+                    terminate_process_bounded(pid, Duration::from_secs(15));
+                });
+            }
+            let message =
+                "硬件读取持续失败，已停止自动重启。请关闭其他 RyzenAdj 工具并重启 Windows。";
+            app.worker_error = Some(message.to_owned());
+            if let Some(controls) = app.simple_controls {
+                let text = wide(message);
+                SetWindowTextW(controls.status, text.as_ptr());
+            }
+            if !app.status_label.is_null() {
+                let text = wide(message);
+                SetWindowTextW(app.status_label, text.as_ptr());
+            }
+            hold_status(app);
+            update_write_availability(app, hwnd);
+            InvalidateRect(hwnd, std::ptr::null(), 0);
+            0
+        }
         WM_APP_POLICY_RESULT => {
+            if app.terminal_fault {
+                app.policy_in_flight = false;
+                let pointer = lparam as *mut String;
+                if !pointer.is_null() {
+                    drop(Box::from_raw(pointer));
+                }
+                return 0;
+            }
             app.policy_in_flight = false;
             let pointer = lparam as *mut String;
             if !pointer.is_null() {
                 let text = Box::from_raw(pointer);
+                if text.contains("自动策略已保存") || text.contains("界面模拟") {
+                    app.saved_policy = app.pending_policy.take();
+                } else {
+                    app.pending_policy = None;
+                    app.saved_policy = app.latest_policy.as_ref().and_then(|state| state.settings);
+                }
                 hold_status(app);
                 if let Some(controls) = app.simple_controls {
                     let message = text.lines().next().unwrap_or(text.as_str());
@@ -6055,7 +6267,7 @@ unsafe extern "system" fn window_proc(
                             battery_target: PowerLimitTarget::uniform(battery_target),
                             ac_target: PowerLimitTarget::uniform(ac_target),
                         };
-                        app.saved_policy = Some(settings);
+                        app.pending_policy = Some(settings);
                         app.policy_in_flight = true;
                         if !app.status_label.is_null() {
                             let text = wide("正在保存自动策略…");
@@ -6129,6 +6341,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     if unsafe { RegisterClassExW(&window_class) } == 0 {
         return Err("RegisterClassExW failed".into());
     }
+    TASKBAR_CREATED_MESSAGE.store(
+        unsafe { RegisterWindowMessageW(wide("TaskbarCreated").as_ptr()) },
+        Ordering::Relaxed,
+    );
 
     // UI fixtures are isolated capture/test instances. They must not collide
     // with the stable tray GUI's single-instance mutex, or the fixture would
@@ -6333,8 +6549,25 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             apply_ui_fixture(&mut *app, hwnd, fixture);
         }
     } else {
+        unsafe {
+            (*app).job = JobObject::new();
+            if (*app).job.is_none() {
+                return Err("unable to create worker cleanup job object".into());
+            }
+        }
         match start_worker(&options) {
             Ok(child) => unsafe {
+                if let Some(child) = child.as_ref() {
+                    let job = (*app)
+                        .job
+                        .as_ref()
+                        .expect("worker job object was created above");
+                    if !job.assign(child) {
+                        let pid = child.id();
+                        terminate_process_bounded(pid, Duration::from_secs(5));
+                        return Err("unable to bind worker to cleanup job object".into());
+                    }
+                }
                 (*app).worker_child = child;
                 (*app).worker_pipe = options.pipe_name.clone();
                 (*app).worker_executable = worker_executable_path(&options);
@@ -6566,6 +6799,30 @@ mod tests {
         assert!(!watchdog_should_restart(5));
         assert!(watchdog_should_restart(6));
         assert!(watchdog_should_restart(60));
+    }
+
+    #[test]
+    fn job_object_kills_assigned_child_on_close() {
+        let job = super::JobObject::new().expect("job object");
+        let mut child = std::process::Command::new("powershell.exe")
+            .args([
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Start-Sleep -Seconds 30",
+            ])
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .expect("spawn sleeping child");
+        assert!(job.assign(&child));
+        let start = std::time::Instant::now();
+        drop(job);
+        let _status = child.wait().expect("wait for killed child");
+        // Job-object teardown may use exit code 0; the observable contract is
+        // that the 30-second child is reaped promptly instead of orphaning.
+        assert!(start.elapsed() < std::time::Duration::from_secs(5));
     }
 
     #[test]

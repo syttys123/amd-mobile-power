@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use windows_sys::Win32::Foundation::{CloseHandle, HANDLE, WAIT_ABANDONED, WAIT_OBJECT_0};
+use windows_sys::Win32::System::Threading::{CreateMutexW, ReleaseMutex, WaitForSingleObject};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -174,11 +176,47 @@ fn update_state(update: impl FnOnce(&mut PersistedUiState)) -> Result<(), String
         std::fs::create_dir_all(parent)
             .map_err(|error| format!("unable to create {}: {error}", parent.display()))?;
     }
+    let _lock = StateLock::acquire()?;
     let mut state = load_state().unwrap_or_default();
     update(&mut state);
     let contents = serde_json::to_string_pretty(&state)
         .map_err(|error| format!("unable to serialize UI state: {error}"))?;
     write_state_atomic(&path, contents.as_bytes())
+}
+
+/// Cross-process/cross-thread serialization for the single UI state file.
+/// Maintenance scripts use the same named mutex so a read-modify-write cannot
+/// overwrite a concurrent GUI save (or vice versa).
+struct StateLock(HANDLE);
+
+impl StateLock {
+    fn acquire() -> Result<Self, String> {
+        let name: Vec<u16> = "Local\\AmdMobilePower.UiState.v1"
+            .encode_utf16()
+            .chain(Some(0))
+            .collect();
+        let handle = unsafe { CreateMutexW(std::ptr::null(), 0, name.as_ptr()) };
+        if handle.is_null() {
+            return Err("unable to create UI state mutex".to_owned());
+        }
+        let wait = unsafe { WaitForSingleObject(handle, 5000) };
+        // WAIT_ABANDONED means a previous holder exited without releasing. The
+        // state file is written atomically, so it is safe to take ownership.
+        if wait != WAIT_OBJECT_0 && wait != WAIT_ABANDONED {
+            unsafe { CloseHandle(handle) };
+            return Err("timed out waiting for the UI state mutex".to_owned());
+        }
+        Ok(Self(handle))
+    }
+}
+
+impl Drop for StateLock {
+    fn drop(&mut self) {
+        unsafe {
+            ReleaseMutex(self.0);
+            CloseHandle(self.0);
+        }
+    }
 }
 
 fn write_state_atomic(path: &Path, contents: &[u8]) -> Result<(), String> {

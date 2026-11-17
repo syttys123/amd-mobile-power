@@ -233,6 +233,56 @@ bool InvalidPreviousReadbackIsRejectedBeforeWrite() {
         Expect(backend.writes.empty(), "previous invalid state must not write");
 }
 
+bool UserPowerCapParsingBoundaries() {
+    using amd_mobile_power::ParseUserPowerCap;
+    return Expect(ParseUserPowerCap(L"5") == 5, "minimum cap parses") &&
+        Expect(ParseUserPowerCap(L"60") == 60, "maximum cap parses") &&
+        Expect(ParseUserPowerCap(L"05") == 5, "leading zero cap parses") &&
+        Expect(ParseUserPowerCap(L"30") == 30, "middle cap parses") &&
+        Expect(!ParseUserPowerCap(L"4").has_value(), "below-minimum cap rejected") &&
+        Expect(!ParseUserPowerCap(L"61").has_value(), "above-maximum cap rejected") &&
+        Expect(!ParseUserPowerCap(L"0").has_value(), "zero cap rejected") &&
+        Expect(!ParseUserPowerCap(L"").has_value(), "empty cap rejected") &&
+        Expect(!ParseUserPowerCap(L"-5").has_value(), "negative cap rejected") &&
+        Expect(!ParseUserPowerCap(L"+5").has_value(), "plus-signed cap rejected") &&
+        Expect(!ParseUserPowerCap(L"5.0").has_value(), "fractional cap rejected") &&
+        Expect(!ParseUserPowerCap(L" 5").has_value(), "leading space rejected") &&
+        Expect(!ParseUserPowerCap(L"5 ").has_value(), "trailing space rejected") &&
+        Expect(!ParseUserPowerCap(L"abc").has_value(), "non-numeric cap rejected") &&
+        Expect(!ParseUserPowerCap(L"005").has_value(), "three-digit cap rejected") &&
+        Expect(
+            !ParseUserPowerCap(L"99999999999999999999").has_value(),
+            "huge cap rejected without overflow") &&
+        Expect(!ParseUserPowerCap(L"\x0665").has_value(), "non-ASCII digit rejected");
+}
+
+bool UserPowerCapValidationBoundaries() {
+    using amd_mobile_power::PowerLimitTarget;
+    using amd_mobile_power::ValidateUserPowerCap;
+    const auto over_stapm = ValidateUserPowerCap(PowerLimitTarget{61, 60, 60}, 60);
+    const auto over_fast = ValidateUserPowerCap(PowerLimitTarget{60, 61, 60}, 60);
+    const auto over_slow = ValidateUserPowerCap(PowerLimitTarget{60, 60, 61}, 60);
+    return Expect(
+               !ValidateUserPowerCap(PowerLimitTarget{60, 60, 60}, 60).has_value(),
+               "target exactly at cap is allowed") &&
+        Expect(over_stapm.has_value(), "STAPM above cap rejected") &&
+        Expect(over_fast.has_value(), "Fast above cap rejected") &&
+        Expect(over_slow.has_value(), "Slow above cap rejected") &&
+        Expect(
+            over_stapm->find("STAPM") != std::string::npos &&
+                over_stapm->find("60") != std::string::npos,
+            "cap error names the limit and the ceiling") &&
+        Expect(
+            !ValidateUserPowerCap(PowerLimitTarget{5, 5, 5}, 5).has_value(),
+            "minimum cap allows matching target") &&
+        Expect(
+            ValidateUserPowerCap(PowerLimitTarget{6, 5, 5}, 5).has_value(),
+            "minimum cap rejects higher target") &&
+        Expect(
+            !ValidateUserPowerCap(PowerLimitTarget{0, 0, 0}, 60).has_value(),
+            "cap is an upper bound; profile validation owns the lower bound");
+}
+
 bool ProfileCatalogSelectsVerifiedAndConservativeFamilies() {
     const auto* development = amd_mobile_power::FindPlatformProfile(
         10,
@@ -374,6 +424,8 @@ int main() {
         InvalidTargetIsRejectedBeforeWrite() &&
         UnsupportedFastIsRejectedBeforeWrite() &&
         InvalidPreviousReadbackIsRejectedBeforeWrite() &&
+        UserPowerCapParsingBoundaries() &&
+        UserPowerCapValidationBoundaries() &&
         ProfileCatalogSelectsVerifiedAndConservativeFamilies() &&
         ProfileCatalogCoversEveryKnownFamily();
     if (!passed) {

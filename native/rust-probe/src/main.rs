@@ -110,7 +110,9 @@ fn print_usage() {
          --diagnose                 start a private read-only worker and emit a\n\
          \x20                          compatibility report (no GUI, no PowerShell)\n  \
          --self-test                validate the probe build without hardware access\n  \
-         --command COMMAND          send one request to an already running worker\n\n\
+         --command COMMAND          send one request to an already running worker;\n\
+         \x20                          this can write if that worker was started with\n\
+         \x20                          write controls enabled\n\n\
          Options:\n  \
          --pipe-name NAME           worker pipe for --command (defaults to the\n\
          \x20                          development pipe name)\n  \
@@ -120,7 +122,7 @@ fn print_usage() {
          --markdown FILE            also write a Markdown summary to FILE\n  \
          --timeout-ms N             worker start timeout for --diagnose (default 8000)\n  \
          --version, --help\n\n\
-         The diagnosis mode never enables hardware write controls."
+         The diagnose and self-test modes never enable hardware write controls."
     );
 }
 

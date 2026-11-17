@@ -2,6 +2,7 @@
 #include "profile_catalog.hpp"
 
 #include <windows.h>
+#include <tlhelp32.h>
 
 #include <array>
 #include <chrono>
@@ -17,6 +18,10 @@ namespace {
 
 constexpr wchar_t kHardwareOwnerMutex[] =
     L"Local\\AmdMobilePower.HardwareOwner.v1";
+constexpr wchar_t kLegacyHardwareOwnerMutex[] =
+    L"Local\\RyzenAdjPowerWorker";
+constexpr double kStapmClampToleranceWatts = 0.5;
+constexpr double kPptClampToleranceWatts = 0.75;
 
 std::string WideToUtf8(std::wstring_view value) {
     if (value.empty()) {
@@ -68,6 +73,55 @@ std::string ReadPowerLine() {
         return "battery";
     }
     return "unknown";
+}
+
+// Detects hardware owners from the legacy worker line and well-known Ryzen
+// utilities before this worker claims the SMU. Fails closed unless the legacy
+// mutex is confirmed absent and the process list can be enumerated.
+bool DetectKnownHardwareOwner(std::string& error) {
+    HANDLE legacy_mutex =
+        OpenMutexW(SYNCHRONIZE, FALSE, kLegacyHardwareOwnerMutex);
+    if (legacy_mutex != nullptr) {
+        CloseHandle(legacy_mutex);
+        error =
+            "legacy hardware owner mutex is held: Local\\RyzenAdjPowerWorker";
+        return true;
+    }
+    const DWORD mutex_error = GetLastError();
+    if (mutex_error != ERROR_FILE_NOT_FOUND) {
+        error = "legacy hardware owner mutex cannot be inspected (error " +
+            std::to_string(mutex_error) + "): Local\\RyzenAdjPowerWorker";
+        return true;
+    }
+
+    const DWORD current_pid = GetCurrentProcessId();
+    const HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snapshot == INVALID_HANDLE_VALUE) {
+        error = "process snapshot failed with error " +
+            std::to_string(GetLastError());
+        return true;
+    }
+
+    PROCESSENTRY32W entry{};
+    entry.dwSize = static_cast<DWORD>(sizeof(entry));
+    if (!Process32FirstW(snapshot, &entry)) {
+        error = "Process32FirstW failed with error " +
+            std::to_string(GetLastError());
+        CloseHandle(snapshot);
+        return true;
+    }
+    bool found = false;
+    do {
+        if (entry.th32ProcessID != current_pid &&
+            IsKnownOwnerProcessName(entry.szExeFile)) {
+            error = "known hardware owner process is running: " +
+                WideToUtf8(entry.szExeFile);
+            found = true;
+            break;
+        }
+    } while (Process32NextW(snapshot, &entry));
+    CloseHandle(snapshot);
+    return found;
 }
 
 std::optional<std::string> ReadBiosVersion(void* ryzen_access, int (*get_bios_if_version)(void*)) {
@@ -155,8 +209,11 @@ struct NativePowerLimitBackend final : IPowerLimitBackend {
 
 }  // namespace
 
-RyzenHardware::RyzenHardware(std::wstring runtime_directory)
-    : runtime_directory_(std::move(runtime_directory)) {
+RyzenHardware::RyzenHardware(
+    std::wstring runtime_directory,
+    int maximum_user_watts)
+    : runtime_directory_(std::move(runtime_directory)),
+      maximum_user_watts_(maximum_user_watts) {
 }
 
 RyzenHardware::~RyzenHardware() {
@@ -206,6 +263,11 @@ bool RyzenHardware::LoadFunction(
 bool RyzenHardware::Initialize(std::string& error) {
     if (initialized_) {
         return true;
+    }
+    // Run before loading runtime DLLs or claiming our own mutex so a known
+    // owner never sees a second driver initialization from this process.
+    if (DetectKnownHardwareOwner(error)) {
+        return false;
     }
     if (runtime_directory_.empty()) {
         error = "RyzenAdj runtime directory is empty";
@@ -367,9 +429,13 @@ TelemetrySnapshot RyzenHardware::Refresh(std::string& error) {
     }
 
     const auto read_value = [&](GetValueFn function) -> std::optional<double> {
-        return function == nullptr
-            ? std::nullopt
-            : std::optional<double>(static_cast<double>(function(ryzen_access_)));
+        if (function == nullptr) {
+            return std::nullopt;
+        }
+        const double value = static_cast<double>(function(ryzen_access_));
+        return std::isfinite(value)
+            ? std::optional<double>(value)
+            : std::nullopt;
     };
     telemetry.stapm_value_watts = read_value(get_stapm_value_);
     telemetry.fast_value_watts = read_value(get_fast_value_);
@@ -379,6 +445,14 @@ TelemetrySnapshot RyzenHardware::Refresh(std::string& error) {
     telemetry.slow_limit_watts = read_value(get_slow_limit_);
     telemetry.tctl_value_celsius = read_value(get_tctl_value_);
     telemetry.tctl_limit_celsius = read_value(get_tctl_limit_);
+    if (last_target_) {
+        telemetry.target_watts = static_cast<double>(last_target_->stapm_watts);
+    }
+    telemetry.has_firmware_clamp = ComputeTelemetryClamp(
+        last_target_,
+        telemetry.stapm_limit_watts,
+        telemetry.fast_limit_watts,
+        telemetry.slow_limit_watts);
     telemetry.power_line = ReadPowerLine();
     telemetry.updated_at = UtcTimestamp();
     return telemetry;
@@ -404,6 +478,14 @@ PowerLimitApplicationResult RyzenHardware::ApplyTarget(
         return result;
     }
 
+    // User ceiling is enforced at the lowest write path so the policy thread
+    // cannot bypass it; reject before any backend call touches the SMU.
+    if (const auto cap_error =
+            ValidateUserPowerCap(target, maximum_user_watts_)) {
+        result.error = *cap_error;
+        return result;
+    }
+
     NativePowerLimitBackend backend(
         ryzen_access_,
         set_stapm_limit_,
@@ -413,13 +495,17 @@ PowerLimitApplicationResult RyzenHardware::ApplyTarget(
         get_stapm_limit_,
         get_fast_limit_,
         get_slow_limit_);
-    return ApplyPowerLimitTarget(
+    result = ApplyPowerLimitTarget(
         backend,
         target,
         capability.profile->minimum_watts,
         capability.profile->maximum_watts,
         capability.limits.supports_fast,
         capability.limits.supports_slow);
+    if (result.IsSuccessful()) {
+        last_target_ = target;
+    }
+    return result;
 }
 
 std::string RyzenHardware::ReadProcessorName() const {
@@ -473,6 +559,69 @@ std::string RyzenAdjFamilyName(int family) {
     case 15: return "Fire Range";
     default: return "Family " + std::to_string(family);
     }
+}
+
+bool IsKnownOwnerProcessName(std::wstring_view process_name) {
+    // Mirrors the .NET HardwareConflictDetector.KnownOwners list. Image names
+    // may carry a trailing ".exe"; GetProcessesByName semantics compare the
+    // base name, so strip exactly one case-insensitive ".exe" suffix.
+    constexpr std::wstring_view kKnownOwnerBaseNames[] = {
+        L"RyzenPower",
+        L"ryzenadj",
+        L"AMD Ryzen Master",
+    };
+    constexpr std::wstring_view kExecutableSuffix = L".exe";
+    std::wstring_view base_name = process_name;
+    if (base_name.size() >= kExecutableSuffix.size() &&
+        CompareStringOrdinal(
+            base_name.data() + base_name.size() - kExecutableSuffix.size(),
+            static_cast<int>(kExecutableSuffix.size()),
+            kExecutableSuffix.data(),
+            static_cast<int>(kExecutableSuffix.size()),
+            TRUE) == CSTR_EQUAL) {
+        base_name.remove_suffix(kExecutableSuffix.size());
+    }
+    for (const std::wstring_view known : kKnownOwnerBaseNames) {
+        if (base_name.size() == known.size() &&
+            CompareStringOrdinal(
+                base_name.data(),
+                static_cast<int>(base_name.size()),
+                known.data(),
+                static_cast<int>(known.size()),
+                TRUE) == CSTR_EQUAL) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ComputeTelemetryClamp(
+    const std::optional<PowerLimitTarget>& last_target,
+    const std::optional<double>& stapm_limit_watts,
+    const std::optional<double>& fast_limit_watts,
+    const std::optional<double>& slow_limit_watts) {
+    if (!last_target) {
+        return false;
+    }
+    const auto below_requested = [](
+        const std::optional<double>& effective,
+        int requested,
+        double tolerance) {
+        return effective.has_value() && std::isfinite(*effective) &&
+            *effective < static_cast<double>(requested) - tolerance;
+    };
+    return below_requested(
+               stapm_limit_watts,
+               last_target->stapm_watts,
+               kStapmClampToleranceWatts) ||
+        below_requested(
+            fast_limit_watts,
+            last_target->fast_watts,
+            kPptClampToleranceWatts) ||
+        below_requested(
+            slow_limit_watts,
+            last_target->slow_watts,
+            kPptClampToleranceWatts);
 }
 
 }  // namespace amd_mobile_power

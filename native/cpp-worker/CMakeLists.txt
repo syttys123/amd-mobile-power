@@ -13,9 +13,11 @@ endif()
 
 add_executable(amdmobilepower_native_worker
     src/main.cpp
+    src/pipe_security.cpp
     src/power_limit_policy.cpp
     src/power_policy.cpp
     src/profile_catalog.cpp
+    src/request_json.cpp
     src/ryzen_hardware.cpp
 )
 
@@ -67,3 +69,15 @@ add_executable(amdmobilepower_hardware_cleanup_tests
 target_compile_definitions(amdmobilepower_hardware_cleanup_tests PRIVATE UNICODE _UNICODE)
 target_compile_options(amdmobilepower_hardware_cleanup_tests PRIVATE /W4 /permissive- /utf-8)
 target_link_libraries(amdmobilepower_hardware_cleanup_tests PRIVATE advapi32)
+
+add_executable(amdmobilepower_worker_safety_tests
+    tests/worker_safety_tests.cpp
+    src/pipe_security.cpp
+    src/power_limit_policy.cpp
+    src/profile_catalog.cpp
+    src/request_json.cpp
+    src/ryzen_hardware.cpp
+)
+target_compile_definitions(amdmobilepower_worker_safety_tests PRIVATE UNICODE _UNICODE)
+target_compile_options(amdmobilepower_worker_safety_tests PRIVATE /W4 /permissive- /utf-8)
+target_link_libraries(amdmobilepower_worker_safety_tests PRIVATE advapi32)

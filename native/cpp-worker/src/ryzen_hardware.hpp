@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace amd_mobile_power {
@@ -62,7 +63,9 @@ struct TelemetrySnapshot {
 
 class RyzenHardware {
 public:
-    explicit RyzenHardware(std::wstring runtime_directory);
+    explicit RyzenHardware(
+        std::wstring runtime_directory,
+        int maximum_user_watts = kDefaultUserPowerCapWatts);
     ~RyzenHardware();
 
     RyzenHardware(const RyzenHardware&) = delete;
@@ -79,6 +82,7 @@ public:
 private:
     friend struct RyzenHardwareTestAccess;
     std::wstring runtime_directory_;
+    int maximum_user_watts_;
     void* winring_handle_ = nullptr;
     void* inpout_handle_ = nullptr;
     void* ryzenadj_handle_ = nullptr;
@@ -86,6 +90,7 @@ private:
     void* ryzen_access_ = nullptr;
     bool initialized_ = false;
     bool ols_initialization_attempted_ = false;
+    std::optional<PowerLimitTarget> last_target_;
 
     using GetDllStatusFn = std::uint32_t(__stdcall*)();
     using InitializeOlsFn = int(__stdcall*)();
@@ -127,5 +132,18 @@ private:
 };
 
 std::string RyzenAdjFamilyName(int family);
+
+// Case-insensitive match for the .NET HardwareConflictDetector owner list
+// (RyzenPower, ryzenadj, AMD Ryzen Master), with or without a trailing .exe.
+bool IsKnownOwnerProcessName(std::wstring_view process_name);
+
+// Reports whether any effective limit sits below its own requested watts
+// from the last successfully applied target beyond the per-limit tolerance
+// (STAPM 0.5W, Fast/Slow 0.75W). Missing or non-finite limits are ignored.
+bool ComputeTelemetryClamp(
+    const std::optional<PowerLimitTarget>& last_target,
+    const std::optional<double>& stapm_limit_watts,
+    const std::optional<double>& fast_limit_watts,
+    const std::optional<double>& slow_limit_watts);
 
 }  // namespace amd_mobile_power

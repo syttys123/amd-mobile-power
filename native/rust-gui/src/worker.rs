@@ -1,9 +1,16 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs::OpenOptions;
-use std::io::{BufRead, BufReader, Write};
+use std::os::windows::fs::OpenOptionsExt;
+use std::os::windows::io::AsRawHandle;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use windows_sys::Win32::Foundation::{
+    GetLastError, ERROR_IO_PENDING, ERROR_MORE_DATA, HANDLE, WAIT_OBJECT_0, WAIT_TIMEOUT,
+};
+use windows_sys::Win32::Storage::FileSystem::{ReadFile, WriteFile, FILE_FLAG_OVERLAPPED};
+use windows_sys::Win32::System::Threading::{CreateEventW, ResetEvent, WaitForSingleObject};
+use windows_sys::Win32::System::IO::{CancelIoEx, GetOverlappedResult, OVERLAPPED};
 
 pub const DEFAULT_PIPE_NAME: &str = r"\\.\pipe\AmdMobilePower.RustGui.Worker.v1";
 
@@ -184,12 +191,22 @@ struct Response {
 #[derive(Debug, Clone)]
 pub struct WorkerClient {
     pipe_name: String,
+    io_timeout: Duration,
 }
 
 impl WorkerClient {
     pub fn new(pipe_name: impl Into<String>) -> Self {
         Self {
             pipe_name: normalize_pipe_name(pipe_name.into()),
+            io_timeout: Duration::from_secs(5),
+        }
+    }
+
+    #[cfg(test)]
+    fn with_io_timeout(pipe_name: impl Into<String>, io_timeout: Duration) -> Self {
+        Self {
+            pipe_name: normalize_pipe_name(pipe_name.into()),
+            io_timeout,
         }
     }
 
@@ -254,30 +271,16 @@ impl WorkerClient {
             OpenOptions::new()
                 .read(true)
                 .write(true)
+                .custom_flags(FILE_FLAG_OVERLAPPED)
                 .open(&self.pipe_name)
         })
         .map_err(|error| format!("unable to open {}: {error}", self.pipe_name))?;
-        let mut writer = stream
-            .try_clone()
-            .map_err(|error| format!("unable to clone worker stream: {error}"))?;
-        let mut reader = BufReader::new(stream);
-        writer
-            .write_all(request.to_string().as_bytes())
-            .map_err(|error| format!("unable to write worker request: {error}"))?;
-        writer
-            .write_all(b"\n")
-            .map_err(|error| format!("unable to terminate worker request: {error}"))?;
-        writer
-            .flush()
-            .map_err(|error| format!("unable to flush worker request: {error}"))?;
-
-        let mut response_line = String::new();
-        let bytes_read = reader
-            .read_line(&mut response_line)
-            .map_err(|error| format!("unable to read worker response: {error}"))?;
-        if bytes_read == 0 {
-            return Err("worker closed the pipe without a response".to_owned());
-        }
+        let handle = stream.as_raw_handle() as HANDLE;
+        let deadline = Instant::now() + self.io_timeout;
+        let mut request_bytes = request.to_string().into_bytes();
+        request_bytes.push(b'\n');
+        write_all_timeout(handle, &request_bytes, deadline)?;
+        let response_line = read_line_timeout(handle, deadline)?;
 
         let response: Response = serde_json::from_str(&response_line)
             .map_err(|error| format!("unable to parse worker response: {error}"))?;
@@ -310,6 +313,135 @@ fn normalize_pipe_name(value: String) -> String {
         value
     } else {
         format!("{PREFIX}{value}")
+    }
+}
+
+struct IoEvent(HANDLE);
+
+impl Drop for IoEvent {
+    fn drop(&mut self) {
+        if !self.0.is_null() {
+            unsafe { windows_sys::Win32::Foundation::CloseHandle(self.0) };
+        }
+    }
+}
+
+fn new_io_event() -> Result<IoEvent, String> {
+    let event = unsafe { CreateEventW(std::ptr::null(), 1, 0, std::ptr::null()) };
+    if event.is_null() {
+        return Err(format!("CreateEventW failed: {}", unsafe {
+            GetLastError()
+        }));
+    }
+    Ok(IoEvent(event))
+}
+
+fn complete_overlapped(
+    handle: HANDLE,
+    overlapped: &mut OVERLAPPED,
+    event: HANDLE,
+    deadline: Instant,
+) -> Result<u32, String> {
+    let remaining = deadline.saturating_duration_since(Instant::now());
+    let milliseconds = remaining.as_millis().min(u32::MAX as u128) as u32;
+    let wait = unsafe { WaitForSingleObject(event, milliseconds) };
+    if wait != WAIT_OBJECT_0 {
+        let timed_out = wait == WAIT_TIMEOUT;
+        let wait_error = unsafe { GetLastError() };
+        unsafe {
+            CancelIoEx(handle, overlapped);
+            let mut transferred = 0u32;
+            // The OVERLAPPED lives on the caller's stack. Wait for cancellation
+            // to complete before returning, otherwise the kernel could still
+            // write into a freed stack frame.
+            GetOverlappedResult(handle, overlapped, &mut transferred, 1);
+        }
+        return Err(if timed_out {
+            "worker pipe I/O timed out".to_owned()
+        } else {
+            format!("worker pipe wait failed: {wait_error}")
+        });
+    }
+    let mut transferred = 0u32;
+    if unsafe { GetOverlappedResult(handle, overlapped, &mut transferred, 0) } == 0 {
+        let error = unsafe { GetLastError() };
+        if error == ERROR_MORE_DATA && transferred > 0 {
+            return Ok(transferred);
+        }
+        return Err(format!("worker pipe I/O failed: {error}"));
+    }
+    Ok(transferred)
+}
+
+fn write_all_timeout(handle: HANDLE, bytes: &[u8], deadline: Instant) -> Result<(), String> {
+    let event = new_io_event()?;
+    let mut offset = 0usize;
+    while offset < bytes.len() {
+        let mut overlapped: OVERLAPPED = unsafe { std::mem::zeroed() };
+        overlapped.hEvent = event.0;
+        unsafe { ResetEvent(event.0) };
+        let mut written = 0u32;
+        let ok = unsafe {
+            WriteFile(
+                handle,
+                bytes[offset..].as_ptr(),
+                (bytes.len() - offset).min(u32::MAX as usize) as u32,
+                &mut written,
+                &mut overlapped,
+            )
+        };
+        if ok == 0 {
+            let error = unsafe { GetLastError() };
+            if error != ERROR_IO_PENDING {
+                return Err(format!("unable to write worker request: {error}"));
+            }
+            written = complete_overlapped(handle, &mut overlapped, event.0, deadline)?;
+        }
+        if written == 0 {
+            return Err("worker pipe closed during write".to_owned());
+        }
+        offset += written as usize;
+    }
+    Ok(())
+}
+
+fn read_line_timeout(handle: HANDLE, deadline: Instant) -> Result<String, String> {
+    let event = new_io_event()?;
+    let mut bytes = Vec::new();
+    let mut buffer = [0u8; 4096];
+    loop {
+        let mut overlapped: OVERLAPPED = unsafe { std::mem::zeroed() };
+        overlapped.hEvent = event.0;
+        unsafe { ResetEvent(event.0) };
+        let mut read = 0u32;
+        let ok = unsafe {
+            ReadFile(
+                handle,
+                buffer.as_mut_ptr(),
+                buffer.len() as u32,
+                &mut read,
+                &mut overlapped,
+            )
+        };
+        if ok == 0 {
+            let error = unsafe { GetLastError() };
+            if error != ERROR_IO_PENDING {
+                return Err(format!("unable to read worker response: {error}"));
+            }
+            read = complete_overlapped(handle, &mut overlapped, event.0, deadline)?;
+        }
+        if read == 0 {
+            return Err("worker closed the pipe without a response".to_owned());
+        }
+        bytes.extend_from_slice(&buffer[..read as usize]);
+        if bytes.len() > 1024 * 1024 {
+            return Err("worker response exceeded 1 MiB".to_owned());
+        }
+        if let Some(newline) = bytes.iter().position(|byte| *byte == b'\n') {
+            bytes.truncate(newline);
+            return String::from_utf8(bytes)
+                .map_err(|error| format!("worker response was not UTF-8: {error}"));
+        }
     }
 }
 
@@ -428,6 +560,46 @@ mod tests {
         assert!(attempts >= 2);
         assert!(start.elapsed() >= std::time::Duration::from_millis(40));
         assert!(start.elapsed() < std::time::Duration::from_secs(2));
+    }
+
+    #[test]
+    fn unresponsive_worker_times_out() {
+        use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
+        use windows_sys::Win32::Storage::FileSystem::PIPE_ACCESS_DUPLEX;
+        use windows_sys::Win32::System::Pipes::{
+            ConnectNamedPipe, CreateNamedPipeW, PIPE_READMODE_MESSAGE, PIPE_TYPE_MESSAGE, PIPE_WAIT,
+        };
+        let name = format!(
+            r"\\.\pipe\AmdMobilePower.TimeoutTest.{}",
+            std::process::id()
+        );
+        let wide: Vec<u16> = name.encode_utf16().chain(Some(0)).collect();
+        let handle = unsafe {
+            CreateNamedPipeW(
+                wide.as_ptr(),
+                PIPE_ACCESS_DUPLEX,
+                PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
+                1,
+                8192,
+                8192,
+                0,
+                std::ptr::null(),
+            )
+        };
+        assert_ne!(handle, INVALID_HANDLE_VALUE);
+        let handle_address = handle as usize;
+        let server = std::thread::spawn(move || unsafe {
+            let handle = handle_address as windows_sys::Win32::Foundation::HANDLE;
+            ConnectNamedPipe(handle, std::ptr::null_mut());
+            std::thread::sleep(std::time::Duration::from_millis(800));
+            CloseHandle(handle);
+        });
+        let client = WorkerClient::with_io_timeout(&name, std::time::Duration::from_millis(300));
+        let start = std::time::Instant::now();
+        let error = client.health().unwrap_err();
+        assert!(error.contains("timed out"), "{error}");
+        assert!(start.elapsed() < std::time::Duration::from_secs(2));
+        server.join().unwrap();
     }
 
     use super::{normalize_pipe_name, PowerLimitTarget, PowerPolicySettings, WorkerClient};
