@@ -3318,6 +3318,12 @@ fn start_worker_monitor(
                 Err(error) => {
                     let hardware_fault = terminal_hardware_fault(&error);
                     stalled = pipe_stall_error(&error);
+                    supervision_debug(&format!(
+                        "monitor error stalled={stalled} terminal={hardware_fault} error={error}"
+                    ));
+                    if stalled {
+                        supervision_debug("monitor snapshot pipe stall");
+                    }
                     if hardware_fault {
                         hardware_failures = hardware_failures.saturating_add(1);
                         if hardware_failures == 5 {
@@ -3376,6 +3382,37 @@ fn terminal_hardware_fault(error: &str) -> bool {
 
 fn pipe_stall_error(error: &str) -> bool {
     error.contains("timed out")
+        || error.contains("worker pipe")
+        || error.contains("worker pipe wait failed")
+        || error.contains("os error 231")
+        || error.contains("unable to read worker response")
+        || error.contains("unable to write worker request")
+        || error.contains("worker closed the pipe")
+}
+
+fn supervision_debug(message: &str) {
+    if std::env::var_os("AMD_MOBILE_POWER_DEBUG_SUPERVISION").is_none() {
+        return;
+    }
+    let Ok(local) = std::env::var("LOCALAPPDATA") else {
+        return;
+    };
+    let dir = std::path::PathBuf::from(local).join("AmdMobilePower");
+    if std::fs::create_dir_all(&dir).is_err() {
+        return;
+    }
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    use std::io::Write;
+    if let Ok(mut file) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(dir.join("supervision-debug.log"))
+    {
+        let _ = writeln!(file, "{stamp} {message}");
+    }
 }
 
 /// Kill a hung worker without blocking the UI thread indefinitely. A worker
@@ -3410,6 +3447,9 @@ fn start_worker_watchdog(
                 return;
             }
             let current = heartbeat.load(Ordering::SeqCst);
+            supervision_debug(&format!(
+                "watchdog check last={last} current={current} stalled={stalled_checks}"
+            ));
             if current != last {
                 last = current;
                 stalled_checks = 0;
@@ -3417,6 +3457,7 @@ fn start_worker_watchdog(
             }
             stalled_checks = stalled_checks.saturating_add(1);
             if watchdog_should_restart(stalled_checks) {
+                supervision_debug(&format!("watchdog post force stalled={stalled_checks}"));
                 unsafe {
                     PostMessageW(hwnd, WM_APP_FORCE_RESTART_WORKER, 0, 0);
                 }
@@ -5966,6 +6007,10 @@ unsafe extern "system" fn window_proc(
                 None => None,
             };
             if app.ui_fixture.is_none() {
+                supervision_debug(&format!(
+                    "force handler live_pid={live_pid:?} in_flight={}",
+                    app.force_restart_in_flight.load(Ordering::SeqCst)
+                ));
                 if live_pid.is_none() {
                     // The worker already exited; replace it now instead of
                     // waiting for the monitor's restart backoff.
@@ -5981,7 +6026,8 @@ unsafe extern "system" fn window_proc(
                     let hwnd_address = hwnd as usize;
                     let pid = live_pid.unwrap_or_default();
                     thread::spawn(move || {
-                        terminate_process_bounded(pid, Duration::from_secs(15));
+                        let terminated = terminate_process_bounded(pid, Duration::from_secs(15));
+                        supervision_debug(&format!("terminate pid={pid} result={terminated}"));
                         unsafe {
                             PostMessageW(hwnd_address as HWND, WM_APP_FORCE_RESTART_READY, 0, 0);
                         }
@@ -5992,7 +6038,9 @@ unsafe extern "system" fn window_proc(
         }
         WM_APP_FORCE_RESTART_READY => {
             app.force_restart_in_flight.store(false, Ordering::SeqCst);
-            if app.ui_fixture.is_none() && try_restart_worker(app) {
+            let restarted = app.ui_fixture.is_none() && try_restart_worker(app);
+            supervision_debug(&format!("force ready restarted={restarted}"));
+            if restarted {
                 // A fresh worker starts with an empty policy; force the next
                 // refresh to re-push the saved battery/AC targets.
                 app.policy_profile_applied = false;
@@ -6327,6 +6375,7 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let options = parse_options()?;
+    supervision_debug("run startup");
     DPI_FIXTURE_PERCENT.store(options.dpi_fixture.unwrap_or(0), Ordering::Relaxed);
     // The manifest declares PerMonitorV2, but setting it explicitly also covers
     // launches whose manifest could not be applied and keeps DPI awareness on.
@@ -6830,6 +6879,13 @@ mod tests {
     #[test]
     fn pipe_timeout_stalls_heartbeat_without_terminal_fault() {
         let error = "worker pipe I/O timed out";
+        assert!(super::pipe_stall_error(error));
+        assert!(!super::terminal_hardware_fault(error));
+    }
+
+    #[test]
+    fn persistent_pipe_busy_is_a_stall_not_a_terminal_fault() {
+        let error = "unable to open \\\\.\\pipe\\test: busy (os error 231)";
         assert!(super::pipe_stall_error(error));
         assert!(!super::terminal_hardware_fault(error));
     }
