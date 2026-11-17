@@ -204,6 +204,31 @@ function Get-BuildInfo {
     return $values
 }
 
+function Resolve-EvidencePath {
+    param(
+        [Parameter(Mandatory = $true)][string]$Directory,
+        [Parameter(Mandatory = $true)][string[]]$Patterns
+    )
+    if (-not (Test-Path -LiteralPath $Directory -PathType Container)) {
+        return $null
+    }
+    foreach ($pattern in $Patterns) {
+        $candidate = Get-ChildItem -LiteralPath $Directory -Filter $pattern -File |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+        if ($candidate) { return $candidate.FullName }
+    }
+    return $null
+}
+
+function Read-JsonFileOptional {
+    param([string]$Path)
+    if ($Path -and (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return Read-JsonFile $Path
+    }
+    return $null
+}
+
 if (-not $EvidencePath) {
     $EvidencePath = Join-Path `
         $repositoryRoot `
@@ -214,44 +239,37 @@ $packageName = "amd-mobile-power-v$Version-win-x64-native-preview.zip"
 $packagePath = Join-Path `
     (Join-Path $artifactsRoot "native-packages") `
     $packageName
-$releaseGatePath = Join-Path `
-    $repositoryRoot `
-    "docs\evidence\packaging\v$Version-release-gate-$(Get-Date -Format 'yyyy-MM-dd').json"
-$cleanEvidencePath = Join-Path `
-    $repositoryRoot `
-    "docs\evidence\packaging\v$Version-clean-$(Get-Date -Format 'yyyy-MM-dd').json"
-$deploymentEvidenceCandidates = @(
-    (Join-Path `
-        $repositoryRoot `
-        "docs\evidence\packaging\v$Version-native-deployment-$(Get-Date -Format 'yyyy-MM-dd').json"),
-    (Join-Path `
-        $repositoryRoot `
-        "docs\evidence\packaging\v$Version-deployment-$(Get-Date -Format 'yyyy-MM-dd').json")
+$packagingEvidenceDir = Join-Path $repositoryRoot "docs\evidence\packaging"
+$hardwareEvidenceDir = Join-Path $repositoryRoot "docs\evidence\hardware"
+$uiEvidenceDir = Join-Path $repositoryRoot "docs\evidence\ui"
+$mediaEvidenceDir = Join-Path $repositoryRoot "docs\evidence\media"
+$buildEvidenceDir = Join-Path $repositoryRoot "docs\evidence\build"
+$releaseGatePath = Resolve-EvidencePath $packagingEvidenceDir @(
+    "v$Version-release-gate-*.json",
+    "v$Version-native-release-gate-*.json"
 )
-$deploymentEvidencePath = $deploymentEvidenceCandidates |
-    Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
-    Select-Object -First 1
-if (-not $deploymentEvidencePath) {
-    $deploymentEvidencePath = $deploymentEvidenceCandidates[0]
-}
-$policyEvidencePath = Join-Path `
-    $repositoryRoot `
-    "docs\evidence\hardware\v$Version-power-policy-no-change-$(Get-Date -Format 'yyyy-MM-dd').json"
-$packagedUiEvidencePath = Join-Path `
-    $repositoryRoot `
-    "docs\evidence\ui\native-packaged-$Version-ui-$(Get-Date -Format 'yyyy-MM-dd').json"
-$versionedMediaEvidencePath = Join-Path `
-    $repositoryRoot `
-    "docs\evidence\media\native-promo-$Version-draft-$(Get-Date -Format 'yyyy-MM-dd').json"
-$genericMediaEvidencePath = Join-Path `
-    $repositoryRoot `
-    "docs\evidence\media\native-promo-draft-$(Get-Date -Format 'yyyy-MM-dd').json"
-$mediaEvidencePath = if (Test-Path -LiteralPath $versionedMediaEvidencePath -PathType Leaf) {
-    $versionedMediaEvidencePath
-}
-else {
-    $genericMediaEvidencePath
-}
+$cleanEvidencePath = Resolve-EvidencePath $packagingEvidenceDir @(
+    "v$Version-clean-*.json"
+)
+$deploymentEvidencePath = Resolve-EvidencePath $packagingEvidenceDir @(
+    "v$Version-deployment-*.json",
+    "v$Version-native-deployment-*.json"
+)
+$policyEvidencePath = Resolve-EvidencePath $hardwareEvidenceDir @(
+    "v$Version-power-policy-no-change-*.json",
+    "v$Version-native-power-policy-no-change-*.json"
+)
+$packagedUiEvidencePath = Resolve-EvidencePath $uiEvidenceDir @(
+    "native-packaged-$Version-ui-*.json",
+    "native-packaged-$Version-*.json",
+    "frozen-$Version-panels-*.json"
+)
+$mediaEvidencePath = Resolve-EvidencePath $mediaEvidenceDir @(
+    "native-promo-$Version-review-*.json",
+    "native-promo-$Version-draft-*.json",
+    "native-promo-review-v2-*.json",
+    "native-promo-draft-*.json"
+)
 $compatibilityIndexPath = Join-Path `
     $repositoryRoot `
     "docs\evidence\compatibility\index.json"
@@ -263,16 +281,37 @@ if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf)) {
     throw "Native package is missing: $packagePath"
 }
 $packageHash = Get-Sha256 $packagePath
-$releaseGate = Read-JsonFile $releaseGatePath
-$cleanEvidence = Read-JsonFile $cleanEvidencePath
-$deployment = Read-JsonFile $deploymentEvidencePath
-$policyEvidence = Read-JsonFile $policyEvidencePath
-$packagedUi = Read-JsonFile $packagedUiEvidencePath
-$media = Read-JsonFile $mediaEvidencePath
+$releaseGate = Read-JsonFileOptional $releaseGatePath
+$cleanEvidence = Read-JsonFileOptional $cleanEvidencePath
+$deployment = Read-JsonFileOptional $deploymentEvidencePath
+$policyEvidence = Read-JsonFileOptional $policyEvidencePath
+$packagedUi = Read-JsonFileOptional $packagedUiEvidencePath
+$media = Read-JsonFileOptional $mediaEvidencePath
 $compatibilityIndex = Read-JsonFile $compatibilityIndexPath
 
 $checks = [ordered]@{}
 $blockers = New-Object System.Collections.Generic.List[string]
+$deployedGuiHash = if ($deployment.DeployedGuiSHA256) {
+    $deployment.DeployedGuiSHA256
+}
+elseif ($deployment.DeployedHashes.gui) {
+    $deployment.DeployedHashes.gui
+}
+else { $null }
+$deployedWorkerHash = if ($deployment.DeployedWorkerSHA256) {
+    $deployment.DeployedWorkerSHA256
+}
+elseif ($deployment.DeployedHashes.worker) {
+    $deployment.DeployedHashes.worker
+}
+else { $null }
+$deployedProbeHash = if ($deployment.DeployedProbeSHA256) {
+    $deployment.DeployedProbeSHA256
+}
+elseif ($deployment.DeployedHashes.probe) {
+    $deployment.DeployedHashes.probe
+}
+else { $null }
 
 $checks.PackageHash = (
     $releaseGate.SHA256 -eq $packageHash -and
@@ -324,14 +363,14 @@ $deployedWorkerPath = Join-Path "C:\RyzenAdj" "amdmobilepower_native_worker.exe"
 # in its place.
 $packagedUiMatchesDeployment = (
     $packagedUi.Verification -eq "PASS" -and
-    $packagedUi.GuiSHA256 -eq $deployment.DeployedGuiSHA256
+    $packagedUi.GuiSHA256 -eq $deployedGuiHash
 )
 $checks.LocalDeployment = (
     (Test-Path -LiteralPath $deployedGuiPath -PathType Leaf) -and
     (Test-Path -LiteralPath $deployedWorkerPath -PathType Leaf) -and
     $deployedBuildInfo["Version"] -eq $Version -and
-    (Get-Sha256 $deployedGuiPath) -eq $deployment.DeployedGuiSHA256 -and
-    (Get-Sha256 $deployedWorkerPath) -eq $deployment.DeployedWorkerSHA256 -and
+    (Get-Sha256 $deployedGuiPath) -eq $deployedGuiHash -and
+    (Get-Sha256 $deployedWorkerPath) -eq $deployedWorkerHash -and
     ($deployment.UiVerification -eq "PASS" -or $packagedUiMatchesDeployment)
 )
 if (-not $checks.LocalDeployment) {
@@ -341,8 +380,8 @@ if (-not $checks.LocalDeployment) {
 $deployedProbePath = Join-Path "C:\RyzenAdj" "amd-mobile-power-probe.exe"
 $checks.DeployedProbe = $false
 if ((Test-Path -LiteralPath $deployedProbePath -PathType Leaf) -and
-    $deployment.DeployedProbeSHA256 -and
-    (Get-Sha256 $deployedProbePath) -eq $deployment.DeployedProbeSHA256) {
+    $deployedProbeHash -and
+    (Get-Sha256 $deployedProbePath) -eq $deployedProbeHash) {
     try {
         $probeSelfTest = & $deployedProbePath --self-test 2>$null | ConvertFrom-Json
         if ($LASTEXITCODE -eq 0 -and
@@ -435,14 +474,35 @@ if (-not $checks.CompatibilityIndex) {
     $blockers.Add("No sanitized compatibility report is indexed.")
 }
 
-$videoPath = Join-Path `
-    $repositoryRoot `
-    ($media.video.path -replace "/", "\")
+$mediaVideoRelative = if ($media.video.path) {
+    $media.video.path
+}
+elseif ($media.Video) {
+    $media.Video
+}
+else { $null }
+$mediaVideoHash = if ($media.video.sha256) {
+    $media.video.sha256
+}
+elseif ($media.VideoSHA256) {
+    $media.VideoSHA256
+}
+else { $null }
+$mediaStatus = if ($media.status) { $media.status } else { $media.Status }
+$mediaDecode = if ($media.verification.ffmpegFullDecode) {
+    $media.verification.ffmpegFullDecode
+}
+else { $media.FullDecode }
+$videoPath = if ($mediaVideoRelative) {
+    Join-Path $repositoryRoot ($mediaVideoRelative -replace "/", "\")
+}
+else { $null }
 $checks.MediaDraft = (
+    $videoPath -and
     (Test-Path -LiteralPath $videoPath -PathType Leaf) -and
-    (Get-Sha256 $videoPath) -eq $media.video.sha256 -and
-    $media.status -eq "DRAFT_FOR_HUMAN_REVIEW" -and
-    $media.verification.ffmpegFullDecode -eq "PASS"
+    (Get-Sha256 $videoPath) -eq $mediaVideoHash -and
+    $mediaStatus -eq "DRAFT_FOR_HUMAN_REVIEW" -and
+    $mediaDecode -eq "PASS"
 )
 if (-not $checks.MediaDraft) {
     $blockers.Add("Native promotional-video draft or media evidence is incomplete.")
@@ -469,9 +529,10 @@ if (-not $checks.ReviewBundle) {
     $blockers.Add("Native review bundle checksums are incomplete or invalid.")
 }
 
-$dpiEvidencePath = Join-Path `
-    $repositoryRoot `
-    "docs\evidence\ui\native-dpi-100-125-150-$(Get-Date -Format 'yyyy-MM-dd').json"
+$dpiEvidencePath = Resolve-EvidencePath $uiEvidenceDir @(
+    "native-dpi-$Version-*.json",
+    "native-dpi-100-125-150-*.json"
+)
 $dpiGate = "PENDING"
 $dpiEvidence = $null
 if (Test-Path -LiteralPath $dpiEvidencePath -PathType Leaf) {
@@ -506,9 +567,11 @@ if (Test-Path -LiteralPath $dpiEvidencePath -PathType Leaf) {
     }
 }
 
-$hostedCiEvidencePath = Join-Path `
-    $repositoryRoot `
-    "docs\evidence\build\hosted-ci-$(Get-Date -Format 'yyyy-MM-dd').json"
+$hostedCiEvidencePath = Resolve-EvidencePath $buildEvidenceDir @(
+    "hosted-ci-$Version-*.json",
+    "hosted-ci-post-deployment-*.json",
+    "hosted-ci-*.json"
+)
 $hostedCiGate = "PENDING"
 $hostedCiEvidence = $null
 if (Test-Path -LiteralPath $hostedCiEvidencePath -PathType Leaf) {
