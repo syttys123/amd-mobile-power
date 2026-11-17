@@ -21,6 +21,45 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-17 (promo content correctness, fixture isolation and timed demo):
+
+- Root cause of the flawed promo: the main preset demo used the
+  `firmware-clamp` fixture, so 25/45 W clicks still showed a 10 W STAPM
+  ceiling; pointer timing also assumed uniform clip frames. The silent review
+  additionally carried a false music credit and omitted the auto-policy unlock
+  prerequisite.
+- Added a hardware-free `preset-success` UI fixture and `fold_fixture_apply`
+  helper. It folds simulated apply results into telemetry so target, STAPM,
+  Fast and Slow read back consistently, while current draw stays below the
+  requested cap. Firmware-clamp behavior remains available for the separate
+  safety/diagnostics scene. Rust GUI tests are now 63 (35 library + 28 GUI),
+  Clippy `-D warnings` PASS.
+- UI fixtures now create an isolated single-instance mutex, so capture/test
+  instances no longer exit by waking the stable tray GUI. The stable
+  `C:\RyzenAdj` 1.0.39 session was not stopped or replaced.
+- Corrected the misleading firmware status wording and the CLI fixture
+  contract. `capture-live-demo.ps1` records per-frame timestamps, first
+  visual-change frame indexes, actual preset button centers and client size;
+  `record.js` binds the synthetic pointer to those records and rejects
+  firmware-clamp footage for the main demo. Added `verify-demo-sync.js` as a
+  content/timing contract gate.
+- Reordered the storyboard to hook -> safety -> clean preset demo -> firmware
+  caveat -> auto-policy -> compatibility -> closing. Removed the false music
+  credit and premature public-download CTA; auto-policy now says it requires
+  write unlock and notes that power banks are usually seen as external power.
+- Rendered and encoded a 39.5 s, 1920x1080, 30 fps silent review with exactly
+  1185 frames. Full decode PASS; seven-scene keyframe bounds/missing-image
+  checks PASS; whole-frame and GUI-region luminance screens found no isolated
+  spikes or near-white frames. Demo-sync contract PASS. Evidence:
+  `evidence/media/native-promo-review-v2-2026-11-17.json`,
+  `evidence/ui/preset-success-demo-2026-11-17.json`,
+  `evidence/ui/firmware-clamp-demo-2026-11-17.json`.
+- Day/night policy remains 07:00 battery 25 W / AC 45 W and 23:00 15/15 W.
+  Source changed after the frozen 1.0.39 package, so any future deployment
+  must be rebuilt and gated as a new candidate; this media work did not
+  promote a package. Owner visual review and publication approval remain
+  pending.
+
 2026-11-17 (07:00 policy failure and resilient direct-worker helper):
 
 - The `07:00` day task ran but exited 1: the worker pipe broke during the
@@ -3909,8 +3948,8 @@ Historical development screenshots:
 - The native UI now has deterministic 100%/125%/150% logical layout fixtures;
   final monitor-transition evidence in real 100% and 150% Windows sessions is
   still pending. The current display session is 125%.
-- Complete human review of the v9 promotional video, cover, claims, and launch
-  copy.
+- Complete human review of the v2 silent promotional video, cover, claims, and
+  launch copy.
 - Obtain explicit owner approval and an authenticated session before creating
   the public GitHub Release or uploading to Bilibili.
 

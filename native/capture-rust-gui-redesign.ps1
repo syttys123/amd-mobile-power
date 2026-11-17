@@ -5,7 +5,7 @@ param(
     [string]$EvidencePath,
     [string]$FilePrefix = "native-redesign",
     [string]$FileDate = "2026-11-11",
-    [ValidateSet("worker-offline", "firmware-clamp", "unsupported-platform", "long-error", "high-contrast")]
+    [ValidateSet("worker-offline", "firmware-clamp", "preset-success", "unsupported-platform", "long-error", "high-contrast")]
     [string]$Fixture,
     [ValidateSet("100", "125", "150", "200")]
     [string]$DpiFixture,
@@ -649,7 +649,7 @@ try {
         }
         $expectedWritesEnabled = (
             -not $ReadOnly -and
-            $Fixture -in @("firmware-clamp", "high-contrast")
+            $Fixture -in @("firmware-clamp", "preset-success", "high-contrast")
         )
         $actualWritesEnabled = (
             [AmdMobilePowerUiCapture]::IsWindowEnabled($applyButton) -and

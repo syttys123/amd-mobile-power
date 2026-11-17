@@ -1,0 +1,89 @@
+{
+  "SchemaVersion": 1,
+  "Version": "1.0.39+dev",
+  "Status": "DRAFT_FOR_HUMAN_REVIEW",
+  "Video": "artifacts\\media\\promo-review-20261117-v2\\amd-mobile-power-review-v2-silent.mp4",
+  "VideoSHA256": "99d618749ac31b965681b3d964cc37b0b9ff4255ffc67838d0a713ac5760d82c",
+  "VideoBytes": 3382806,
+  "DurationSeconds": 39.5,
+  "Width": 1920,
+  "Height": 1080,
+  "FrameRate": 30,
+  "Frames": 1185,
+  "VideoCodec": "h264",
+  "Audio": "none",
+  "Scenes": 7,
+  "SceneOrder": ["hook", "safety", "ui-demo", "firmware", "auto-policy", "compat", "closing"],
+  "FullDecode": "PASS",
+  "DemoSyncReview": {
+    "Path": "artifacts\\media\\promo-review-20261117-v2\\demo-sync-review.json",
+    "Result": "PASS",
+    "ClickTimesSceneLocal": [2.0455873, 5.0116046, 8.0921345],
+    "ExpectedWatts": [25, 45, 10]
+  },
+  "KeyframeReview": {
+    "Path": "artifacts\\media\\promo-review-20261117-v2\\keyframes",
+    "OutOfBounds": [],
+    "MissingImages": [],
+    "Result": "PASS"
+  },
+  "VisualCropReview": {
+    "Path": "artifacts\\media\\promo-review-20261117-v2\\click-crops",
+    "Result": "PASS",
+    "Scope": "Subagent review of 25/45/10 before/click/after/readback GUI crops, preset rows, pointer crops and safety/firmware/auto-policy/closing keyframes",
+    "Findings": [
+      "Pointer tip lands on the matching preset button at each click frame.",
+      "Read-back limits match 25/25/25, 45/45/45 and 10/10/10 respectively; no firmware clamp in the main demo.",
+      "No clipped preset text, white blocks, missing images or false music credit.",
+      "Minor non-blocking observations: the 10 W approach enters the button slightly early, and the preset-row crop boundary cuts the pencil button."
+    ]
+  },
+  "LuminanceReview": {
+    "WholeFrame": {
+      "Path": "artifacts\\media\\promo-review-20261117-v2\\luminance-review.json",
+      "Frames": 1185,
+      "IsolatedSpikes": [],
+      "BrightFrames": [],
+      "Minimum": 29.03,
+      "Maximum": 72.181,
+      "Result": "PASS"
+    },
+    "GuiRegion": {
+      "Path": "artifacts\\media\\promo-review-20261117-v2\\luminance-gui-region-review.json",
+      "Frames": 1185,
+      "IsolatedSpikes": [],
+      "BrightFrames": [],
+      "Minimum": 29.0,
+      "Maximum": 139.57,
+      "Result": "PASS"
+    },
+    "Scope": "Downscaled luminance heuristics; not proof of absence of local flicker"
+  },
+  "DemoClip": {
+    "Path": "artifacts\\media\\preset-success-demo-20261117\\presets-demo.mp4",
+    "SHA256": "06eec29ca27cd4d059dfda7d3e29c0029ea0cffb2be9bc15ff51187cbc3f0444",
+    "Manifest": "artifacts\\media\\preset-success-demo-20261117\\frames-manifest.json",
+    "GuiSHA256": "3fe22ab8ac7d7f754fe4fc0146e3c92b4704440b36b8af126c43dc9b20a2f9f4",
+    "Fixture": "preset-success",
+    "SimulatedData": true,
+    "HardwareAccess": false
+  },
+  "FirmwareAsset": {
+    "Path": "media\\promo-html\\assets\\firmware-clamp-demo.png",
+    "SourceEvidence": "docs\\evidence\\ui\\firmware-clamp-demo-2026-11-17.json",
+    "Fixture": "firmware-clamp",
+    "SimulatedData": true,
+    "HardwareAccess": false
+  },
+  "Notes": [
+    "Supersedes the 1.0.39 review render that mixed firmware-clamp data into the main preset demo.",
+    "The main preset demo uses the clean preset-success fixture; firmware limitation is a separate scene.",
+    "Pointer clicks are bound to recorded visual-change frames and actual button centers.",
+    "Safety/read-only scene precedes the write demo; auto-policy copy states the unlock prerequisite.",
+    "Silent review version; the false Kevin MacLeod music credit was removed.",
+    "GUI captures use a development fixture build with an isolated single-instance mutex, not the deployed 1.0.39 package.",
+    "Stable deployment and day/night power policy were not changed by this media work.",
+    "No publication or upload was performed."
+  ],
+  "RecordedAt": "2026-11-17T17:10:00+08:00"
+}

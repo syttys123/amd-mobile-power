@@ -1,0 +1,59 @@
+{
+  "Verification": "PASS",
+  "Clip": "artifacts\\media\\preset-success-demo-20261117\\presets-demo.mp4",
+  "ClipSha256": "06eec29ca27cd4d059dfda7d3e29c0029ea0cffb2be9bc15ff51187cbc3f0444",
+  "GuiSha256": "3fe22ab8ac7d7f754fe4fc0146e3c92b4704440b36b8af126c43dc9b20a2f9f4",
+  "SimulatedData": true,
+  "DurationSeconds": 13.5,
+  "Frames": 165,
+  "Timing": "Per-frame monotonic timestamps; visual event frame indexes recorded",
+  "Manifest": "artifacts\\media\\preset-success-demo-20261117\\frames-manifest.json",
+  "FrameDirectory": "artifacts\\media\\preset-success-demo-20261117\\frames-a9fb8116be2d463ba305b02c8d1e7589",
+  "Mode": "simple",
+  "Events": [
+    {
+      "Action": "command",
+      "Command": 102,
+      "ScheduledAt": 1.6,
+      "ActualAt": 1.6455873,
+      "Completed": true,
+      "VisualFrameIndex": 18,
+      "VisualAt": 1.6455873,
+      "PresetIndex": 1,
+      "ExpectedWatts": 25,
+      "ClickX": 0.5153333333333333,
+      "ClickY": 0.5322222222222223
+    },
+    {
+      "Action": "command",
+      "Command": 103,
+      "ScheduledAt": 4.6,
+      "ActualAt": 4.6116046,
+      "Completed": true,
+      "VisualFrameIndex": 54,
+      "VisualAt": 4.6116046,
+      "PresetIndex": 2,
+      "ExpectedWatts": 45,
+      "ClickX": 0.758,
+      "ClickY": 0.5322222222222223
+    },
+    {
+      "Action": "command",
+      "Command": 101,
+      "ScheduledAt": 7.6,
+      "ActualAt": 7.6921345,
+      "Completed": true,
+      "VisualFrameIndex": 93,
+      "VisualAt": 7.6921345,
+      "PresetIndex": 0,
+      "ExpectedWatts": 10,
+      "ClickX": 0.274,
+      "ClickY": 0.5322222222222223
+    }
+  ],
+  "Fixture": "preset-success",
+  "DpiFixture": 125,
+  "GuiBuild": "Development fixture build with isolated single-instance mutex; not the deployed 1.0.39 package",
+  "HardwareAccess": false,
+  "RecordedAt": "2026-11-17T16:59:06.3918719+08:00"
+}

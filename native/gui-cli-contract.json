@@ -28,7 +28,7 @@
     },
     "--ui-fixture": {
       "takesValue": true,
-      "summary": "测试夹具：worker-offline、firmware-clamp、unsupported-platform、long-error、high-contrast。"
+      "summary": "测试夹具：worker-offline、firmware-clamp、preset-success、unsupported-platform、long-error、high-contrast。"
     },
     "--max-target-watts": {
       "takesValue": true,

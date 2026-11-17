@@ -2,37 +2,37 @@
 window.__SCENES__ = [
   {
     id: "hook",
-    duration: 4.5,
-    narration: "同一台笔记本，插电和用电池的时候，性能和续航差别往往很大。",
+    duration: 4.0,
+    narration: "同一台轻薄本，插电想快，电池想省。",
   },
   {
-    id: "problem",
-    duration: 5.5,
-    narration: "例如插电时选四十五瓦，日常使用选二十五瓦，想省电时选十瓦。预设可以编辑，实际效果取决于机型和固件。",
+    id: "safety",
+    duration: 5.0,
+    narration: "默认只读，不解锁就不会动硬件。要修改，先勾选须知再确认。",
   },
   {
     id: "ui-demo",
-    duration: 11.0,
-    narration: "点击预设，回读确认。目标、当前功耗与实际生效上限分开显示，遇到固件限制会明确提示。",
+    duration: 10.5,
+    narration: "点一下预设，立即应用并自动核对。瓦数可以按机型修改。",
+  },
+  {
+    id: "firmware",
+    duration: 4.5,
+    narration: "固件可能压低上限。界面显示实际值，以回读为准。",
   },
   {
     id: "auto-policy",
     duration: 6.0,
-    narration: "嫌手动切换麻烦，可以打开自动策略：插上电源自动切到高性能，拔掉电源自动切到省电。",
-  },
-  {
-    id: "safety",
-    duration: 5.5,
-    narration: "首次启动默认只读。要启用修改，点右上角的锁，阅读并勾选须知，再确认启用写入。",
+    narration: "解锁后设好电池和插电瓦数，插拔自动切换。也可以只管电池。",
   },
   {
     id: "compat",
     duration: 5.0,
-    narration: "目前已在一台 Ryzen 7 8845HS 笔记本实测。其他 AMD 机型请先查看识别结果，并导出诊断协助验证。",
+    narration: "仅一台 8845HS 实测。其他机型先看识别结果，再导出诊断。",
   },
   {
     id: "closing",
-    duration: 5.0,
-    narration: "项目完全开源免费，欢迎去 GitHub 下载试用，也欢迎告诉我们你的机型。",
+    duration: 4.5,
+    narration: "项目开源免费，正式发布后欢迎下载试用。",
   },
 ];

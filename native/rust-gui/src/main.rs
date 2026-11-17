@@ -603,6 +603,7 @@ impl Default for Options {
 enum UiFixture {
     WorkerOffline,
     FirmwareClamp,
+    PresetSuccess,
     UnsupportedPlatform,
     LongError,
     HighContrast,
@@ -1035,7 +1036,7 @@ unsafe fn visible_status(app: &GuiApp) -> (String, String, u32, u32) {
     if clamp {
         return (
             "固件限制".to_owned(),
-            "目标已写入，但固件回读低于请求值".to_owned(),
+            "部分上限受固件限制，实际以回读为准".to_owned(),
             palette().warning_soft,
             palette().warning,
         );
@@ -2875,11 +2876,12 @@ fn parse_ui_fixture(value: &str) -> Result<UiFixture, String> {
     match value {
         "worker-offline" => Ok(UiFixture::WorkerOffline),
         "firmware-clamp" => Ok(UiFixture::FirmwareClamp),
+        "preset-success" => Ok(UiFixture::PresetSuccess),
         "unsupported-platform" => Ok(UiFixture::UnsupportedPlatform),
         "long-error" => Ok(UiFixture::LongError),
         "high-contrast" => Ok(UiFixture::HighContrast),
         _ => Err(format!(
-            "unknown UI fixture: {value}; expected worker-offline, firmware-clamp, unsupported-platform, long-error, or high-contrast"
+            "unknown UI fixture: {value}; expected worker-offline, firmware-clamp, preset-success, unsupported-platform, long-error, or high-contrast"
         )),
     }
 }
@@ -2900,7 +2902,10 @@ fn fixture_worker_error(fixture: UiFixture) -> Option<String> {
              这不是固件钳制，也不是目标值超出范围。"
                 .to_owned(),
         ),
-        UiFixture::FirmwareClamp | UiFixture::UnsupportedPlatform | UiFixture::HighContrast => None,
+        UiFixture::FirmwareClamp
+        | UiFixture::PresetSuccess
+        | UiFixture::UnsupportedPlatform
+        | UiFixture::HighContrast => None,
     }
 }
 
@@ -2934,6 +2939,36 @@ fn fixture_snapshot(fixture: UiFixture) -> Option<SnapshotPayload> {
                 power_line: "battery".to_owned(),
                 updated_at: Some("2026-11-11T07:45:00Z".to_owned()),
                 has_firmware_clamp: true,
+            },
+        }),
+        UiFixture::PresetSuccess => Some(SnapshotPayload {
+            platform: fixture_platform(
+                "AMD Ryzen 7 8845HS w/ Radeon 780M Graphics",
+                Some(10),
+                Some("Hawk Point"),
+                Some("hawk-point-8845hs"),
+                true,
+                None,
+                LimitsPayload {
+                    supports_stapm: true,
+                    supports_fast: true,
+                    supports_slow: true,
+                    supports_any: true,
+                },
+            ),
+            telemetry: TelemetryPayload {
+                target_watts: Some(10.0),
+                stapm_value_watts: Some(8.2),
+                fast_value_watts: Some(10.0),
+                slow_value_watts: Some(10.0),
+                stapm_limit_watts: Some(10.0),
+                fast_limit_watts: Some(10.0),
+                slow_limit_watts: Some(10.0),
+                tctl_value_celsius: Some(58.6),
+                tctl_limit_celsius: Some(95.0),
+                power_line: "battery".to_owned(),
+                updated_at: Some("2026-11-17T08:00:00Z".to_owned()),
+                has_firmware_clamp: false,
             },
         }),
         UiFixture::UnsupportedPlatform => Some(SnapshotPayload {
@@ -3030,6 +3065,42 @@ fn fixture_platform(
         is_supported,
         unsupported_reason: unsupported_reason.map(str::to_owned),
     }
+}
+
+/// Fold a simulated apply into fixture telemetry so captures show the same
+/// target -> read-back story as the real worker. `PresetSuccess` keeps every
+/// requested limit; `FirmwareClamp` deliberately holds STAPM at 10 W.
+fn fold_fixture_apply(
+    snapshot: &mut SnapshotPayload,
+    applied: PowerLimitTarget,
+    fixture: UiFixture,
+) {
+    let stapm_ceiling = match fixture {
+        UiFixture::FirmwareClamp => Some(10.0_f64),
+        UiFixture::PresetSuccess => None,
+        _ => return,
+    };
+    let requested_stapm = applied.stapm_watts as f64;
+    let fast = applied.fast_watts as f64;
+    let slow = applied.slow_watts as f64;
+    let stapm_limit = stapm_ceiling.unwrap_or(requested_stapm);
+    let stapm_value = if stapm_ceiling.is_some() {
+        requested_stapm.min(stapm_limit) + 0.02
+    } else {
+        // A limit is not the same as instantaneous draw. Keep the simulated
+        // current power below the requested cap so the demo does not imply
+        // the CPU is always pinned at the limit.
+        requested_stapm * 0.82
+    };
+    let telemetry = &mut snapshot.telemetry;
+    telemetry.target_watts = Some(requested_stapm);
+    telemetry.fast_value_watts = Some(fast);
+    telemetry.fast_limit_watts = Some(fast);
+    telemetry.slow_value_watts = Some(slow);
+    telemetry.slow_limit_watts = Some(slow);
+    telemetry.stapm_value_watts = Some(stapm_value);
+    telemetry.stapm_limit_watts = Some(stapm_limit);
+    telemetry.has_firmware_clamp = requested_stapm > stapm_limit;
 }
 
 fn worker_executable_path(options: &Options) -> Option<PathBuf> {
@@ -5086,6 +5157,20 @@ fn start_apply(
                     }),
                 )
             }
+            Some(UiFixture::PresetSuccess) => {
+                thread::sleep(Duration::from_millis(500));
+                format_apply_result(
+                    target,
+                    Ok(ApplyTargetResult {
+                        is_successful: true,
+                        error: None,
+                        has_firmware_clamp: false,
+                        has_stapm_warning: false,
+                        restore_attempted: false,
+                        restored_previous_limits: false,
+                    }),
+                )
+            }
             Some(_) => {
                 thread::sleep(Duration::from_millis(500));
                 "应用失败。\n当前界面为夹具状态，未连接硬件 worker。".to_owned()
@@ -5747,25 +5832,11 @@ unsafe extern "system" fn window_proc(
             if !pointer.is_null() {
                 let text = Box::from_raw(pointer);
                 hold_status(app);
-                // Firmware-clamp fixture: fold the simulated apply back into
-                // the displayed telemetry so captures show a consistent
-                // apply -> read-back story (STAPM stays clamped at 10 W).
-                if app.ui_fixture == Some(UiFixture::FirmwareClamp) {
+                // Test fixtures fold the simulated apply back into telemetry
+                // so captures show a consistent apply -> read-back story.
+                if let Some(fixture) = app.ui_fixture {
                     if let Some(snapshot) = app.latest_snapshot.as_mut() {
-                        let applied = app.selected_target;
-                        let stapm_ceiling = 10.0_f64;
-                        let fast = applied.fast_watts as f64;
-                        let slow = applied.slow_watts as f64;
-                        let stapm = (applied.stapm_watts as f64).min(stapm_ceiling);
-                        snapshot.telemetry.target_watts = Some(applied.stapm_watts as f64);
-                        snapshot.telemetry.fast_value_watts = Some(fast);
-                        snapshot.telemetry.fast_limit_watts = Some(fast);
-                        snapshot.telemetry.slow_value_watts = Some(slow);
-                        snapshot.telemetry.slow_limit_watts = Some(slow);
-                        snapshot.telemetry.stapm_value_watts = Some(stapm + 0.02);
-                        snapshot.telemetry.stapm_limit_watts = Some(stapm_ceiling);
-                        snapshot.telemetry.has_firmware_clamp =
-                            (applied.stapm_watts as f64) > stapm_ceiling;
+                        fold_fixture_apply(snapshot, app.selected_target, fixture);
                     }
                 }
                 if let Some(controls) = app.simple_controls {
@@ -6059,7 +6130,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Err("RegisterClassExW failed".into());
     }
 
-    let mutex_name = wide(MUTEX_NAME);
+    // UI fixtures are isolated capture/test instances. They must not collide
+    // with the stable tray GUI's single-instance mutex, or the fixture would
+    // silently wake the stable window and exit before creating its own.
+    let mutex_name = if options.ui_fixture.is_some() {
+        wide(&format!("{MUTEX_NAME}.Fixture.{}", std::process::id()))
+    } else {
+        wide(MUTEX_NAME)
+    };
     let mutex = unsafe { CreateMutexW(std::ptr::null(), 0, mutex_name.as_ptr()) };
     if mutex.is_null() {
         return Err("CreateMutexW failed".into());
@@ -6357,9 +6435,9 @@ mod tests {
 
     use super::{
         clamp_preset_values, clamp_to_ceiling, diagnostics_document, fitted_header_subtitle_for,
-        fixture_snapshot, fixture_worker_error, format_policy_state, format_snapshot,
-        format_snapshot_simple, format_writable_fields, parse_arguments, parse_ui_fixture,
-        platform_subtitle_for, preset_menu_label, restart_delay, rgb, state,
+        fixture_snapshot, fixture_worker_error, fold_fixture_apply, format_policy_state,
+        format_snapshot, format_snapshot_simple, format_writable_fields, parse_arguments,
+        parse_ui_fixture, platform_subtitle_for, preset_menu_label, restart_delay, rgb, state,
         terminate_process_bounded, uniform_power_policy, watchdog_should_restart, UiDiagnostics,
         UiFixture, HIGH_CONTRAST_PALETTE,
     };
@@ -6691,6 +6769,46 @@ mod tests {
         assert!(offline.starts_with("worker 离线："));
         let long_error = fixture_worker_error(UiFixture::LongError).unwrap();
         assert!(long_error.lines().next().unwrap().contains("重启 Windows"));
+    }
+
+    #[test]
+    fn preset_success_fixture_matches_requested_limits_without_clamp() {
+        assert_eq!(
+            parse_ui_fixture("preset-success"),
+            Ok(UiFixture::PresetSuccess)
+        );
+        let mut snapshot = fixture_snapshot(UiFixture::PresetSuccess).unwrap();
+        assert!(snapshot.platform.is_supported);
+        assert!(!snapshot.telemetry.has_firmware_clamp);
+        for watts in [10, 25, 45] {
+            fold_fixture_apply(
+                &mut snapshot,
+                PowerLimitTarget::uniform(watts),
+                UiFixture::PresetSuccess,
+            );
+            let telemetry = &snapshot.telemetry;
+            assert_eq!(telemetry.target_watts, Some(watts as f64));
+            assert_eq!(telemetry.stapm_limit_watts, Some(watts as f64));
+            assert_eq!(telemetry.fast_limit_watts, Some(watts as f64));
+            assert_eq!(telemetry.slow_limit_watts, Some(watts as f64));
+            assert!(!telemetry.has_firmware_clamp);
+            assert!(telemetry.stapm_value_watts.unwrap() < watts as f64);
+        }
+    }
+
+    #[test]
+    fn firmware_clamp_fixture_keeps_stapm_ceiling_and_warning() {
+        let mut snapshot = fixture_snapshot(UiFixture::FirmwareClamp).unwrap();
+        fold_fixture_apply(
+            &mut snapshot,
+            PowerLimitTarget::uniform(45),
+            UiFixture::FirmwareClamp,
+        );
+        let telemetry = &snapshot.telemetry;
+        assert_eq!(telemetry.stapm_limit_watts, Some(10.0));
+        assert_eq!(telemetry.fast_limit_watts, Some(45.0));
+        assert_eq!(telemetry.slow_limit_watts, Some(45.0));
+        assert!(telemetry.has_firmware_clamp);
     }
 
     #[test]

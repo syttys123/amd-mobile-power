@@ -1,0 +1,59 @@
+{
+  "Verification": "PASS",
+  "Clip": "artifacts\\media\\firmware-clamp-demo-20261117\\presets-demo.mp4",
+  "ClipSha256": "b9af44387f634f2d3cfb20a1d8c7e641223ca84a8e3ff1007c5db5e66a50e4dd",
+  "GuiSha256": "3fe22ab8ac7d7f754fe4fc0146e3c92b4704440b36b8af126c43dc9b20a2f9f4",
+  "SimulatedData": true,
+  "DurationSeconds": 10.5,
+  "Frames": 105,
+  "Timing": "Per-frame monotonic timestamps; visual event frame indexes recorded",
+  "Manifest": "artifacts\\media\\firmware-clamp-demo-20261117\\frames-manifest.json",
+  "FrameDirectory": "artifacts\\media\\firmware-clamp-demo-20261117\\frames-3311e60480e94ccfb3b0ef7f8d404ca9",
+  "Mode": "simple",
+  "Events": [
+    {
+      "Action": "command",
+      "Command": 102,
+      "ScheduledAt": 1.6,
+      "ActualAt": 1.6134746,
+      "Completed": true,
+      "VisualFrameIndex": 16,
+      "VisualAt": 1.6134746,
+      "PresetIndex": 1,
+      "ExpectedWatts": 25,
+      "ClickX": 0.5153333333333333,
+      "ClickY": 0.5322222222222223
+    },
+    {
+      "Action": "command",
+      "Command": 103,
+      "ScheduledAt": 4.6,
+      "ActualAt": 4.6075337,
+      "Completed": true,
+      "VisualFrameIndex": 46,
+      "VisualAt": 4.6075337,
+      "PresetIndex": 2,
+      "ExpectedWatts": 45,
+      "ClickX": 0.758,
+      "ClickY": 0.5322222222222223
+    },
+    {
+      "Action": "command",
+      "Command": 101,
+      "ScheduledAt": 7.6,
+      "ActualAt": 7.6173494,
+      "Completed": true,
+      "VisualFrameIndex": 76,
+      "VisualAt": 7.6173494,
+      "PresetIndex": 0,
+      "ExpectedWatts": 10,
+      "ClickX": 0.274,
+      "ClickY": 0.5322222222222223
+    }
+  ],
+  "Fixture": "firmware-clamp",
+  "DpiFixture": 125,
+  "GuiBuild": "Development fixture build with isolated single-instance mutex; not the deployed 1.0.39 package",
+  "HardwareAccess": false,
+  "RecordedAt": "2026-11-17T16:59:55.6254721+08:00"
+}

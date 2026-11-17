@@ -118,7 +118,7 @@ SCENE_RENDERERS.hook = (scene, t, root) => {
     width: "1150px", flexShrink: "0",
   });
 
-  const eyebrow = txt("给 AMD 笔记本的功耗开关", {
+  const eyebrow = txt("给 AMD 轻薄本的功耗开关", {
     color: "#45d6a8", fontSize: "26px", fontWeight: "700",
     letterSpacing: "6px", marginBottom: "28px",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
@@ -126,7 +126,7 @@ SCENE_RENDERERS.hook = (scene, t, root) => {
   slideUp(eyebrow, t, 0.1);
 
   const title = el("div", {});
-  title.innerHTML = "想快就快<br>想省就省";
+  title.innerHTML = "插电要性能<br>电池要续航";
   Object.assign(title.style, {
     color: "#f1f7f4", fontSize: "118px", fontWeight: "900", lineHeight: "1.1",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
@@ -134,7 +134,7 @@ SCENE_RENDERERS.hook = (scene, t, root) => {
   });
   slideUp(title, t, 0.22);
 
-  const sub = txt("AMD 笔记本 · 功耗开关 · 插电电池一键切换", {
+  const sub = txt("AMD 轻薄本 · 功耗上限管理 · 预设一键应用", {
     color: "#a6b8b0", fontSize: "34px", fontWeight: "400",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
   });
@@ -239,7 +239,7 @@ SCENE_RENDERERS["ui-demo"] = (scene, t, root) => {
   const head = el("div", {
     display: "flex", flexDirection: "column", width: "520px", flexShrink: "0",
   });
-  const eyebrow = txt("ONE-CLICK PRESETS", {
+  const eyebrow = txt("一键预设", {
     color: "#45d6a8", fontSize: "22px", fontWeight: "700",
     letterSpacing: "5px", marginBottom: "20px",
   });
@@ -257,9 +257,13 @@ SCENE_RENDERERS["ui-demo"] = (scene, t, root) => {
   head.append(eyebrow, title, sub);
   slideUp(head, t, 0.1);
 
-  // The demo clip is 1200x720 (5:3); the right column holds it at 1050x630.
+  // The right column holds the captured client area at 1050x630. If the
+  // capture aspect differs, object-fit leaves a small letterbox; pointer
+  // coordinates are mapped into the actual displayed image rectangle.
+  const frameWidth = 1050;
+  const frameHeight = 630;
   const frameWrap = el("div", {
-    width: "1050px", height: "630px", flexShrink: "0",
+    width: `${frameWidth}px`, height: `${frameHeight}px`, flexShrink: "0",
     position: "relative", borderRadius: "14px", overflow: "hidden",
     border: "1px solid rgba(69,214,168,0.25)",
     boxShadow: "0 24px 64px rgba(0,0,0,0.5)", background: "#10181d",
@@ -276,16 +280,42 @@ SCENE_RENDERERS["ui-demo"] = (scene, t, root) => {
   });
   head.append(fixtureLabel);
 
+  let displayWidth = frameWidth;
+  let displayHeight = frameHeight;
+  let offsetX = 0;
+  let offsetY = 0;
+  if (window.__CLIP_CLIENT_SIZE__) {
+    const imageAspect = window.__CLIP_CLIENT_SIZE__.width / window.__CLIP_CLIENT_SIZE__.height;
+    const frameAspect = frameWidth / frameHeight;
+    if (imageAspect > frameAspect) {
+      displayWidth = frameWidth;
+      displayHeight = frameWidth / imageAspect;
+      offsetY = (frameHeight - displayHeight) / 2;
+    } else {
+      displayHeight = frameHeight;
+      displayWidth = frameHeight * imageAspect;
+      offsetX = (frameWidth - displayWidth) / 2;
+    }
+  }
+
   // Synthetic pointer: the PrintWindow capture never includes the real
   // cursor, so the demo draws one whose clicks line up with the recorded
-  // preset presses (25 W @2.0 s, 45 W @5.0 s, 10 W @8.0 s scene-local).
+  // preset presses. The recorder supplies the first visual-change frame and
+  // the actual button center for each press; fallback coordinates are only
+  // for opening the HTML preview without a recorded manifest.
   const clicks = [
-    { t: 2.0, x: 0.51, y: 0.535 },
-    { t: 5.0, x: 0.75, y: 0.535 },
-    { t: 8.0, x: 0.275, y: 0.535 },
+    { t: 2.0, x: 0.26, y: 0.59 },
+    { t: 5.0, x: 0.43, y: 0.59 },
+    { t: 8.0, x: 0.59, y: 0.59 },
   ];
   if (window.__PRESET_CLICK_TIMES__) {
     clicks.forEach((click, index) => { click.t = window.__PRESET_CLICK_TIMES__[index]; });
+  }
+  if (window.__PRESET_CLICK_POINTS__) {
+    clicks.forEach((click, index) => {
+      click.x = window.__PRESET_CLICK_POINTS__[index].x;
+      click.y = window.__PRESET_CLICK_POINTS__[index].y;
+    });
   }
   const idleStart = { x: 0.62, y: 0.78 };
   const cursor = el("div", {
@@ -318,7 +348,7 @@ SCENE_RENDERERS["ui-demo"] = (scene, t, root) => {
   const press = clicks.some((c) => t >= c.t && t < c.t + 0.12) ? 0.86 : 1;
   cursor.style.opacity = String(appear);
   cursor.style.transform =
-    `translate(${cx * 1050}px, ${cy * 630}px) scale(${press})`;
+    `translate(${offsetX + cx * displayWidth}px, ${offsetY + cy * displayHeight}px) scale(${press})`;
   frameWrap.append(cursor);
 
   // Click ripple at each pressed button.
@@ -330,7 +360,7 @@ SCENE_RENDERERS["ui-demo"] = (scene, t, root) => {
       position: "absolute", left: "0", top: "0", zIndex: "4",
       width: "56px", height: "56px", borderRadius: "50%",
       border: "2px solid rgba(69,214,168,0.9)",
-      transform: `translate(${click.x * 1050 - 28}px, ${click.y * 630 - 28}px) scale(${0.45 + 1.1 * easeOut(phase)})`,
+      transform: `translate(${offsetX + click.x * displayWidth - 28}px, ${offsetY + click.y * displayHeight - 28}px) scale(${0.45 + 1.1 * easeOut(phase)})`,
       opacity: String((1 - phase) * 0.85),
       pointerEvents: "none",
     });
@@ -368,7 +398,7 @@ SCENE_RENDERERS.safety = (scene, t, root) => {
   slideUp(eyebrow, t, 0.05);
 
   const title = el("div", {});
-  title.innerHTML = "默认只读<br>不怕点错";
+  title.innerHTML = "默认只读<br>改前确认";
   Object.assign(title.style, {
     color: "#f1f7f4", fontSize: "88px", fontWeight: "900", lineHeight: "1.1",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
@@ -530,6 +560,94 @@ SCENE_RENDERERS.compat = (scene, t, root) => {
   root.append(wrap);
 };
 
+SCENE_RENDERERS.firmware = (scene, t, root) => {
+  root.innerHTML = "";
+  const opacity = fadeSlide(scene, t);
+  const wrap = el("div", {
+    position: "absolute", inset: "0", opacity: String(opacity),
+    display: "flex", alignItems: "center",
+    padding: "0 80px", gap: "50px",
+    background: "linear-gradient(180deg,#0b1216 0%,#0c1418 100%)",
+  });
+
+  const left = el("div", {
+    display: "flex", flexDirection: "column", justifyContent: "center",
+    width: "800px", flexShrink: "0",
+  });
+  const eyebrow = txt("固件限制", {
+    color: "#ffb45a", fontSize: "24px", fontWeight: "700",
+    letterSpacing: "6px", marginBottom: "32px",
+  });
+  slideUp(eyebrow, t, 0.05);
+  const title = el("div", {});
+  title.innerHTML = "没生效<br>会直说";
+  Object.assign(title.style, {
+    color: "#f1f7f4", fontSize: "88px", fontWeight: "900", lineHeight: "1.1",
+    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
+    marginBottom: "48px",
+  });
+  slideUp(title, t, 0.18);
+  const items = [
+    ["分开显示", "目标值和实际上限不混在一起"],
+    ["明确提示", "固件压低上限时会说明"],
+    ["以回读为准", "最终看实际生效值"],
+  ];
+  const list = el("div", { display: "flex", flexDirection: "column", gap: "20px" });
+  items.forEach(([head, body], i) => {
+    const row = el("div", { display: "flex", alignItems: "baseline", gap: "24px" });
+    const dot = el("div", {
+      width: "10px", height: "10px", borderRadius: "50%",
+      background: "#ffb45a", flexShrink: "0", transform: "translateY(-4px)",
+    });
+    const content = el("div", { display: "flex", alignItems: "baseline", gap: "20px", flexWrap: "wrap" });
+    const h = txt(head, {
+      color: "#f1f7f4", fontSize: "38px", fontWeight: "700",
+      fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
+    });
+    const b = txt(body, {
+      color: "#a6b8b0", fontSize: "28px", fontWeight: "400",
+      fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
+    });
+    content.append(h, b);
+    row.append(dot, content);
+    slideUp(row, t, 0.35 + i * 0.18);
+    list.append(row);
+  });
+
+  const card = el("div", {
+    width: "820px", flexShrink: "0", background: "#0e1518",
+    border: "1px solid rgba(255,180,90,0.28)", borderRadius: "14px",
+    overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.45)",
+    display: "flex", flexDirection: "column",
+  });
+  const shotHead = el("div", {
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    padding: "16px 20px", background: "rgba(255,255,255,0.035)",
+  });
+  const shotTitle = txt("固件限制演示 · 模拟数据", {
+    color: "#f1f7f4", fontSize: "21px", fontWeight: "700",
+    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
+  });
+  const shotBadge = txt("STAPM 受限", {
+    color: "#ffb45a", fontSize: "16px", fontWeight: "700",
+    padding: "6px 12px", border: "1px solid rgba(255,180,90,0.45)",
+    borderRadius: "999px", background: "rgba(255,180,90,0.1)",
+    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
+  });
+  shotHead.append(shotTitle, shotBadge);
+  const shot = el("img", { width: "100%", height: "auto", display: "block" });
+  shot.src = "assets/firmware-clamp-demo.png";
+  card.append(shotHead, shot);
+  const cardPop = clamp01((t - 0.5) / 0.6);
+  const cardEased = easeOut(cardPop);
+  card.style.opacity = String(cardEased);
+  card.style.transform = `translateY(${(1 - cardEased) * 30}px)`;
+
+  left.append(eyebrow, title, list);
+  wrap.append(left, card);
+  root.append(wrap);
+};
+
 SCENE_RENDERERS["auto-policy"] = (scene, t, root) => {
   root.innerHTML = "";
   const opacity = fadeSlide(scene, t);
@@ -545,14 +663,14 @@ SCENE_RENDERERS["auto-policy"] = (scene, t, root) => {
     width: "800px", flexShrink: "0",
   });
 
-  const eyebrow = txt("全自动", {
+  const eyebrow = txt("自动切换", {
     color: "#45d6a8", fontSize: "24px", fontWeight: "700",
     letterSpacing: "6px", marginBottom: "32px",
   });
   slideUp(eyebrow, t, 0.05);
 
   const title = el("div", {});
-  title.innerHTML = "也可以<br>全自动";
+  title.innerHTML = "插拔电源<br>自动切换";
   Object.assign(title.style, {
     color: "#f1f7f4", fontSize: "96px", fontWeight: "900", lineHeight: "1.1",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
@@ -560,11 +678,16 @@ SCENE_RENDERERS["auto-policy"] = (scene, t, root) => {
   });
   slideUp(title, t, 0.18);
 
-  const sub = txt("设置一次，之后按电源状态自动切换", {
+  const sub = txt("解锁后，给电池和插电各设一个瓦数", {
     color: "#a6b8b0", fontSize: "28px",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
   });
   slideUp(sub, t, 0.34);
+  const note = txt("也可以只管电池，插电不动。充电宝通常会被识别为外接电源。", {
+    color: "#7d8f88", fontSize: "22px", marginTop: "18px",
+    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
+  });
+  slideUp(note, t, 0.5);
 
   // Candidate policy controls captured with isolated fixture data.
   const card = el("div", {
@@ -598,7 +721,7 @@ SCENE_RENDERERS["auto-policy"] = (scene, t, root) => {
   card.style.opacity = String(cardEased);
   card.style.transform = `translateY(${(1 - cardEased) * 30}px)`;
 
-  left.append(eyebrow, title, sub);
+  left.append(eyebrow, title, sub, note);
   wrap.append(left, card);
   root.append(wrap);
 };
@@ -621,7 +744,7 @@ SCENE_RENDERERS.closing = (scene, t, root) => {
   slideUp(eyebrow, t, 0.05);
 
   const title = el("div", {});
-  title.innerHTML = "欢迎试用<br>欢迎反馈";
+  title.innerHTML = "开源免费<br>欢迎反馈";
   Object.assign(title.style, {
     color: "#f1f7f4", fontSize: "108px", fontWeight: "900", lineHeight: "1.1",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
@@ -636,14 +759,14 @@ SCENE_RENDERERS.closing = (scene, t, root) => {
   slideUp(repo, t, 0.38);
 
   const note = txt(
-    "开源免费 · 下载即用 · 欢迎告诉我们你的机型", {
+    "开源免费 · 便携运行 · 欢迎反馈机型", {
     color: "#a6b8b0", fontSize: "24px",
     fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
   });
   slideUp(note, t, 0.5);
 
   const credit = txt(
-    "Music: Deliberate Thought — Kevin MacLeod (incompetech.com) · CC BY 4.0", {
+    "审查版 · 无声 · 未发布", {
     color: "#5c6b65", fontSize: "16px",
     fontFamily: "'Segoe UI',sans-serif", marginTop: "18px",
   });

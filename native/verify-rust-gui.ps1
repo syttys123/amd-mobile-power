@@ -4,7 +4,7 @@ param(
     [switch]$VerifyWriteControls,
     [switch]$ExecuteNoChangePreset,
     [switch]$ExecutePolicySave,
-    [ValidateSet("worker-offline", "firmware-clamp", "unsupported-platform", "long-error", "high-contrast")]
+    [ValidateSet("worker-offline", "firmware-clamp", "preset-success", "unsupported-platform", "long-error", "high-contrast")]
     [string]$UiFixture,
     [ValidateSet("100", "125", "150", "200")]
     [string]$DpiFixture,

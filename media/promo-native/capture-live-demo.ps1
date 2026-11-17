@@ -3,7 +3,7 @@ param(
     [string]$GuiExecutable,
     [string]$OutputDirectory,
     [string]$ClipPath,
-    [ValidateSet("firmware-clamp")]
+    [ValidateSet("firmware-clamp", "preset-success")]
     [string]$UiFixture = "firmware-clamp",
     [int]$DpiFixture = 125,
     [ValidateSet("advanced", "simple")]
@@ -11,7 +11,7 @@ param(
     [ValidateRange(10, 60)]
     [double]$DurationSeconds = 13.5,
     [ValidateRange(1, 30)]
-    [int]$Fps = 10
+    [int]$Fps = 25
 )
 
 $ErrorActionPreference = "Stop"
@@ -31,10 +31,7 @@ if (-not $resolvedOutput.StartsWith(
     throw "Output must stay under artifacts: $resolvedOutput"
 }
 New-Item -ItemType Directory -Path $resolvedOutput -Force | Out-Null
-$frameDirectory = Join-Path $resolvedOutput "frames"
-if (Test-Path -LiteralPath $frameDirectory) {
-    Remove-Item -LiteralPath $frameDirectory -Recurse -Force
-}
+$frameDirectory = Join-Path $resolvedOutput ("frames-" + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $frameDirectory -Force | Out-Null
 
 Add-Type -AssemblyName System.Drawing
@@ -81,11 +78,22 @@ public static class AmdMobilePowerLiveDemo {
     public static extern bool SetWindowPos(
         IntPtr hwnd, IntPtr after, int x, int y, int width, int height, uint flags);
 
+    [DllImport("user32.dll")]
+    public static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
+
+    [DllImport("user32.dll")]
+    public static extern bool ClientToScreen(IntPtr hwnd, ref POINT point);
+
     public struct RECT {
         public int Left;
         public int Top;
         public int Right;
         public int Bottom;
+    }
+
+    public struct POINT {
+        public int X;
+        public int Y;
     }
 }
 "@
@@ -94,6 +102,28 @@ public static class AmdMobilePowerLiveDemo {
 # GetClientRect measurement comes back virtualized to 96 DPI and PrintWindow
 # renders only the top-left fraction of the real window.
 [AmdMobilePowerLiveDemo]::SetProcessDpiAwarenessContext([IntPtr](-4)) | Out-Null
+
+function Get-PresetClickPoint {
+    param([IntPtr]$Window, [int]$ControlId)
+    $button = [AmdMobilePowerLiveDemo]::GetDlgItem($Window, $ControlId)
+    if ($button -eq [IntPtr]::Zero) {
+        throw "Preset control $ControlId was not created."
+    }
+    $buttonRect = New-Object AmdMobilePowerLiveDemo+RECT
+    [AmdMobilePowerLiveDemo]::GetWindowRect($button, [ref]$buttonRect) | Out-Null
+    $origin = New-Object AmdMobilePowerLiveDemo+POINT
+    $origin.X = 0
+    $origin.Y = 0
+    [AmdMobilePowerLiveDemo]::ClientToScreen($Window, [ref]$origin) | Out-Null
+    $clientRect = New-Object AmdMobilePowerLiveDemo+RECT
+    [AmdMobilePowerLiveDemo]::GetClientRect($Window, [ref]$clientRect) | Out-Null
+    $centerX = (($buttonRect.Left + $buttonRect.Right) / 2.0) - $origin.X
+    $centerY = (($buttonRect.Top + $buttonRect.Bottom) / 2.0) - $origin.Y
+    return [pscustomobject]@{
+        X = $centerX / [Math]::Max(1, $clientRect.Right)
+        Y = $centerY / [Math]::Max(1, $clientRect.Bottom)
+    }
+}
 
 function Save-Frame {
     param([IntPtr]$Window, [string]$Path)
@@ -136,13 +166,15 @@ New-Item -ItemType Directory -Path $stateFileDirectory -Force | Out-Null
 # the code path that sizes the window and lays out with the fixture DPI.
 # Launching straight into --advanced-mode leaves the window at its creation
 # size and the advanced content strip stays clipped.
-[ordered]@{
+$stateSeed = [ordered]@{
     presets = @(10, 25, 45)
     mode = $Mode
     topMost = $false
-} | ConvertTo-Json | Set-Content `
-    -LiteralPath (Join-Path $stateFileDirectory "rust-ui-state.json") `
-    -Encoding UTF8
+} | ConvertTo-Json
+[System.IO.File]::WriteAllText(
+    (Join-Path $stateFileDirectory "rust-ui-state.json"),
+    $stateSeed,
+    [System.Text.UTF8Encoding]::new($false))
 $previousLocalAppData = $env:LOCALAPPDATA
 $env:LOCALAPPDATA = $stateDirectory
 $process = $null
@@ -209,6 +241,9 @@ try {
         Start-Sleep -Milliseconds 400
     }
 
+    $clientSize = New-Object AmdMobilePowerLiveDemo+RECT
+    [AmdMobilePowerLiveDemo]::GetClientRect($window, [ref]$clientSize) | Out-Null
+
     # Timed interaction script. Nothing writes hardware because the fixture
     # only simulates apply/read-back. Presets seed as 10/25/45 W so the demo
     # matches the 10 / 25 / 45 W headline.
@@ -228,10 +263,15 @@ try {
         # Simple mode: a short settle, then 25 -> 45 -> 10 with a pause on
         # each selection so the target field and apply result are readable.
         $timeline = @(
-            @{ At = 1.6; Action = "command"; Command = 102 },
-            @{ At = 4.6; Action = "command"; Command = 103 },
-            @{ At = 7.6; Action = "command"; Command = 101 }
+            @{ At = 1.6; Action = "command"; Command = 102; PresetIndex = 1; ExpectedWatts = 25 },
+            @{ At = 4.6; Action = "command"; Command = 103; PresetIndex = 2; ExpectedWatts = 45 },
+            @{ At = 7.6; Action = "command"; Command = 101; PresetIndex = 0; ExpectedWatts = 10 }
         )
+        foreach ($step in $timeline) {
+            $point = Get-PresetClickPoint -Window $window -ControlId ([int]$step.Command)
+            $step.ClickX = $point.X
+            $step.ClickY = $point.Y
+        }
     }
 
     $watch = [System.Diagnostics.Stopwatch]::StartNew()
@@ -273,8 +313,24 @@ try {
             $capturedFrames.Add([pscustomobject]@{ Path=$framePath; At=$elapsed })
             $frameIndex++
             $nextFrameAt += $frameInterval
+            foreach ($step in $timeline) {
+                if ($step.ContainsKey("Done") -and $step.Done -and
+                    -not $step.ContainsKey("VisualFrameIndex") -and
+                    $step.ActualAt -le $elapsed) {
+                    $step.VisualFrameIndex = $frameIndex - 1
+                    $step.VisualAt = $elapsed
+                }
+            }
         }
         Start-Sleep -Milliseconds 25
+    }
+
+    foreach ($step in $timeline) {
+        if ($step.ContainsKey("Done") -and $step.Done -and
+            -not $step.ContainsKey("VisualFrameIndex")) {
+            $step.VisualFrameIndex = $capturedFrames.Count - 1
+            $step.VisualAt = $capturedFrames[-1].At
+        }
     }
 
     $ffmpeg = (Get-Command ffmpeg -ErrorAction Stop).Source
@@ -309,6 +365,51 @@ try {
         throw "ffmpeg failed with exit code $LASTEXITCODE."
     }
 
+    $manifestFrames = for ($i = 0; $i -lt $capturedFrames.Count; $i++) {
+        [ordered]@{
+            Index = $i
+            At = $capturedFrames[$i].At
+            Path = [System.IO.Path]::GetFileName($capturedFrames[$i].Path)
+        }
+    }
+    $manifestEvents = @($timeline | ForEach-Object {
+        $event = [ordered]@{
+            Action = $_.Action
+            Command = $_.Command
+            ScheduledAt = $_.At
+            ActualAt = $_.ActualAt
+            Completed = $_.Done
+            VisualFrameIndex = $_.VisualFrameIndex
+            VisualAt = $_.VisualAt
+        }
+        if ($_.ContainsKey("PresetIndex")) { $event.PresetIndex = $_.PresetIndex }
+        if ($_.ContainsKey("ExpectedWatts")) { $event.ExpectedWatts = $_.ExpectedWatts }
+        if ($_.ContainsKey("ClickX")) { $event.ClickX = $_.ClickX }
+        if ($_.ContainsKey("ClickY")) { $event.ClickY = $_.ClickY }
+        $event
+    })
+    $manifest = [ordered]@{
+        SchemaVersion = 1
+        SimulatedData = $true
+        Fixture = $UiFixture
+        Mode = $Mode
+        DpiFixture = $DpiFixture
+        RequestedFps = $Fps
+        DurationSeconds = $DurationSeconds
+        FrameCount = $frameIndex
+        FrameDirectory = $frameDirectory
+        ClientWidth = $clientSize.Right
+        ClientHeight = $clientSize.Bottom
+        Frames = @($manifestFrames)
+        Events = $manifestEvents
+        RecordedAt = (Get-Date).ToString("o")
+    }
+    $manifestPath = Join-Path $resolvedOutput "frames-manifest.json"
+    [System.IO.File]::WriteAllText(
+        $manifestPath,
+        ($manifest | ConvertTo-Json -Depth 8),
+        [System.Text.UTF8Encoding]::new($false))
+
     $hash = (Get-FileHash -LiteralPath $ClipPath -Algorithm SHA256).
         Hash.ToLowerInvariant()
     [ordered]@{
@@ -319,10 +420,11 @@ try {
         SimulatedData = $true
         DurationSeconds = $DurationSeconds
         Frames = $frameIndex
-        Timing = 'Per-frame monotonic timestamps; no uniform redistribution'
-        Events = @($timeline | ForEach-Object {
-            [ordered]@{ Action=$_.Action; Command=$_.Command; ScheduledAt=$_.At; ActualAt=$_.ActualAt; Completed=$_.Done }
-        })
+        Timing = 'Per-frame monotonic timestamps; visual event frame indexes recorded'
+        Manifest = $manifestPath
+        FrameDirectory = $frameDirectory
+        Mode = $Mode
+        Events = $manifestEvents
         Fixture = $UiFixture
         DpiFixture = $DpiFixture
         RecordedAt = (Get-Date).ToString("o")
@@ -347,8 +449,14 @@ finally {
     }
     finally {
     $env:LOCALAPPDATA = $previousLocalAppData
-    if (Test-Path -LiteralPath $stateDirectory) {
-        Remove-Item -LiteralPath $stateDirectory -Recurse -Force
+    $stateFile = Join-Path $stateFileDirectory "rust-ui-state.json"
+    if (Test-Path -LiteralPath $stateFile) {
+        Remove-Item -LiteralPath $stateFile -Force
+    }
+    foreach ($directory in @($stateFileDirectory, $stateDirectory)) {
+        if (Test-Path -LiteralPath $directory) {
+            try { [System.IO.Directory]::Delete($directory, $false) } catch { }
+        }
     }
     }
 }
