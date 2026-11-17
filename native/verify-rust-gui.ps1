@@ -1,4 +1,4 @@
-param(
+﻿param(
     [switch]$NoBuild,
     [switch]$VerifyWorker,
     [switch]$VerifyWriteControls,
@@ -594,9 +594,12 @@ try {
         if ($workerStatus -notmatch "已连接 worker") {
             throw "Rust GUI did not connect to the read-only worker: $workerStatus"
         }
+        # The dashboard distinguishes the most recent hardware write from the
+        # automatic policy target. Accept only the current explicit label;
+        # the old ambiguous label is a contract regression, not a fallback.
         if ($workerStatus -notmatch "已连接 worker ·" -or
             $workerStatus -notmatch "STAPM / Fast / Slow 上限" -or
-            $workerStatus -notmatch "目标功耗：") {
+            $workerStatus -notmatch "最近写入目标：") {
             throw "Rust GUI worker status is incomplete: $workerStatus"
         }
     }
