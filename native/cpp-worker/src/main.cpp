@@ -617,6 +617,10 @@ std::string PowerPolicyStatePayload(
     }
     output << ",\"lastObservedPowerLine\":";
     AppendOptionalPowerLine(output, state.last_observed_power_line);
+    output << ",\"lastAttemptPowerLine\":";
+    AppendOptionalPowerLine(output, state.last_attempt_power_line);
+    output << ",\"lastAppliedPowerLine\":";
+    AppendOptionalPowerLine(output, state.last_applied_power_line);
     output << ",\"lastAppliedTarget\":";
     if (state.last_applied_target) {
         output << PowerLimitTargetPayload(*state.last_applied_target);

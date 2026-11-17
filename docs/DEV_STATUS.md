@@ -21,6 +21,39 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-18 (1.0.42 source candidate: policy-line semantics and promotion hardening):
+
+- The native `getPowerPolicy` / `setPowerPolicy` state now distinguishes
+  `lastObservedPowerLine`, `lastAttemptPowerLine`, and
+  `lastAppliedPowerLine`. The GUI reports the actual attempt/applied line and
+  the policy's own current target; `telemetry.targetWatts` is labeled as the
+  most recent write target so a manual apply cannot masquerade as the automatic
+  policy target. Old workers omit the two new fields and deserialize as `null`.
+- `apply-power-policy-direct.ps1`, `restore-day-policy.ps1`, and
+  `verify-power-policy.ps1` prefer the new attempt/applied fields, require a
+  fresh attempt timestamp and matching observed line, and retain an explicit
+  legacy fallback only when the new fields are absent. Observation-only stale
+  success, failed attempts, and missing applied targets fail closed.
+- Driver-free verification is PASS: Rust GUI 74 tests, probe 7 tests,
+  formatting, Clippy `-D warnings`, C++ power-policy 18 cases plus the other
+  three C++ suites, worker request bounds, policy helper contract, release GUI
+  recovery contract, policy script contract 13/13, policy observation contract
+  6/6, install process scope, document links, and `git diff --check`.
+- `promote-stable-deployment.ps1` now binds an optional expected ZIP SHA256 and
+  source commit before stopping owners, validates the unique BUILD-INFO and
+  every SHA256SUMS payload before and after installation, records deployed
+  hashes and previous/same-version backup identity, restricts targets and
+  cleanup paths, stops only target-tree owners, and restores the old tree on
+  failure. Hashing and UTF-8 JSON reads work in both Windows PowerShell 5.1 and
+  PowerShell 7. The new promotion contract passes 16/16 in both hosts; a real
+  1.0.41 dry-run identifies `BackupKind=SameVersion` without touching the tray.
+- This is source-only work. `C:\RyzenAdj` remains the gated 1.0.41 deployment;
+  no 1.0.42 package has been built or promoted. The next step is a clean
+  candidate commit/package, the formal hardware/release gate, and only then a
+  reversible promotion. Night remains 23:00-07:00 battery/AC 15/15 W; day
+  remains 07:00-23:00 battery 25 W / AC 45 W. Public Release and Bilibili
+  publication remain unapproved.
+
 2026-11-18 (1.0.41 gate PASS and stable-local deployment):
 
 - The C++ policy controller now observes STAPM, Fast, and Slow read-back on

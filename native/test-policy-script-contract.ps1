@@ -6,7 +6,10 @@
 # behavior) hosting a fake worker pipe, plus a fake probe, then run the REAL
 # apply/restore scripts against those fakes with overridden -PipeName/-GuiPath/
 # -StatePath/-LogPath. setPowerPolicy is only ever sent to the fake pipe.
-param([string]$EvidencePath)
+param(
+    [string]$EvidencePath,
+    [switch]$PreserveWork
+)
 $ErrorActionPreference = 'Stop'
 $native = $PSScriptRoot
 . (Join-Path $native 'worker-client.ps1')
@@ -59,6 +62,15 @@ static class FakeAmdGui
     static bool _enabled, _batteryOnly, _writeEnabled;
     static int _saveCount;
     static IntPtr _hwnd;
+    static string _mode = "new";
+    static string _observedLine = "battery";
+    static string _attemptLine;
+    static string _appliedLine;
+    static DateTime? _attemptAt;
+    static bool? _attemptSucceeded;
+    static Dictionary<string, object> _appliedTarget;
+    static DateTime _convergeAt = DateTime.MinValue;
+    static bool _convergePending;
     static readonly object _sync = new object();
     static Dictionary<string, object> _settings = Uniform(12, 45, false, false);
     static WndProc _proc;
@@ -74,6 +86,32 @@ static class FakeAmdGui
             { "batteryTarget", Target(b) }, { "acTarget", Target(a) }
         };
     }
+    static Dictionary<string, object> TargetForLine(string line)
+    {
+        return line == "ac"
+            ? (Dictionary<string, object>)_settings["acTarget"]
+            : (Dictionary<string, object>)_settings["batteryTarget"];
+    }
+    static void RecordAttempt(string line, bool success)
+    {
+        _observedLine = line;
+        _attemptLine = line;
+        _attemptAt = DateTime.UtcNow;
+        _attemptSucceeded = success;
+        if (success)
+        {
+            _appliedLine = line;
+            _appliedTarget = TargetForLine(line);
+        }
+    }
+    static void AdvanceScenario()
+    {
+        if (_convergePending && DateTime.UtcNow >= _convergeAt)
+        {
+            _convergePending = false;
+            RecordAttempt("ac", true);
+        }
+    }
 
     static void Main(string[] args)
     {
@@ -82,6 +120,16 @@ static class FakeAmdGui
         _batteryOnly = args.Length > 2 && args[2] == "1";
         _writeEnabled = args.Length <= 3 || args[3] == "1";
         string ready = args.Length > 4 ? args[4] : null;
+        _mode = args.Length > 5 ? args[5] : "new";
+        if (_mode == "legacyObservation" || _mode == "newObservation")
+        {
+            _observedLine = "battery";
+            _attemptLine = "battery";
+            _appliedLine = "battery";
+            _attemptAt = DateTime.UtcNow.AddMinutes(-1);
+            _attemptSucceeded = true;
+            _appliedTarget = Target(12);
+        }
         Thread server = new Thread(ServerLoop); server.IsBackground = true; server.Start();
         _proc = Wnd;
         WNDCLASS wc = new WNDCLASS();
@@ -185,25 +233,54 @@ static class FakeAmdGui
                         object payload = null; bool success = true;
                         lock (_sync)
                         {
+                            AdvanceScenario();
                             if (cmd == "getPowerPolicy")
                             {
-                                payload = new Dictionary<string, object> {
-                                    { "settings", _settings }, { "lastAttemptSucceeded", true },
-                                    { "lastAppliedTarget", _settings["batteryTarget"] }, { "lastObservedPowerLine", "battery" }
+                                Dictionary<string, object> policy = new Dictionary<string, object> {
+                                    { "settings", _settings },
+                                    { "lastAttemptSucceeded", _attemptSucceeded },
+                                    { "lastObservedPowerLine", _observedLine },
+                                    { "lastAttemptAt", _attemptAt.HasValue ? _attemptAt.Value.ToString("o") : null }
                                 };
+                                if (_mode != "missingTarget")
+                                {
+                                    policy["lastAppliedTarget"] = _appliedTarget;
+                                }
+                                if (_mode != "legacy" && _mode != "legacyObservation")
+                                {
+                                    policy["lastAttemptPowerLine"] = _attemptLine;
+                                    policy["lastAppliedPowerLine"] = _appliedLine;
+                                }
+                                payload = policy;
                             }
                             else if (cmd == "setPowerPolicy")
                             {
                                 Dictionary<string, object> p = (Dictionary<string, object>)req["payload"];
                                 _settings = (Dictionary<string, object>)p["settings"];
+                                if (_mode == "legacyObservation" || _mode == "newObservation")
+                                {
+                                    _observedLine = "ac";
+                                }
+                                else if (_mode == "switch")
+                                {
+                                    _observedLine = "ac";
+                                    _convergePending = true;
+                                    _convergeAt = DateTime.UtcNow.AddMilliseconds(900);
+                                }
+                                else
+                                {
+                                    RecordAttempt(
+                                        _observedLine,
+                                        _mode != "fail");
+                                }
                             }
                             else if (cmd == "getSnapshot")
                             {
-                                Dictionary<string, object> bt = (Dictionary<string, object>)_settings["batteryTarget"];
+                                Dictionary<string, object> target = TargetForLine(_observedLine);
                                 payload = new Dictionary<string, object> {
                                     { "telemetry", new Dictionary<string, object> {
-                                        { "powerLine", "battery" }, { "fastLimitWatts", bt["fastWatts"] },
-                                        { "slowLimitWatts", bt["slowWatts"] }, { "stapmLimitWatts", bt["stapmWatts"] } } }
+                                        { "powerLine", _observedLine }, { "fastLimitWatts", target["fastWatts"] },
+                                        { "slowLimitWatts", target["slowWatts"] }, { "stapmLimitWatts", target["stapmWatts"] } } }
                                 };
                             }
                             else if (cmd == "getGuiState")
@@ -288,8 +365,16 @@ function Invoke-FakeCommand([string]$Pipe, [string]$Command) {
     if (-not $r.Success) { throw "fake $Command failed: $($r.ErrorText)" }
     return $r.Payload
 }
-function Start-FakeGui([string]$Exe, [string]$Pipe, [bool]$Enabled, [bool]$BatteryOnly, [bool]$Write, [string]$Ready) {
-    $argList = @($Pipe, $(if ($Enabled) { '1' } else { '0' }), $(if ($BatteryOnly) { '1' } else { '0' }), $(if ($Write) { '1' } else { '0' }), $Ready)
+function Start-FakeGui(
+    [string]$Exe,
+    [string]$Pipe,
+    [bool]$Enabled,
+    [bool]$BatteryOnly,
+    [bool]$Write,
+    [string]$Ready,
+    [string]$Mode = 'new'
+) {
+    $argList = @($Pipe, $(if ($Enabled) { '1' } else { '0' }), $(if ($BatteryOnly) { '1' } else { '0' }), $(if ($Write) { '1' } else { '0' }), $Ready, $Mode)
     return Start-Process -FilePath $Exe -ArgumentList $argList -WindowStyle Hidden -PassThru
 }
 function Stop-FakeGui($Proc) {
@@ -298,21 +383,62 @@ function Stop-FakeGui($Proc) {
         try { $Proc.Dispose() } catch { }
     }
 }
+function Invoke-ApplyFixture(
+    [string]$Name,
+    [string]$Mode,
+    [int]$BatteryWatts,
+    [int]$AcWatts
+) {
+    $pipe = "amdContract$Name." + [guid]::NewGuid().ToString('N')
+    $ready = Join-Path $work "ready$Name.txt"
+    $statePath = Join-Path $work "state$Name.json"
+    $logPath = Join-Path $work "apply$Name.log"
+    $bogusGui = Join-Path $work "absent-$Name.exe"
+    $process = Start-FakeGui $guiExe $pipe $true $false $true $ready $Mode
+    try {
+        if (-not (Wait-Ready $ready 10000)) { throw "fake GUI $Name not ready" }
+        $run = Invoke-ScriptChild $applyScript @{
+            BatteryWatts = $BatteryWatts
+            AcWatts = $AcWatts
+            PipeName = $pipe
+            GuiPath = $bogusGui
+            StatePath = $statePath
+            LogPath = $logPath
+        }
+        $policy = Invoke-FakeCommand $pipe 'getPowerPolicy'
+        $logText = if (Test-Path -LiteralPath $logPath) {
+            Get-Content -LiteralPath $logPath -Raw
+        }
+        else {
+            ''
+        }
+        return [pscustomobject]@{
+            ExitCode = $run.ExitCode
+            Policy = $policy
+            LogText = $logText
+        }
+    }
+    finally {
+        Stop-FakeGui $process
+    }
+}
 function Invoke-ScriptChild([string]$Script, [hashtable]$Params) {
     $argList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $Script)
     foreach ($key in $Params.Keys) { $argList += @("-$key", [string]$Params[$key]) }
-    $out = Join-Path $work ('child-' + [guid]::NewGuid().ToString('N') + '.txt')
-    $p = Start-Process -FilePath 'powershell.exe' -ArgumentList $argList -WindowStyle Hidden -PassThru `
-        -RedirectStandardOutput $out -RedirectStandardError ($out + '.err')
-    if (-not $p.WaitForExit(60000)) {
+    $p = Start-Process -FilePath 'powershell.exe' -ArgumentList $argList -WindowStyle Hidden -PassThru
+    $deadline = (Get-Date).AddSeconds(60)
+    while (-not $p.HasExited -and (Get-Date) -lt $deadline) {
+        Start-Sleep -Milliseconds 100
+        $p.Refresh()
+    }
+    if (-not $p.HasExited) {
         try { $p.Kill() | Out-Null } catch { }
         $p.WaitForExit() | Out-Null
     }
+    $p.Refresh()
     $code = $p.ExitCode
-    $text = ''
-    if (Test-Path -LiteralPath $out) { $text = (Get-Content -LiteralPath $out -Raw) }
     $p.Dispose()
-    return [pscustomobject]@{ ExitCode = $code; Output = $text }
+    return [pscustomobject]@{ ExitCode = $code }
 }
 
 try {
@@ -436,13 +562,119 @@ try {
     Add-Result 'mutex-concurrent-state' $passF ("exit1={0} exit2={1} validJson={2} enabled={3}" -f $p1.ExitCode, $p2.ExitCode, $stateValid, $stateEnabled)
     $p1.Dispose(); $p2.Dispose()
     Stop-FakeGui $guiProc; $guiProc = $null
+
+    # Test G: a line switch exposes a stale battery success first. The new
+    # attempt/applied line fields must keep waiting until AC actually converges.
+    $caseG = Invoke-ApplyFixture 'G' 'switch' 10 45
+    $passG = ($caseG.ExitCode -eq 0) -and
+        ($caseG.Policy.lastObservedPowerLine -eq 'ac') -and
+        ($caseG.Policy.lastAttemptPowerLine -eq 'ac') -and
+        ($caseG.Policy.lastAppliedPowerLine -eq 'ac') -and
+        ($caseG.Policy.lastAppliedTarget.stapmWatts -eq 45) -and
+        ($caseG.LogText -match 'observedLine=ac appliedLine=ac')
+    Add-Result 'new-fields-line-switch-converges' $passG ("exit={0} observed={1} attempt={2} applied={3} logLines={4}" -f `
+        $caseG.ExitCode, $caseG.Policy.lastObservedPowerLine, $caseG.Policy.lastAttemptPowerLine,
+        $caseG.Policy.lastAppliedPowerLine, ($caseG.LogText -match 'observedLine=ac appliedLine=ac'))
+
+    # Test H: an old worker without the new fields still falls back to the
+    # observed line after proving that a fresh attempt timestamp was recorded.
+    $caseH = Invoke-ApplyFixture 'H' 'legacy' 10 45
+    $hProperties = @($caseH.Policy.PSObject.Properties.Name)
+    $passH = ($caseH.ExitCode -eq 0) -and
+        ($hProperties -notcontains 'lastAttemptPowerLine') -and
+        ($hProperties -notcontains 'lastAppliedPowerLine') -and
+        ($caseH.Policy.lastObservedPowerLine -eq 'battery') -and
+        ($caseH.Policy.lastAttemptSucceeded -eq $true) -and
+        ($caseH.LogText -match 'observedLine=battery appliedLine=battery')
+    Add-Result 'legacy-observed-line-fallback' $passH ("exit={0} hasAttemptField={1} hasAppliedField={2} logFallback={3}" -f `
+        $caseH.ExitCode, ($hProperties -contains 'lastAttemptPowerLine'),
+        ($hProperties -contains 'lastAppliedPowerLine'),
+        ($caseH.LogText -match 'observedLine=battery appliedLine=battery'))
+
+    # Test I: new fields show observation advanced to AC while the only
+    # successful attempt/applied line is still battery. Equal battery/AC watts
+    # make the old observed-line logic pass, so this must be rejected.
+    $caseI = Invoke-ApplyFixture 'I' 'newObservation' 12 12
+    $passI = ($caseI.ExitCode -ne 0) -and
+        ($caseI.Policy.lastObservedPowerLine -eq 'ac') -and
+        ($caseI.Policy.lastAttemptPowerLine -eq 'battery') -and
+        ($caseI.Policy.lastAppliedPowerLine -eq 'battery') -and
+        ($caseI.Policy.lastAttemptSucceeded -eq $true) -and
+        ($caseI.LogText -match 'observed=ac attempt=battery applied=battery') -and
+        ($caseI.LogText -notmatch 'PASS ')
+    Add-Result 'new-fields-observation-not-applied' $passI ("exit={0} observed={1} attempt={2} applied={3} rejected={4}" -f `
+        $caseI.ExitCode, $caseI.Policy.lastObservedPowerLine, $caseI.Policy.lastAttemptPowerLine,
+        $caseI.Policy.lastAppliedPowerLine, ($caseI.LogText -notmatch 'PASS '))
+
+    # Test J: legacy observation-only state has stale success fields. The
+    # observed-line fallback must still reject it because lastAttemptAt did not
+    # advance after setPowerPolicy.
+    $caseJ = Invoke-ApplyFixture 'J' 'legacyObservation' 12 12
+    $jProperties = @($caseJ.Policy.PSObject.Properties.Name)
+    $passJ = ($caseJ.ExitCode -ne 0) -and
+        ($jProperties -notcontains 'lastAttemptPowerLine') -and
+        ($jProperties -notcontains 'lastAppliedPowerLine') -and
+        ($caseJ.Policy.lastObservedPowerLine -eq 'ac') -and
+        ($caseJ.Policy.lastAttemptSucceeded -eq $true) -and
+        ($caseJ.LogText -match 'observed=ac') -and
+        ($caseJ.LogText -notmatch 'PASS ')
+    Add-Result 'legacy-observation-not-applied' $passJ ("exit={0} observed={1} success={2} rejected={3}" -f `
+        $caseJ.ExitCode, $caseJ.Policy.lastObservedPowerLine,
+        $caseJ.Policy.lastAttemptSucceeded, ($caseJ.LogText -notmatch 'PASS '))
+
+    # Test K: a failed attempt must never be reported as an applied policy.
+    $caseK = Invoke-ApplyFixture 'K' 'fail' 10 45
+    $passK = ($caseK.ExitCode -ne 0) -and
+        ($caseK.Policy.lastAttemptSucceeded -eq $false) -and
+        ($caseK.LogText -match 'did not confirm applied policy') -and
+        ($caseK.LogText -notmatch 'PASS ')
+    Add-Result 'failed-attempt-rejected' $passK ("exit={0} attemptSucceeded={1} rejected={2}" -f `
+        $caseK.ExitCode, $caseK.Policy.lastAttemptSucceeded, ($caseK.LogText -notmatch 'PASS '))
+
+    # Test L: a successful attempt without lastAppliedTarget is incomplete and
+    # must fail closed.
+    $caseL = Invoke-ApplyFixture 'L' 'missingTarget' 10 45
+    $lProperties = @($caseL.Policy.PSObject.Properties.Name)
+    $passL = ($caseL.ExitCode -ne 0) -and
+        ($caseL.Policy.lastAttemptSucceeded -eq $true) -and
+        ($lProperties -notcontains 'lastAppliedTarget') -and
+        ($caseL.LogText -match 'did not confirm applied policy') -and
+        ($caseL.LogText -notmatch 'PASS ')
+    Add-Result 'missing-applied-target-rejected' $passL ("exit={0} hasAppliedTarget={1} rejected={2}" -f `
+        $caseL.ExitCode, ($lProperties -contains 'lastAppliedTarget'), ($caseL.LogText -notmatch 'PASS '))
+
+    # Test M: restore-day-policy uses the same legacy fallback contract.
+    $pipeM = 'amdContractM.' + [guid]::NewGuid().ToString('N')
+    $readyM = Join-Path $work 'readyM.txt'
+    $logM = Join-Path $work 'restoreM.log'
+    $guiProc = Start-FakeGui $guiExe $pipeM $false $true $true $readyM 'legacy'
+    if (-not (Wait-Ready $readyM 10000)) { throw 'fake GUI M not ready' }
+    $runM = Invoke-ScriptChild $restoreScript @{
+        BatteryWatts = 10
+        AcWatts = 45
+        GuiPath = $guiExe
+        ProbePath = $probeExe
+        PipeName = $pipeM
+        LogPath = $logM
+    }
+    $polM = Invoke-FakeCommand $pipeM 'getPowerPolicy'
+    $logMText = Get-Content -LiteralPath $logM -Raw
+    $passM = ($runM.ExitCode -eq 0) -and
+        ($polM.PSObject.Properties.Name -notcontains 'lastAttemptPowerLine') -and
+        ($logMText -match 'observedLine=battery appliedLine=battery')
+    Add-Result 'restore-legacy-fallback' $passM ("exit={0} observed={1} fallbackLog={2}" -f `
+        $runM.ExitCode, $polM.lastObservedPowerLine,
+        ($logMText -match 'observedLine=battery appliedLine=battery'))
+    Stop-FakeGui $guiProc; $guiProc = $null
 }
 catch {
     Add-Result 'harness-error' $false $_.Exception.Message
 }
 finally {
     Stop-FakeGui $guiProc
-    if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue }
+    if (-not $PreserveWork -and (Test-Path -LiteralPath $work)) {
+        Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 $failed = @($results.Keys | Where-Object { -not $results[$_].pass })
@@ -455,5 +687,6 @@ $record = [ordered]@{
     RecordedAt = (Get-Date).ToString('o')
 }
 if ($EvidencePath) { $record | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $EvidencePath -Encoding UTF8 }
+if ($PreserveWork) { Write-Host "work=$work" }
 $record | ConvertTo-Json -Depth 8
 if ($failed.Count -gt 0) { exit 1 }

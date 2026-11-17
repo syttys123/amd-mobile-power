@@ -70,6 +70,10 @@ fn default_true() -> bool {
 pub struct PowerPolicyState {
     pub settings: Option<PowerPolicySettings>,
     pub last_observed_power_line: Option<PowerLineState>,
+    #[serde(default)]
+    pub last_attempt_power_line: Option<PowerLineState>,
+    #[serde(default)]
+    pub last_applied_power_line: Option<PowerLineState>,
     pub last_applied_target: Option<PowerLimitTarget>,
     pub last_attempt_at: Option<String>,
     pub last_attempt_succeeded: Option<bool>,
@@ -682,5 +686,29 @@ mod tests {
 
         assert!(settings.battery_enabled);
         assert!(settings.ac_enabled);
+    }
+
+    #[test]
+    fn legacy_power_policy_state_defaults_attempt_and_applied_lines() {
+        let state: super::PowerPolicyState = serde_json::from_value(serde_json::json!({
+            "settings": null,
+            "lastObservedPowerLine": "battery",
+            "lastAppliedTarget": {
+                "stapmWatts": 10,
+                "fastWatts": 10,
+                "slowWatts": 10
+            },
+            "lastAttemptAt": "2026-11-18T00:00:00Z",
+            "lastAttemptSucceeded": true,
+            "lastError": null
+        }))
+        .unwrap();
+
+        assert_eq!(
+            state.last_observed_power_line,
+            Some(super::PowerLineState::Battery)
+        );
+        assert!(state.last_attempt_power_line.is_none());
+        assert!(state.last_applied_power_line.is_none());
     }
 }

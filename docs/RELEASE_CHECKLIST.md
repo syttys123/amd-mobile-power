@@ -1,5 +1,30 @@
 # Release Checklist
 
+## Source Candidate 1.0.42 (2026-11-18)
+
+Current source candidate: **1.0.42**, status **SOURCE_READY_PENDING_PACKAGE_AND_GATE**.
+The deployed stable target remains **1.0.41**. Do not reuse 1.0.41 hashes or
+promotion evidence for this candidate.
+
+- [x] Policy state exposes separate observed, attempt, and applied power lines;
+      GUI text uses the attempt/applied line and labels manual write targets.
+- [x] Maintenance scripts prefer the new fields, require a fresh attempt, and
+      fail closed on observation-only stale success; legacy fallback is tested.
+- [x] Promotion binds expected ZIP SHA256/source commit, verifies all payload
+      checksums after install, scopes process stops and cleanup, and records
+      previous/same-version backup identity.
+- [x] Driver-free checks: Rust GUI 74, probe 7, C++ power-policy 18 plus three
+      other suites, policy script contract 13/13, observation contract 6/6,
+      promotion contract 16/16 in PowerShell 5.1 and 7, request bounds,
+      helper/recovery/install-scope contracts, formatting, Clippy, docs, and
+      `git diff --check`.
+- [ ] Clean commit and exact `build-package.ps1 -Version 1.0.42` package.
+- [ ] Formal release gate with reproducibility, shell integration, no-change
+      policy, worker-hang, DPI/work-area/maximize fixtures, and sanitization.
+- [ ] Reversible promotion with a new previous-stable backup and live read-back.
+- [ ] Hosted Windows CI, second AMD device, real OS DPI sessions, clean-Windows
+      WinRing0 baseline, owner media review, and explicit publication approval.
+
 ## Deployed Stable 1.0.41 (2026-11-18)
 
 Current target: **1.0.41**, status **STABLE_LOCAL_DEPLOYED_PENDING_PUBLICATION**.

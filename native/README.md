@@ -183,6 +183,12 @@ The native worker now implements the v1 `getPowerPolicy` and
 battery or AC target after a power-line change, skips duplicate writes, and
 backs off failed targets for five seconds. The controller is covered by
 fake-backend tests; the read-only IPC gate is part of `verify-native.ps1`.
+The state separates the latest observed supply line from the latest attempt and
+successful apply lines. Maintenance scripts require a fresh attempt and matching
+observed line before accepting an apply; old workers without the new fields use
+an explicit legacy fallback. The GUI labels `telemetry.targetWatts` as the most
+recent write target and shows the automatic policy's current line target
+separately.
 The Rust GUI exposes battery and AC target fields, an enable checkbox, and a
 save button when write controls are enabled. Saved settings live in
 `%LocalAppData%\AmdMobilePower\rust-ui-state.json` and are restored on launch.
@@ -228,6 +234,12 @@ The installer stages every file before switching directories, preserves the
 previous marked installation for rollback during the switch, and refuses to
 write into an unmarked non-empty directory. Install and remove the preview with
 `install-preview.ps1` and `uninstall-preview.ps1` from the extracted package.
+The stable promotion helper additionally accepts paired
+`-ExpectedPackageSHA256` / `-ExpectedSourceCommit` values, verifies every
+SHA256SUMS payload after installation, restricts cleanup to resolved expected
+paths, stops only owners under the target tree, and marks same-version backups
+so they are not mistaken for the previous-stable rollback. It runs under both
+Windows PowerShell 5.1 and PowerShell 7.
 The package also includes `install-driver-bootstrap.ps1` and
 `uninstall-driver-bootstrap.ps1` for the elevated WinRing0 service. The
 installer stops an app-owned running driver and waits for it to stop before

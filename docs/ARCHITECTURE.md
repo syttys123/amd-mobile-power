@@ -54,6 +54,10 @@ on 2026-11-18. See `NATIVE_RC_STATUS.md` for the exact evidence set.
   the configured ceiling plus the read-back tolerance. Lower values are treated
   as firmware clamps; STAPM-only movement and missing/non-finite readings do not
   trigger writes. Battery-only policy leaves the AC/external line untouched.
+- Exposes `lastObservedPowerLine`, `lastAttemptPowerLine`, and
+  `lastAppliedPowerLine` separately. Observation may advance without an apply;
+  clients must use the attempt/applied line for application status. Workers
+  before 1.0.42 omit the latter two fields, and clients default them to null.
 - Publishes telemetry snapshots to the GUI; filters non-finite (NaN/Inf) reads
   to null and reports the firmware-clamp flag against the persistent
   last-applied target.

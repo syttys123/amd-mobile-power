@@ -100,6 +100,66 @@ function Test-PolicySettingsMatch($Settings, [int]$BatteryTarget, [int]$AcTarget
         $ac.fastWatts -eq $AcTarget -and
         $ac.slowWatts -eq $AcTarget)
 }
+function Get-PolicyLineDiagnostics($State) {
+    $observed = $null
+    $attempt = $null
+    $applied = $null
+    $verificationLine = $null
+    $usesNewFields = $false
+    if ($State) {
+        $observed = [string]$State.lastObservedPowerLine
+        $attemptProperty = $State.PSObject.Properties['lastAttemptPowerLine']
+        $appliedProperty = $State.PSObject.Properties['lastAppliedPowerLine']
+        $usesNewFields = ($null -ne $attemptProperty) -or ($null -ne $appliedProperty)
+        if ($null -ne $attemptProperty) { $attempt = [string]$attemptProperty.Value }
+        if ($null -ne $appliedProperty) { $applied = [string]$appliedProperty.Value }
+        if ($usesNewFields) {
+            # A missing new field means the worker explicitly has no apply line.
+            # Never reinterpret observation-only state as an application.
+            $verificationLine = if ($applied) { $applied } elseif ($attempt) { $attempt } else { $null }
+        }
+        else {
+            $verificationLine = $observed
+        }
+    }
+    return [pscustomobject]@{
+        Observed = $observed
+        Attempt = $attempt
+        Applied = $applied
+        VerificationLine = $verificationLine
+        UsesNewFields = $usesNewFields
+    }
+}
+function Get-PolicyAttemptBaseline($State) {
+    if (-not $State) { return '' }
+    return [string]$State.lastAttemptAt
+}
+function Test-PolicyAppliedState(
+    $State,
+    [int]$BatteryTarget,
+    [int]$AcTarget,
+    [string]$AttemptBaseline
+) {
+    if ($State.lastAttemptSucceeded -ne $true -or
+        -not (Test-PolicySettingsMatch $State.settings $BatteryTarget $AcTarget)) {
+        return $false
+    }
+    $attemptAt = [string]$State.lastAttemptAt
+    if ([string]::IsNullOrWhiteSpace($attemptAt) -or $attemptAt -eq $AttemptBaseline) {
+        return $false
+    }
+    $lines = Get-PolicyLineDiagnostics $State
+    if (-not $lines.Observed -or -not $lines.VerificationLine -or
+        $lines.VerificationLine -ne $lines.Observed) {
+        return $false
+    }
+    $expected = if ($lines.Observed -eq 'ac') { $AcTarget } else { $BatteryTarget }
+    $applied = $State.lastAppliedTarget
+    if (-not $applied) { return $false }
+    return ($applied.stapmWatts -eq $expected -and
+        $applied.fastWatts -eq $expected -and
+        $applied.slowWatts -eq $expected)
+}
 function Wait-PolicyTelemetry([int]$BatteryTarget, [int]$AcTarget) {
     $deadline = (Get-Date).AddSeconds(12)
     $last = $null
@@ -119,27 +179,22 @@ function Wait-PolicyTelemetry([int]$BatteryTarget, [int]$AcTarget) {
     $slow = if ($last) { $last.slowLimitWatts } else { '--' }
     throw "Telemetry read-back mismatch on ${line}: Fast/Slow ${fast}/${slow} W."
 }
-function Wait-PolicyApplied([int]$BatteryTarget, [int]$AcTarget) {
+function Wait-PolicyApplied([int]$BatteryTarget, [int]$AcTarget, [string]$AttemptBaseline) {
     $deadline = (Get-Date).AddSeconds(12)
     $last = $null
     while ((Get-Date) -lt $deadline) {
         $state = Invoke-WorkerRequestWithRetry 'getPowerPolicy' $null
         $last = $state
-        $line = $state.lastObservedPowerLine
-        $applied = $state.lastAppliedTarget
-        if ($state.lastAttemptSucceeded -eq $true -and $line -and $applied -and
-            (Test-PolicySettingsMatch $state.settings $BatteryTarget $AcTarget)) {
-            $expected = if ($line -eq 'ac') { $AcTarget } else { $BatteryTarget }
-            if ($applied.stapmWatts -eq $expected -and
-                $applied.fastWatts -eq $expected -and
-                $applied.slowWatts -eq $expected) {
-                return
-            }
+        if (Test-PolicyAppliedState $state $BatteryTarget $AcTarget $AttemptBaseline) {
+            return $state
         }
         Start-Sleep -Milliseconds 300
     }
-    $line = if ($last) { $last.lastObservedPowerLine } else { 'unknown' }
-    throw "Worker did not confirm applied policy on ${line} within 12 seconds."
+    $lines = Get-PolicyLineDiagnostics $last
+    $observed = if ($lines.Observed) { $lines.Observed } else { 'unknown' }
+    $attempt = if ($lines.Attempt) { $lines.Attempt } else { 'unknown' }
+    $applied = if ($lines.Applied) { $lines.Applied } else { 'unknown' }
+    throw "Worker did not confirm applied policy on ${observed} within 12 seconds (observed=$observed attempt=$attempt applied=$applied)."
 }
 function Update-UiStatePolicy([string]$Path, $Settings) {
     # The GUI persists the same file with atomic tmp+rename writes. Share the
@@ -446,12 +501,17 @@ $settings = [ordered]@{
 }
 try {
     Ensure-GuiWorker -AllowStart ([bool]$AllowGuiAutoStart)
+    $attemptBaseline = Get-PolicyAttemptBaseline (
+        Invoke-WorkerRequestWithRetry 'getPowerPolicy' $null)
     $null = Invoke-WorkerRequestWithRetry 'setPowerPolicy' @{ settings = $settings }
     $verified = (Invoke-WorkerRequestWithRetry 'getPowerPolicy' $null).settings
     if (-not (Test-PolicySettingsMatch $verified $BatteryWatts $AcWatts)) {
         throw 'Worker policy read-back mismatch.'
     }
-    Wait-PolicyApplied -BatteryTarget $BatteryWatts -AcTarget $AcWatts
+    $null = Wait-PolicyApplied `
+        -BatteryTarget $BatteryWatts `
+        -AcTarget $AcWatts `
+        -AttemptBaseline $attemptBaseline
     $telemetry = Wait-PolicyTelemetry -BatteryTarget $BatteryWatts -AcTarget $AcWatts
 
     Update-UiStatePolicy -Path $StatePath -Settings $settings
@@ -471,9 +531,11 @@ try {
     if (-not (Test-PolicySettingsMatch $final.settings $BatteryWatts $AcWatts)) {
         throw "Final worker policy read-back mismatch after gui=$guiMode."
     }
-    $message = "PASS battery={0} ac={1} forcedWrite=True enabled=true gui={2} line={3} fastSlow={4}/{5}" -f `
+    $finalLines = Get-PolicyLineDiagnostics $final
+    $message = "PASS battery={0} ac={1} forcedWrite=True enabled=true gui={2} line={3} observedLine={4} appliedLine={5} fastSlow={6}/{7}" -f `
         $BatteryWatts, $AcWatts, $guiMode,
-        $telemetry.powerLine, $telemetry.fastLimitWatts, $telemetry.slowLimitWatts
+        $telemetry.powerLine, $finalLines.Observed, $finalLines.VerificationLine,
+        $telemetry.fastLimitWatts, $telemetry.slowLimitWatts
     Write-Log $message
 } catch {
     Write-Log "FAIL battery=$BatteryWatts ac=$AcWatts $($_.Exception.Message)"

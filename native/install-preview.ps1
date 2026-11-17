@@ -13,7 +13,11 @@ $sourceDirectory = $PSCommandPath | Split-Path -Parent
 $nativePreviewVersion = "0.5.0-native-preview.1"
 $buildInfoPath = Join-Path $sourceDirectory "BUILD-INFO.txt"
 if (Test-Path -LiteralPath $buildInfoPath) {
-    foreach ($line in Get-Content -LiteralPath $buildInfoPath) {
+    $buildInfoText = [System.IO.File]::ReadAllText(
+        $buildInfoPath,
+        [System.Text.Encoding]::UTF8)
+    foreach ($line in ($buildInfoText -split "`r?`n")) {
+        $line = $line.TrimStart([char]0xFEFF)
         if ($line -match "^Version=(.+)$") {
             $nativePreviewVersion = $Matches[1].Trim()
             break
@@ -80,6 +84,48 @@ $installParent = Split-Path -Parent $resolvedInstall
 if ([string]::IsNullOrWhiteSpace($installParent)) {
     throw "InstallDirectory has no parent directory: $resolvedInstall"
 }
+
+function Assert-ExpectedCleanupDirectory {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$ExpectedPath,
+        [Parameter(Mandatory = $true)][string]$Parent,
+        [string]$LeafPrefix
+    )
+
+    $resolvedPath = [System.IO.Path]::GetFullPath($Path)
+    $resolvedExpected = [System.IO.Path]::GetFullPath($ExpectedPath)
+    if (-not [string]::Equals(
+        $resolvedPath,
+        $resolvedExpected,
+        [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Refusing to clean an unexpected path: $resolvedPath != $resolvedExpected"
+    }
+    $resolvedParent = [System.IO.Path]::GetFullPath($Parent)
+    if (-not [string]::Equals(
+        [System.IO.Path]::GetFullPath((Split-Path -Parent $resolvedPath)),
+        $resolvedParent,
+        [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Cleanup path must be a direct child of $resolvedParent : $resolvedPath"
+    }
+    if ($LeafPrefix -and
+        -not [System.IO.Path]::GetFileName($resolvedPath).StartsWith(
+            $LeafPrefix,
+            [System.StringComparison]::Ordinal)) {
+        throw "Cleanup path has an unexpected name: $resolvedPath"
+    }
+    if (Test-Path -LiteralPath $resolvedPath) {
+        $item = Get-Item -LiteralPath $resolvedPath -Force
+        if (-not $item.PSIsContainer) {
+            throw "Cleanup path is not a directory: $resolvedPath"
+        }
+        if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "Refusing to clean a reparse point: $resolvedPath"
+        }
+    }
+    return $resolvedPath
+}
+
 New-Item -ItemType Directory -Path $installParent -Force | Out-Null
 
 $operationId = [Guid]::NewGuid().ToString("N")
@@ -90,6 +136,21 @@ $backupDirectory = Join-Path `
     $installParent `
     ".AmdMobilePowerNativePreview.backup-$operationId"
 try {
+    Assert-ExpectedCleanupDirectory `
+        -Path $stagingDirectory `
+        -ExpectedPath $stagingDirectory `
+        -Parent $installParent `
+        -LeafPrefix ".AmdMobilePowerNativePreview.install-" | Out-Null
+    Assert-ExpectedCleanupDirectory `
+        -Path $backupDirectory `
+        -ExpectedPath $backupDirectory `
+        -Parent $installParent `
+        -LeafPrefix ".AmdMobilePowerNativePreview.backup-" | Out-Null
+    if ((Test-Path -LiteralPath $stagingDirectory) -or
+        (Test-Path -LiteralPath $backupDirectory)) {
+        throw "Installer staging or backup path already exists."
+    }
+
     New-Item -ItemType Directory -Path $stagingDirectory | Out-Null
     Copy-Item `
         -Path (Join-Path $resolvedSource "*") `
@@ -105,6 +166,10 @@ try {
     }
 
     if (Test-Path -LiteralPath $resolvedInstall) {
+        Assert-ExpectedCleanupDirectory `
+            -Path $resolvedInstall `
+            -ExpectedPath $resolvedInstall `
+            -Parent $installParent | Out-Null
         $existingMarker = Join-Path $resolvedInstall "NATIVE-PREVIEW-INSTALL.txt"
         $existingEntries = @(Get-ChildItem -LiteralPath $resolvedInstall -Force)
         if (-not (Test-Path -LiteralPath $existingMarker) -and $existingEntries.Count -gt 0) {
@@ -116,12 +181,21 @@ try {
     try {
         Move-Item -LiteralPath $stagingDirectory -Destination $resolvedInstall
         if (Test-Path -LiteralPath $backupDirectory) {
-            Remove-Item -LiteralPath $backupDirectory -Recurse -Force
+            $cleanupBackup = Assert-ExpectedCleanupDirectory `
+                -Path $backupDirectory `
+                -ExpectedPath $backupDirectory `
+                -Parent $installParent `
+                -LeafPrefix ".AmdMobilePowerNativePreview.backup-"
+            Remove-Item -LiteralPath $cleanupBackup -Recurse -Force
         }
     }
     catch {
         if (Test-Path -LiteralPath $resolvedInstall) {
-            Remove-Item -LiteralPath $resolvedInstall -Recurse -Force
+            $cleanupInstall = Assert-ExpectedCleanupDirectory `
+                -Path $resolvedInstall `
+                -ExpectedPath $resolvedInstall `
+                -Parent $installParent
+            Remove-Item -LiteralPath $cleanupInstall -Recurse -Force
         }
         if (Test-Path -LiteralPath $backupDirectory) {
             Move-Item -LiteralPath $backupDirectory -Destination $resolvedInstall
@@ -131,10 +205,20 @@ try {
 }
 finally {
     if (Test-Path -LiteralPath $stagingDirectory) {
-        Remove-Item -LiteralPath $stagingDirectory -Recurse -Force
+        $cleanupStaging = Assert-ExpectedCleanupDirectory `
+            -Path $stagingDirectory `
+            -ExpectedPath $stagingDirectory `
+            -Parent $installParent `
+            -LeafPrefix ".AmdMobilePowerNativePreview.install-"
+        Remove-Item -LiteralPath $cleanupStaging -Recurse -Force
     }
     if (Test-Path -LiteralPath $backupDirectory) {
-        Remove-Item -LiteralPath $backupDirectory -Recurse -Force
+        $cleanupBackup = Assert-ExpectedCleanupDirectory `
+            -Path $backupDirectory `
+            -ExpectedPath $backupDirectory `
+            -Parent $installParent `
+            -LeafPrefix ".AmdMobilePowerNativePreview.backup-"
+        Remove-Item -LiteralPath $cleanupBackup -Recurse -Force
     }
 }
 

@@ -3,7 +3,11 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSCommandPath
 $repositoryRoot = Split-Path -Parent $root
 $helperPath = Join-Path $root 'apply-power-policy-direct.ps1'
+$restorePath = Join-Path $root 'restore-day-policy.ps1'
+$verifyPath = Join-Path $root 'verify-power-policy.ps1'
 $source = Get-Content -LiteralPath $helperPath -Raw
+$restoreSource = Get-Content -LiteralPath $restorePath -Raw
+$verifySource = Get-Content -LiteralPath $verifyPath -Raw
 $failures = New-Object System.Collections.Generic.List[string]
 
 function Assert-Contains([string]$Text, [string]$Needle, [string]$Message) {
@@ -24,9 +28,36 @@ Assert-Contains $source 'RESTARTED GUI to reload the saved policy' `
     'policy reload must gracefully restart the tray GUI'
 Assert-Contains $source 'gui={2}' `
     'PASS log must describe the GUI reload mode explicitly'
+Assert-Contains $source 'lastAttemptPowerLine' `
+    'helper must read the explicit attempt line field'
+Assert-Contains $source 'lastAppliedPowerLine' `
+    'helper must prefer the explicit applied line field'
+Assert-Contains $source '$verificationLine = if ($applied) { $applied } elseif ($attempt)' `
+    'helper must prefer applied then attempt before falling back to observed'
+Assert-Contains $source 'lastAttemptAt' `
+    'helper must prove a fresh attempt with lastAttemptAt'
+Assert-Contains $source 'observedLine={4} appliedLine={5}' `
+    'helper PASS log must include observed and applied lines'
 if ($source.Contains('guiSynced=')) {
     $failures.Add('PASS log must not report a boolean guiSynced success state')
 }
+
+foreach ($entry in @(
+        @{ Name = 'restore'; Text = $restoreSource },
+        @{ Name = 'verify'; Text = $verifySource })) {
+    Assert-Contains $entry.Text 'lastAttemptPowerLine' `
+        "$($entry.Name) must read the explicit attempt line field"
+    Assert-Contains $entry.Text 'lastAppliedPowerLine' `
+        "$($entry.Name) must prefer the explicit applied line field"
+    Assert-Contains $entry.Text 'lastAttemptAt' `
+        "$($entry.Name) must reject observation-only state without a fresh attempt"
+    Assert-Contains $entry.Text 'lastObservedPowerLine' `
+        "$($entry.Name) must retain the legacy observed-line fallback"
+}
+Assert-Contains $restoreSource '$line -ne $lines.Observed' `
+    'restore must require the applied line to match the current observation'
+Assert-Contains $verifySource '$lines.VerificationLine -eq $powerLine' `
+    'verify must compare the explicit apply line with its expected line'
 
 foreach ($taskName in @(
         'AmdMobilePower DirectDayPolicy 0700',

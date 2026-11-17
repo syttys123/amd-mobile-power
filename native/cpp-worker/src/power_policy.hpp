@@ -27,7 +27,13 @@ struct PowerPolicySettings {
 
 struct PowerPolicyState {
     std::optional<PowerPolicySettings> settings;
+    // Last successfully observed supply line. This may advance without an
+    // apply attempt (for example while one line is excluded from the policy).
     std::optional<PowerLineState> last_observed_power_line;
+    // Supply line of the latest apply attempt or known-line policy failure.
+    std::optional<PowerLineState> last_attempt_power_line;
+    // Supply line of the latest successful apply; retained across failures.
+    std::optional<PowerLineState> last_applied_power_line;
     std::optional<PowerLimitTarget> last_applied_target;
     std::optional<std::string> last_attempt_at;
     std::optional<bool> last_attempt_succeeded;

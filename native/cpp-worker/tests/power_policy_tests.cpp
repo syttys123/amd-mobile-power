@@ -247,6 +247,167 @@ bool BatteryOnlyPolicySkipsAcAndAppliesOnBattery() {
             "battery-only policy should still apply on battery");
 }
 
+bool ObservationWithoutAttemptKeepsTheAttemptLine() {
+    FakePolicyBackend backend;
+    backend.capability = SupportedCapability();
+    backend.power_line = PowerLineState::Battery;
+    PowerPolicyController controller;
+    PowerPolicySettings settings;
+    settings.enabled = true;
+    settings.battery_target = PowerLimitTarget::uniform(10);
+    settings.ac_target = PowerLimitTarget::uniform(45);
+    settings.battery_enabled = true;
+    settings.ac_enabled = false;
+    controller.SetSettings(settings);
+
+    const auto start = std::chrono::steady_clock::now();
+    TickAt(backend, controller, start, 0);
+    const auto first_attempt_at = controller.state().last_attempt_at;
+    const bool battery_applied =
+        backend.apply_count == 1 &&
+        controller.state().last_attempt_power_line ==
+            std::optional<PowerLineState>(PowerLineState::Battery) &&
+        controller.state().last_applied_power_line ==
+            std::optional<PowerLineState>(PowerLineState::Battery);
+
+    TickAt(backend, controller, start, 1);
+    const bool same_line_noop_keeps_attempt =
+        backend.apply_count == 1 &&
+        controller.state().last_observed_power_line ==
+            std::optional<PowerLineState>(PowerLineState::Battery) &&
+        controller.state().last_attempt_power_line ==
+            std::optional<PowerLineState>(PowerLineState::Battery) &&
+        controller.state().last_attempt_at == first_attempt_at;
+
+    backend.power_line = PowerLineState::Ac;
+    TickAt(backend, controller, start, 2);
+    const bool observation_moved_without_attempt =
+        backend.apply_count == 1 &&
+        controller.state().last_observed_power_line ==
+            std::optional<PowerLineState>(PowerLineState::Ac) &&
+        controller.state().last_attempt_power_line ==
+            std::optional<PowerLineState>(PowerLineState::Battery) &&
+        controller.state().last_applied_power_line ==
+            std::optional<PowerLineState>(PowerLineState::Battery) &&
+        controller.state().last_attempt_at == first_attempt_at;
+
+    return Expect(battery_applied, "battery attempt line should be recorded") &&
+        Expect(
+            same_line_noop_keeps_attempt,
+            "a same-line no-op tick must not move the attempt line or timestamp") &&
+        Expect(
+            observation_moved_without_attempt,
+            "an excluded line may update the observation without changing the attempt line");
+}
+
+bool FailedApplyRecordsTheAttemptLine() {
+    FakePolicyBackend backend;
+    backend.capability = SupportedCapability();
+    backend.power_line = PowerLineState::Battery;
+    backend.apply_failure = true;
+    PowerPolicyController controller;
+    controller.SetSettings(PowerPolicySettings{
+        true,
+        PowerLimitTarget::uniform(12),
+        PowerLimitTarget::uniform(45)});
+
+    TickAt(backend, controller, std::chrono::steady_clock::now(), 0);
+
+    return Expect(backend.apply_count == 1, "the failing target should be attempted once") &&
+        Expect(
+            controller.state().last_attempt_power_line ==
+                std::optional<PowerLineState>(PowerLineState::Battery),
+            "a failed apply should record the attempted power line") &&
+        Expect(
+            !controller.state().last_applied_power_line.has_value(),
+            "a failed apply must not claim a successful power line") &&
+        Expect(
+            controller.state().last_attempt_succeeded == std::optional<bool>(false),
+            "the failed attempt should be surfaced");
+}
+
+bool PowerLineSwitchUpdatesAttemptAndAppliedLines() {
+    FakePolicyBackend backend;
+    backend.capability = SupportedCapability();
+    backend.power_line = PowerLineState::Battery;
+    PowerPolicyController controller;
+    controller.SetSettings(PowerPolicySettings{
+        true,
+        PowerLimitTarget::uniform(12),
+        PowerLimitTarget::uniform(45)});
+
+    const auto start = std::chrono::steady_clock::now();
+    TickAt(backend, controller, start, 0);
+    backend.power_line = PowerLineState::Ac;
+    TickAt(backend, controller, start, 1);
+
+    return Expect(backend.apply_count == 2, "the AC target should be applied after a line switch") &&
+        Expect(
+            controller.state().last_attempt_power_line ==
+                std::optional<PowerLineState>(PowerLineState::Ac),
+            "a line switch should update the attempt line") &&
+        Expect(
+            controller.state().last_applied_power_line ==
+                std::optional<PowerLineState>(PowerLineState::Ac),
+            "a successful line switch should update the applied line") &&
+        Expect(
+            controller.state().last_applied_target ==
+                std::optional<PowerLimitTarget>(PowerLimitTarget::uniform(45)),
+            "a successful line switch should update the applied target");
+}
+
+bool UnsupportedPlatformFailureRecordsTheAttemptLine() {
+    FakePolicyBackend backend;
+    backend.capability = SupportedCapability();
+    backend.capability.is_supported = false;
+    backend.capability.unsupported_reason = "unsupported test platform";
+    backend.power_line = PowerLineState::Battery;
+    PowerPolicyController controller;
+    controller.SetSettings(PowerPolicySettings{
+        true,
+        PowerLimitTarget::uniform(12),
+        PowerLimitTarget::uniform(45)});
+
+    TickAt(backend, controller, std::chrono::steady_clock::now(), 0);
+
+    return Expect(backend.apply_count == 0, "unsupported platforms must not write") &&
+        Expect(
+            controller.state().last_attempt_power_line ==
+                std::optional<PowerLineState>(PowerLineState::Battery),
+            "a known-line policy failure should record the attempted line") &&
+        Expect(
+            controller.state().last_attempt_succeeded == std::optional<bool>(false),
+            "the unsupported platform failure should be surfaced");
+}
+
+bool SetSettingsResetsAttemptAndAppliedLines() {
+    FakePolicyBackend backend;
+    backend.capability = SupportedCapability();
+    backend.power_line = PowerLineState::Battery;
+    PowerPolicyController controller;
+    controller.SetSettings(PowerPolicySettings{
+        true,
+        PowerLimitTarget::uniform(12),
+        PowerLimitTarget::uniform(45)});
+    TickAt(backend, controller, std::chrono::steady_clock::now(), 0);
+
+    controller.SetSettings(PowerPolicySettings{
+        true,
+        PowerLimitTarget::uniform(20),
+        PowerLimitTarget::uniform(50)});
+
+    const auto& state = controller.state();
+    return Expect(
+               !state.last_observed_power_line.has_value() &&
+                   !state.last_attempt_power_line.has_value() &&
+                   !state.last_applied_power_line.has_value(),
+               "new settings should clear observation, attempt, and applied lines") &&
+        Expect(
+            !state.last_applied_target.has_value() &&
+                !state.last_attempt_succeeded.has_value(),
+            "new settings should clear the old result");
+}
+
 bool HighFastDriftIsReapplied() {
     FakePolicyBackend backend;
     backend.capability = SupportedCapability();
@@ -450,6 +611,11 @@ int main() {
         DisabledPolicyDoesNotTouchHardware() &&
         UnknownPowerLineIsRejected() &&
         BatteryOnlyPolicySkipsAcAndAppliesOnBattery() &&
+        ObservationWithoutAttemptKeepsTheAttemptLine() &&
+        FailedApplyRecordsTheAttemptLine() &&
+        PowerLineSwitchUpdatesAttemptAndAppliedLines() &&
+        UnsupportedPlatformFailureRecordsTheAttemptLine() &&
+        SetSettingsResetsAttemptAndAppliedLines() &&
         HighFastDriftIsReapplied() &&
         HighSlowDriftIsReapplied() &&
         MatchingLimitsDoNotReapply() &&

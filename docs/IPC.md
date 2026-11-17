@@ -122,6 +122,46 @@ integer extractor that rejects non-integers and any magnitude outside the
 signed 32-bit range, then validate the target against the matched profile and
 reported capabilities before any hardware write.
 
+## PowerPolicyState
+
+`getPowerPolicy` and a successful `setPowerPolicy` return the current policy
+state as the response payload:
+
+```json
+{
+  "settings": {
+    "enabled": true,
+    "batteryEnabled": true,
+    "acEnabled": true,
+    "batteryTarget": { "stapmWatts": 10, "fastWatts": 10, "slowWatts": 10 },
+    "acTarget": { "stapmWatts": 45, "fastWatts": 45, "slowWatts": 45 }
+  },
+  "lastObservedPowerLine": "ac",
+  "lastAttemptPowerLine": "battery",
+  "lastAppliedPowerLine": "battery",
+  "lastAppliedTarget": { "stapmWatts": 10, "fastWatts": 10, "slowWatts": 10 },
+  "lastAttemptAt": "2026-11-18T00:00:00Z",
+  "lastAttemptSucceeded": true,
+  "lastError": null
+}
+```
+
+Power-line fields use `"ac"`, `"battery"`, `"unknown"`, or `null`. Target
+fields use the same camelCase shape as `applyTarget`, or `null`.
+
+- `lastObservedPowerLine` is the most recent successful observation. It may
+  advance without an apply attempt, for example when the newly observed line is
+  excluded from the policy.
+- `lastAttemptPowerLine` is the line of the latest apply attempt or known-line
+  policy failure. An observation failure with no known line leaves it
+  unchanged. `lastAppliedPowerLine` is the line of the latest successful apply
+  and is retained across later failures.
+- Clients must use the attempt or applied line for "last applied" text. They
+  must not infer an applied line from `lastObservedPowerLine`.
+- Workers released before 1.0.42 omit `lastAttemptPowerLine` and
+  `lastAppliedPowerLine`. Clients must treat both as `null` and fall back to a
+  line-less result instead of propagating the observed line.
+
 ## Development
 
 Run the native worker with an isolated pipe (writes stay disabled unless both

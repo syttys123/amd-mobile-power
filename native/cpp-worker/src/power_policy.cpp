@@ -71,7 +71,7 @@ void PowerPolicyController::Tick(
     std::string observe_error;
     if (!backend.Observe(observation, observe_error)) {
         RecordFailure(
-            state_.last_observed_power_line,
+            std::nullopt,
             observe_error.empty() ? "Power policy observation failed." : observe_error,
             now,
             timestamp);
@@ -159,6 +159,7 @@ void PowerPolicyController::RecordAttempt(
         last_applied_power_line_ = power_line;
         last_applied_target_ = target;
         last_failure_at_.reset();
+        state_.last_applied_power_line = power_line;
         state_.last_applied_target = target;
         state_.last_error.reset();
     } else {
@@ -168,6 +169,7 @@ void PowerPolicyController::RecordAttempt(
 
     state_.settings = settings_;
     state_.last_observed_power_line = power_line;
+    state_.last_attempt_power_line = power_line;
     state_.last_attempt_at = timestamp;
     state_.last_attempt_succeeded = succeeded;
 }
@@ -181,6 +183,7 @@ void PowerPolicyController::RecordFailure(
     state_.settings = settings_;
     if (power_line) {
         state_.last_observed_power_line = *power_line;
+        state_.last_attempt_power_line = *power_line;
     }
     state_.last_attempt_at = timestamp;
     state_.last_attempt_succeeded = false;

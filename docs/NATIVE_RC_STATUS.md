@@ -1,6 +1,6 @@
 # Native Release Candidate Status
 
-Status: `STABLE_LOCAL_DEPLOYED_1.0.41_PENDING_PUBLICATION_REVIEW`
+Status: `STABLE_LOCAL_DEPLOYED_1.0.41_CANDIDATE_1.0.42_SOURCE_READY`
 
 This document tracks the native Rust GUI + C++ worker package and its
 stable-local deployment. `C:\RyzenAdj` currently holds `1.0.41`
@@ -57,6 +57,24 @@ Evidence:
 `docs/evidence/packaging/v1.0.41-release-gate-2026-11-18.json`,
 `docs/evidence/packaging/v1.0.41-deployment-2026-11-18.json`,
 `docs/evidence/hardware/v1.0.41-night-policy-restore-2026-11-18.json`.
+
+## Source Candidate 1.0.42
+
+The working tree contains a source-ready, not yet packaged candidate. It adds
+explicit policy attempt/applied power-line fields, separates the automatic
+policy target from the most recent manual write target, hardens the maintenance
+scripts against observation-only stale success, and binds promotion to the
+verified ZIP identity and installed payload checksums. The promotion helper is
+compatible with Windows PowerShell 5.1 and PowerShell 7 and distinguishes a
+same-version backup from the previous-stable rollback.
+
+Driver-free checks pass: Rust GUI 74 tests, probe 7 tests, C++ power-policy 18
+cases plus the other three C++ suites, policy script contract 13/13, policy
+observation contract 6/6, promotion contract 16/16 in both PowerShell hosts,
+worker request bounds, helper/recovery/install-scope contracts, formatting,
+Clippy, document links, and `git diff --check`. No 1.0.42 ZIP, formal hardware
+gate, deployment, or publication exists yet. The stable deployment remains
+1.0.41 with night 15/15 W and day battery 25 W / AC 45 W.
 
 Note (2026-11-12): `1.0.18-native` is the first package gated with
 `-VerifyWorkerHang`, which runs the maintained hang verifier against the

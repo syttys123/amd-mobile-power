@@ -42,7 +42,42 @@ function Read-PolicyViaPipe {
     if (-not $result.Success) { throw "Worker getPowerPolicy failed: $($result.ErrorText)" }
     return $result.Payload
 }
-function Test-DayPolicyMatch($State, [int]$BatteryTarget, [int]$AcTarget) {
+function Get-PolicyLineDiagnostics($State) {
+    $observed = $null
+    $attempt = $null
+    $applied = $null
+    $verificationLine = $null
+    if ($State) {
+        $observed = [string]$State.lastObservedPowerLine
+        $attemptProperty = $State.PSObject.Properties['lastAttemptPowerLine']
+        $appliedProperty = $State.PSObject.Properties['lastAppliedPowerLine']
+        $usesNewFields = ($null -ne $attemptProperty) -or ($null -ne $appliedProperty)
+        if ($null -ne $attemptProperty) { $attempt = [string]$attemptProperty.Value }
+        if ($null -ne $appliedProperty) { $applied = [string]$appliedProperty.Value }
+        if ($usesNewFields) {
+            $verificationLine = if ($applied) { $applied } elseif ($attempt) { $attempt } else { $null }
+        }
+        else {
+            $verificationLine = $observed
+        }
+    }
+    return [pscustomobject]@{
+        Observed = $observed
+        Attempt = $attempt
+        Applied = $applied
+        VerificationLine = $verificationLine
+    }
+}
+function Get-PolicyAttemptBaseline($State) {
+    if (-not $State) { return '' }
+    return [string]$State.lastAttemptAt
+}
+function Test-DayPolicyMatch(
+    $State,
+    [int]$BatteryTarget,
+    [int]$AcTarget,
+    [string]$AttemptBaseline
+) {
     $settings = $State.settings
     if (-not $settings) { return $false }
     if ($settings.enabled -ne $true -or
@@ -60,9 +95,16 @@ function Test-DayPolicyMatch($State, [int]$BatteryTarget, [int]$AcTarget) {
     # Require the worker to confirm it actually applied the target, not just
     # that the settings were stored.
     if ($State.lastAttemptSucceeded -ne $true) { return $false }
-    $line = $State.lastObservedPowerLine
+    $attemptAt = [string]$State.lastAttemptAt
+    if ([string]::IsNullOrWhiteSpace($attemptAt) -or $attemptAt -eq $AttemptBaseline) {
+        return $false
+    }
+    $lines = Get-PolicyLineDiagnostics $State
+    $line = $lines.VerificationLine
     $applied = $State.lastAppliedTarget
-    if (-not $line -or -not $applied) { return $false }
+    if (-not $lines.Observed -or -not $line -or $line -ne $lines.Observed -or -not $applied) {
+        return $false
+    }
     $expected = if ($line -eq 'ac') { $AcTarget } else { $BatteryTarget }
     return ($applied.stapmWatts -eq $expected -and
         $applied.fastWatts -eq $expected -and
@@ -113,6 +155,7 @@ try {
     $verified = $false
     $lastState = $null
     for ($attempt = 1; $attempt -le 2 -and -not $verified; $attempt++) {
+        $attemptBaseline = Get-PolicyAttemptBaseline (Read-PolicyViaPipe)
         [AmdDayPolicyUi]::SetText($batteryEdit, 0x000C, [UIntPtr]::Zero, $marker) | Out-Null
         [AmdDayPolicyUi]::SetText($acEdit, 0x000C, [UIntPtr]::Zero, "$AcWatts") | Out-Null
         [AmdDayPolicyUi]::Send(
@@ -125,7 +168,8 @@ try {
             [AmdDayPolicyUi]::GetText($batteryEdit, 0x000D, [UIntPtr]::new([uint64]64), $buffer) | Out-Null
             $landed = $buffer.ToString() -ne $marker
             $lastState = Read-PolicyViaPipe
-            if ($landed -and (Test-DayPolicyMatch $lastState $BatteryWatts $AcWatts)) {
+            if ($landed -and
+                (Test-DayPolicyMatch $lastState $BatteryWatts $AcWatts $attemptBaseline)) {
                 $verified = $true
                 break
             }
@@ -169,7 +213,8 @@ try {
         $probeSettings.acTarget.slowWatts -ne $AcWatts) {
         throw "Day policy probe read-back mismatch: $($probe.Output)"
     }
-    Write-Log "PASS battery=$BatteryWatts ac=$AcWatts $($probe.Output)"
+    $lines = Get-PolicyLineDiagnostics $lastState
+    Write-Log "PASS battery=$BatteryWatts ac=$AcWatts observedLine=$($lines.Observed) appliedLine=$($lines.VerificationLine) $($probe.Output)"
 } catch {
     Write-Log "FAIL $($_.Exception.Message)"
     throw

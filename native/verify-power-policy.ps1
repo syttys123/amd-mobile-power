@@ -1,7 +1,11 @@
 param(
     [switch]$NoBuild,
     [switch]$ExecuteNoChangePolicy,
-    [string]$EvidencePath
+    [string]$EvidencePath,
+    # Test-only fixture overrides. Production callers leave these unset so the
+    # verifier always starts the staged native worker and probe.
+    [string]$WorkerPath,
+    [string]$ProbePath
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,8 +20,10 @@ $worker = Join-Path `
 $probe = Join-Path `
     $root `
     "rust-probe\target\release\amd-mobile-power-probe.exe"
+if ($WorkerPath) { $worker = [IO.Path]::GetFullPath($WorkerPath) }
+if ($ProbePath) { $probe = [IO.Path]::GetFullPath($ProbePath) }
 
-if (-not $NoBuild) {
+if (-not $NoBuild -and -not $WorkerPath -and -not $ProbePath) {
     & (Join-Path $root "build.ps1") -Offline
 }
 if (-not (Test-Path -LiteralPath $worker)) {
@@ -62,6 +68,38 @@ function Invoke-Probe {
         ExitCode = 1
         Output = $result.ErrorText
     }
+}
+
+function Get-PolicyLineDiagnostics($State) {
+    $observed = $null
+    $attempt = $null
+    $applied = $null
+    $verificationLine = $null
+    if ($State) {
+        $observed = [string]$State.lastObservedPowerLine
+        $attemptProperty = $State.PSObject.Properties["lastAttemptPowerLine"]
+        $appliedProperty = $State.PSObject.Properties["lastAppliedPowerLine"]
+        $usesNewFields = ($null -ne $attemptProperty) -or ($null -ne $appliedProperty)
+        if ($null -ne $attemptProperty) { $attempt = [string]$attemptProperty.Value }
+        if ($null -ne $appliedProperty) { $applied = [string]$appliedProperty.Value }
+        if ($usesNewFields) {
+            $verificationLine = if ($applied) { $applied } elseif ($attempt) { $attempt } else { $null }
+        }
+        else {
+            $verificationLine = $observed
+        }
+    }
+    return [pscustomobject]@{
+        Observed = $observed
+        Attempt = $attempt
+        Applied = $applied
+        VerificationLine = $verificationLine
+    }
+}
+
+function Get-PolicyAttemptBaseline($State) {
+    if (-not $State) { return "" }
+    return [string]$State.lastAttemptAt
 }
 
 function Start-NativeWorker {
@@ -222,6 +260,12 @@ try {
         batteryTarget = $batteryTarget
         acTarget = $acTarget
     }
+    $baselineResult = Invoke-Probe -PipePath $pipePath -Command "getPowerPolicy"
+    if ($baselineResult.ExitCode -ne 0) {
+        throw "getPowerPolicy baseline failed: $($baselineResult.Output)"
+    }
+    $attemptBaseline = Get-PolicyAttemptBaseline (
+        $baselineResult.Output | ConvertFrom-Json)
     $payload = @{ settings = $settings } | ConvertTo-Json -Compress -Depth 6
     $setResult = Invoke-Probe `
         -PipePath $pipePath `
@@ -237,8 +281,13 @@ try {
         $stateResult = Invoke-Probe -PipePath $pipePath -Command "getPowerPolicy"
         if ($stateResult.ExitCode -eq 0) {
             $candidate = $stateResult.Output | ConvertFrom-Json
+            $attemptAt = [string]$candidate.lastAttemptAt
+            $lines = Get-PolicyLineDiagnostics $candidate
             if ($candidate.lastAttemptSucceeded -eq $true -and
-                $candidate.lastObservedPowerLine -eq $powerLine) {
+                -not [string]::IsNullOrWhiteSpace($attemptAt) -and
+                $attemptAt -ne $attemptBaseline -and
+                $lines.VerificationLine -eq $powerLine -and
+                $lines.Observed -eq $powerLine) {
                 $state = $candidate
                 break
             }
@@ -246,7 +295,14 @@ try {
         Start-Sleep -Milliseconds 250
     }
     if ($null -eq $state) {
-        throw "Power policy did not report a successful no-change apply."
+        $latest = Invoke-Probe -PipePath $pipePath -Command "getPowerPolicy"
+        $latestText = if ($latest.ExitCode -eq 0) {
+            $latestLines = Get-PolicyLineDiagnostics (
+                $latest.Output | ConvertFrom-Json)
+            " observed=$($latestLines.Observed) attempt=$($latestLines.Attempt) applied=$($latestLines.Applied)"
+        }
+        else { "" }
+        throw "Power policy did not report a successful no-change apply.$latestText"
     }
     foreach ($property in @("stapmWatts", "fastWatts", "slowWatts")) {
         if ([int]$state.lastAppliedTarget.$property -ne [int]$activeTarget.$property) {

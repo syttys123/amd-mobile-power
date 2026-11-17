@@ -2559,12 +2559,30 @@ fn format_policy_state(state: Option<&PowerPolicyState>) -> String {
     } else {
         "已停用"
     };
-    let last = match (state.last_attempt_succeeded, state.last_observed_power_line) {
-        (Some(true), Some(line)) => format!("上次应用：{} · 成功", format_power_line(Some(line))),
-        (Some(false), Some(line)) => format!("上次应用：{} · 失败", format_power_line(Some(line))),
-        (Some(false), None) => "上次应用：失败".to_owned(),
-        (Some(true), None) => "上次应用：成功".to_owned(),
-        (None, _) => "上次应用：未执行".to_owned(),
+    // The observed line can advance without an apply. Report the attempt or
+    // applied line so a no-op observation never becomes a fake "applied".
+    let applied_line = state
+        .last_applied_power_line
+        .or(state.last_attempt_power_line);
+    let last = match (
+        state.last_attempt_succeeded,
+        applied_line,
+        state.last_attempt_power_line,
+    ) {
+        (Some(true), Some(line), _) => match state.last_applied_target {
+            Some(target) => format!(
+                "上次应用：{} {} W · 成功",
+                format_power_line(Some(line)),
+                target.stapm_watts
+            ),
+            None => format!("上次应用：{} · 成功", format_power_line(Some(line))),
+        },
+        (Some(true), None, _) => "上次应用：成功（线路未知）".to_owned(),
+        (Some(false), _, Some(line)) => {
+            format!("上次尝试：{} · 失败", format_power_line(Some(line)))
+        }
+        (Some(false), _, None) => "上次尝试：失败".to_owned(),
+        (None, _, _) => "上次应用：未执行".to_owned(),
     };
     let error = state
         .last_error
@@ -2586,7 +2604,28 @@ fn format_policy_state(state: Option<&PowerPolicyState>) -> String {
     } else {
         "未选择供电路径".to_owned()
     };
-    format!("自动策略：{}（{}）\n{}{}", status, scope, last, error)
+    let current = if settings.enabled {
+        match state.last_observed_power_line {
+            Some(PowerLineState::Ac) if settings.ac_enabled => Some(format!(
+                "当前策略目标：{} W（外接）",
+                settings.ac_target.stapm_watts
+            )),
+            Some(PowerLineState::Ac) => Some("当前策略目标：不控制（外接）".to_owned()),
+            Some(PowerLineState::Battery) if settings.battery_enabled => Some(format!(
+                "当前策略目标：{} W（电池）",
+                settings.battery_target.stapm_watts
+            )),
+            Some(PowerLineState::Battery) => Some("当前策略目标：不控制（电池）".to_owned()),
+            _ => None,
+        }
+    } else {
+        None
+    };
+    let current = current.map(|line| format!("\n{line}")).unwrap_or_default();
+    format!(
+        "自动策略：{}（{}）{}\n{}{}",
+        status, scope, current, last, error
+    )
 }
 
 fn format_snapshot(snapshot: &SnapshotPayload, policy: Option<&PowerPolicyState>) -> String {
@@ -2630,7 +2669,7 @@ fn format_snapshot(snapshot: &SnapshotPayload, policy: Option<&PowerPolicyState>
             "PM 表：{}\n",
             "供电：{}\n",
             "\n",
-            "目标功耗：{}\n",
+            "最近写入目标：{}\n",
             "STAPM 上限：{}\n",
             "Fast 上限：{}\n",
             "Slow 上限：{}\n",
@@ -2675,7 +2714,7 @@ fn format_snapshot_simple(snapshot: &SnapshotPayload, policy: Option<&PowerPolic
             "STAPM / Fast / Slow 上限\n",
             "{} / {} / {}\n",
             "\n",
-            "目标功耗：{}    CPU：{}\n",
+            "最近写入目标：{}    CPU：{}\n",
             "{}"
         ),
         format_power_line_raw(&telemetry.power_line),
@@ -4262,7 +4301,7 @@ unsafe fn update_simple_view(app: &GuiApp) {
     } else if !app.write_enabled {
         "只读模式 · 写入未解锁".to_owned()
     } else if let Some(target) = telemetry.target_watts {
-        format!("写入已解锁 · 当前目标 {}", format_watts(Some(target)))
+        format!("写入已解锁 · 最近写入 {}", format_watts(Some(target)))
     } else {
         "写入已解锁 · 等待目标".to_owned()
     };
@@ -6837,7 +6876,7 @@ mod tests {
             "{text}"
         );
         assert!(text.contains("供电：电池"), "{text}");
-        assert!(text.contains("目标功耗：10.00 W"), "{text}");
+        assert!(text.contains("最近写入目标：10.00 W"), "{text}");
         assert!(text.contains("Fast 上限：10.00 W"), "{text}");
         assert!(text.contains("CPU 温度：44.9 °C"), "{text}");
         assert!(text.contains("平台状态：支持写入"), "{text}");
@@ -6959,6 +6998,8 @@ mod tests {
                 ac_target: PowerLimitTarget::uniform(12),
             }),
             last_observed_power_line: Some(PowerLineState::Battery),
+            last_attempt_power_line: Some(PowerLineState::Battery),
+            last_applied_power_line: Some(PowerLineState::Battery),
             last_applied_target: Some(PowerLimitTarget::uniform(10)),
             last_attempt_at: Some("2026-11-10T15:10:00Z".to_owned()),
             last_attempt_succeeded: Some(true),
@@ -6971,7 +7012,7 @@ mod tests {
             text.contains("自动策略：已启用（电池 10 W / 外接 12 W）"),
             "{text}"
         );
-        assert!(text.contains("上次应用：电池 · 成功"), "{text}");
+        assert!(text.contains("上次应用：电池 10 W · 成功"), "{text}");
     }
 
     #[test]
@@ -6990,6 +7031,8 @@ mod tests {
                 ac_target: PowerLimitTarget::uniform(45),
             }),
             last_observed_power_line: Some(PowerLineState::Battery),
+            last_attempt_power_line: Some(PowerLineState::Battery),
+            last_applied_power_line: Some(PowerLineState::Battery),
             last_applied_target: Some(PowerLimitTarget::uniform(10)),
             last_attempt_at: None,
             last_attempt_succeeded: Some(true),
@@ -7002,6 +7045,109 @@ mod tests {
             text.contains("自动策略：已启用（仅电池 10 W（外接不控制））"),
             "{text}"
         );
+    }
+
+    #[test]
+    fn policy_reports_attempt_line_instead_of_the_observed_line() {
+        let state = PowerPolicyState {
+            settings: Some(PowerPolicySettings {
+                enabled: true,
+                battery_enabled: true,
+                ac_enabled: true,
+                battery_target: PowerLimitTarget::uniform(10),
+                ac_target: PowerLimitTarget::uniform(45),
+            }),
+            last_observed_power_line: Some(PowerLineState::Ac),
+            last_attempt_power_line: Some(PowerLineState::Battery),
+            last_applied_power_line: Some(PowerLineState::Battery),
+            last_applied_target: Some(PowerLimitTarget::uniform(10)),
+            last_attempt_at: Some("2026-11-18T00:00:00Z".to_owned()),
+            last_attempt_succeeded: Some(true),
+            last_error: None,
+        };
+
+        let text = format_policy_state(Some(&state));
+
+        assert!(text.contains("上次应用：电池 10 W · 成功"), "{text}");
+        assert!(!text.contains("上次应用：外接"), "{text}");
+        assert!(text.contains("当前策略目标：45 W（外接）"), "{text}");
+    }
+
+    #[test]
+    fn policy_without_an_attempt_is_not_reported_as_applied() {
+        let state = PowerPolicyState {
+            settings: Some(PowerPolicySettings {
+                enabled: true,
+                battery_enabled: true,
+                ac_enabled: true,
+                battery_target: PowerLimitTarget::uniform(10),
+                ac_target: PowerLimitTarget::uniform(45),
+            }),
+            last_observed_power_line: Some(PowerLineState::Battery),
+            last_attempt_power_line: None,
+            last_applied_power_line: None,
+            last_applied_target: None,
+            last_attempt_at: None,
+            last_attempt_succeeded: None,
+            last_error: None,
+        };
+
+        let text = format_policy_state(Some(&state));
+
+        assert!(text.contains("上次应用：未执行"), "{text}");
+        assert!(!text.contains("成功"), "{text}");
+        assert!(text.contains("当前策略目标：10 W（电池）"), "{text}");
+    }
+
+    #[test]
+    fn failed_policy_attempt_reports_its_attempt_line() {
+        let state = PowerPolicyState {
+            settings: Some(PowerPolicySettings {
+                enabled: true,
+                battery_enabled: true,
+                ac_enabled: true,
+                battery_target: PowerLimitTarget::uniform(10),
+                ac_target: PowerLimitTarget::uniform(45),
+            }),
+            last_observed_power_line: Some(PowerLineState::Ac),
+            last_attempt_power_line: Some(PowerLineState::Battery),
+            last_applied_power_line: None,
+            last_applied_target: None,
+            last_attempt_at: Some("2026-11-18T00:00:00Z".to_owned()),
+            last_attempt_succeeded: Some(false),
+            last_error: Some("apply failed".to_owned()),
+        };
+
+        let text = format_policy_state(Some(&state));
+
+        assert!(text.contains("上次尝试：电池 · 失败"), "{text}");
+        assert!(!text.contains("上次应用：电池"), "{text}");
+        assert!(text.contains("策略错误：apply failed"), "{text}");
+    }
+
+    #[test]
+    fn legacy_success_without_attempt_line_does_not_borrow_observation() {
+        let state = PowerPolicyState {
+            settings: Some(PowerPolicySettings {
+                enabled: true,
+                battery_enabled: true,
+                ac_enabled: true,
+                battery_target: PowerLimitTarget::uniform(10),
+                ac_target: PowerLimitTarget::uniform(45),
+            }),
+            last_observed_power_line: Some(PowerLineState::Battery),
+            last_attempt_power_line: None,
+            last_applied_power_line: None,
+            last_applied_target: Some(PowerLimitTarget::uniform(10)),
+            last_attempt_at: Some("2026-11-18T00:00:00Z".to_owned()),
+            last_attempt_succeeded: Some(true),
+            last_error: None,
+        };
+
+        let text = format_policy_state(Some(&state));
+
+        assert!(text.contains("上次应用：成功（线路未知）"), "{text}");
+        assert!(!text.contains("上次应用：电池"), "{text}");
     }
 
     #[test]
@@ -7035,6 +7181,8 @@ mod tests {
                 ac_target: PowerLimitTarget::uniform(12),
             }),
             last_observed_power_line: Some(PowerLineState::Ac),
+            last_attempt_power_line: Some(PowerLineState::Ac),
+            last_applied_power_line: Some(PowerLineState::Ac),
             last_applied_target: Some(PowerLimitTarget::uniform(12)),
             last_attempt_at: Some("2026-11-11T00:00:00Z".to_owned()),
             last_attempt_succeeded: Some(true),
@@ -7170,7 +7318,7 @@ mod tests {
 
         assert!(text.contains("已连接 worker · 电池"), "{text}");
         assert!(text.contains("10.00 W / 10.00 W / 10.00 W"), "{text}");
-        assert!(text.contains("目标功耗：10.00 W"), "{text}");
+        assert!(text.contains("最近写入目标：10.00 W"), "{text}");
         assert!(text.contains("CPU：44.9 °C"), "{text}");
         assert!(!text.contains("PM 表"), "{text}");
     }
