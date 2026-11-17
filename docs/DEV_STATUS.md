@@ -21,7 +21,7 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
-2026-11-18 (1.0.41 candidate source: limits-aware drift repair):
+2026-11-18 (1.0.41 gate PASS and stable-local deployment):
 
 - The C++ policy controller now observes STAPM, Fast, and Slow read-back on
   every enabled-policy tick. After a successful apply of the same line and
@@ -38,9 +38,7 @@ not authoritative.
   failure backoff, and power-line switching.
 - Source checks are PASS: Rust GUI 69 tests, probe 7 tests, formatting, Clippy,
   C++ 4 tests, worker request bounds, helper contract, release GUI recovery
-  contract, document links, and `git diff --check`. Candidate status remains
-  pending the clean commit, exact 1.0.41 package build, and the formal hardware
-  gate. No 1.0.41 package has been promoted.
+  contract, document links, and `git diff --check`.
 - `native/verify-release.ps1` now snapshots the stable `C:\RyzenAdj` GUI and
   launch arguments before build/hardware work, clears only test-owned
   GUI/worker processes from `artifacts`, and restores the supervised stable
@@ -52,13 +50,26 @@ not authoritative.
   with AST checks plus extracted `catch`/`finally` failure injection for body
   failure, composite recovery failure, and success-path evidence, without
   touching hardware or the stable processes.
-- `C:\RyzenAdj` remains the stable 1.0.40 deployment. The user restored the
-  current night policy to battery 15 W / AC 15 W (all six limits at 15 W) on
-  2026-11-18; the night task action now runs `-BatteryWatts 15 -AcWatts 15`
-  and a manual trigger returned exit 0 with a PASS log. The day policy stays
-  at 07:00 battery 25 W / AC 45 W.
-  The next step is to record the complete 1.0.41 gate and promote only after
-  PASS, with a rollback and a final live read-back.
+- The clean 1.0.41 package from source `6bf8144` is
+  `amd-mobile-power-v1.0.41-win-x64-native-preview.zip` (793,163 bytes,
+  SHA256
+  `f376e1a28746a376e0f2f8a0ff72ed87c70bd5271821885b1ef36ec7098dc847`).
+  The formal command with reproducibility, shell integration, no-change
+  policy, worker-hang replacement and `-AllowBatteryWriteGuard` returned
+  `Verification=PASS`; see
+  `docs/evidence/packaging/v1.0.41-release-gate-2026-11-18.json`.
+- `C:\RyzenAdj` is now the stable 1.0.41 deployment. Promotion dry-run and
+  apply both passed. The rollback to the previous stable 1.0.40 tree is
+  `C:\RyzenAdj.before-20261118-032150`. A second same-version promotion left
+  `C:\RyzenAdj.before-20261118-032310`; that directory also contains 1.0.41
+  and is not the previous-stable rollback. Deployment evidence is in
+  `docs/evidence/packaging/v1.0.41-deployment-2026-11-18.json`.
+- Final live state: GUI PID `44884`, worker PID `31924`, automatic policy
+  `enabled=true`. Battery and AC targets are all six limits at `15 W`; the
+  current AC read-back is STAPM/Fast/Slow `15/15/15 W`. Night is 23:00-07:00
+  at `15/15 W`; day is 07:00-23:00 battery `25 W` / AC `45 W`. See
+  `docs/evidence/hardware/v1.0.41-night-policy-restore-2026-11-18.json`.
+  Public Release and Bilibili publication remain unapproved.
 
 2026-11-18 (1.0.40 hardware gate PASS, deployed; night policy is 10/10):
 

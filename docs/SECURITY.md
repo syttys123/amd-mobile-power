@@ -13,13 +13,23 @@ is not legal advice.
 
 ## Deployment Note
 
-The deployed `C:\RyzenAdj` package is `1.0.40` (source `ca64f37`). It includes
-the explicit pipe DACL, legacy-mutex and known-process conflict detection, the
-five-consecutive-`refresh_failed` terminal-fault latch, the kill-on-close Job
-Object, expanded NaN/Inf telemetry filtering, the persistent last-target clamp,
-the UI-state mutex, overlapped pipe I/O with deadlines, and the pipe-stall
-watchdog fix. The own-mutex single-owner guard, the first-pipe-instance flag,
-and worker supervision/watchdog were already present in 1.0.39.
+The deployed `C:\RyzenAdj` package is `1.0.41` (source `6bf8144`), package
+SHA256
+`f376e1a28746a376e0f2f8a0ff72ed87c70bd5271821885b1ef36ec7098dc847`.
+It includes the explicit pipe DACL, legacy-mutex and known-process conflict
+detection, the five-consecutive-`refresh_failed` terminal-fault latch, the
+kill-on-close Job Object, expanded NaN/Inf telemetry filtering, the persistent
+last-target clamp, the UI-state mutex, overlapped pipe I/O with deadlines, and
+the pipe-stall watchdog fix. The own-mutex single-owner guard, the
+first-pipe-instance flag, and worker supervision/watchdog were already present
+in 1.0.39.
+
+The 1.0.41 policy controller re-reads STAPM, Fast, and Slow on each enabled
+tick. It re-asserts the configured target only when Fast or Slow is above the
+high-side tolerance; lower firmware clamps are accepted, and STAPM-only drift
+does not trigger writes. The rollback to the previous stable `1.0.40` tree is
+`C:\RyzenAdj.before-20261118-032150`. The later
+`C:\RyzenAdj.before-20261118-032310` backup also contains `1.0.41`.
 
 ## Default Read-Only Mode
 

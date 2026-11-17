@@ -1,0 +1,20 @@
+{
+  "Version": "1.0.41",
+  "SourceCommit": "6bf8144ebdfbf1805eaac8a4472ee2f939560e2d",
+  "PackageSHA256": "f376e1a28746a376e0f2f8a0ff72ed87c70bd5271821885b1ef36ec7098dc847",
+  "Verification": "PASS",
+  "PowerLine": "ac",
+  "PolicyEnabled": true,
+  "BatteryEnabled": true,
+  "AcEnabled": true,
+  "BatteryTarget": "15/15/15",
+  "AcTarget": "15/15/15",
+  "AcReadBack": "15/15/15",
+  "GuiProcessId": 44884,
+  "WorkerProcessId": 31924,
+  "NightPolicy": "23:00-07:00 both power lines 15/15 W",
+  "DayPolicy": "07:00-23:00 battery 25 W / AC 45 W",
+  "EvidenceSource": "Live deployed worker read-back independently confirmed after the 1.0.41 promotion. No additional hardware write was performed for this documentation closeout.",
+  "PublicReleaseApproved": false,
+  "RecordedAt": "2026-11-18T03:29:46.9334051+08:00"
+}

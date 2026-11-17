@@ -1,0 +1,54 @@
+{
+  "Verification": "PASS",
+  "Package": "D:\\amd-mobile-power\\artifacts\\native-packages\\amd-mobile-power-v1.0.41-win-x64-native-preview.zip",
+  "PackageSize": 793163,
+  "PackageSHA256": "f376e1a28746a376e0f2f8a0ff72ed87c70bd5271821885b1ef36ec7098dc847",
+  "PackageVersion": "1.0.41",
+  "SourceCommit": "6bf8144ebdfbf1805eaac8a4472ee2f939560e2d",
+  "Target": "C:\\RyzenAdj",
+  "PromotionBackup": "C:\\RyzenAdj.before-20261118-032310",
+  "PreviousStableBackup": "C:\\RyzenAdj.before-20261118-032150",
+  "PreviousStableVersion": "1.0.40",
+  "PromotionBackupNote": "The 032310 backup was created by a second same-version promotion and also contains 1.0.41. Use 032150 to roll back to the previous stable 1.0.40 tree.",
+  "GuiArguments": "--simple-mode --max-target-watts 45",
+  "ShortcutsUpdated": [
+    "%USERPROFILE%\\Desktop\\功耗设置 5-60W.lnk"
+  ],
+  "ShortcutArguments": [
+    {
+      "Path": "%USERPROFILE%\\Desktop\\功耗设置 5-60W.lnk",
+      "Before": "--simple-mode --max-target-watts 45",
+      "After": "--simple-mode --max-target-watts 45",
+      "Dropped": []
+    }
+  ],
+  "LaunchVerification": "Skipped",
+  "Launched": false,
+  "InstalledBuildInfo": {
+    "Version": "1.0.41",
+    "Commit": "6bf8144ebdfbf1805eaac8a4472ee2f939560e2d",
+    "WorkingTree": "Clean",
+    "Platform": "win-x64",
+    "Native": true
+  },
+  "DeployedBinaries": {
+    "GuiSHA256": "27b17ece3b9a313ac0affd911848d79c37a0301a5535c04182cfc58a76715cfc",
+    "WorkerSHA256": "e14c58c83493546c34f3a6b691b536bdf916c3a052867fb60c6bb9865141f258",
+    "ProbeSHA256": "00369735f7d3623592ad4806973a115161744e42c304ca3cbd52d322300ec353"
+  },
+  "LiveState": {
+    "GuiProcessId": 44884,
+    "WorkerProcessId": 31924,
+    "PolicyEnabled": true,
+    "PowerLine": "ac",
+    "BatteryTarget": "15/15/15",
+    "AcTarget": "15/15/15",
+    "AcReadBack": "15/15/15"
+  },
+  "PolicySchedule": {
+    "Night": "23:00-07:00 battery and AC targets 15/15 W",
+    "Day": "07:00-23:00 battery 25 W / AC 45 W"
+  },
+  "PublicReleaseApproved": false,
+  "RecordedAt": "2026-11-18T03:23:14.8415250+08:00"
+}

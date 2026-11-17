@@ -1,0 +1,17 @@
+{
+  "SourceCommit": "6bf8144ebdfbf1805eaac8a4472ee2f939560e2d",
+  "WorkingTree": "Clean",
+  "Verification": "PASS",
+  "Path": "Native worker power policy -> RyzenAdj",
+  "WorkerVersion": "0.6.0-native",
+  "Processor": "AMD Ryzen 7 8845HS w/ Radeon 780M Graphics",
+  "PowerLine": "ac",
+  "RequestedTarget": "15/15/15",
+  "BatteryTarget": "12/12/12",
+  "AcTarget": "15/15/15",
+  "LastAppliedTarget": "15/15/15",
+  "LastAttemptSucceeded": true,
+  "PolicyDisabled": "PASS",
+  "Shutdown": "PASS",
+  "RecordedAt": "2026-11-18T03:18:20.7312199+08:00"
+}

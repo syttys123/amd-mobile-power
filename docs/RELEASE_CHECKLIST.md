@@ -1,36 +1,78 @@
 # Release Checklist
 
-## Pending Candidate 1.0.41 (2026-11-18)
+## Deployed Stable 1.0.41 (2026-11-18)
 
-Current source candidate: **1.0.41**, status **SOURCE_READY_PENDING_GATE**.
+Current target: **1.0.41**, status **STABLE_LOCAL_DEPLOYED_PENDING_PUBLICATION**.
 It adds high-side Fast/Slow drift correction while ignoring lower firmware
-clamps, STAPM-only movement, and missing/non-finite samples. The stable
-deployment remains **1.0.40**; README remains on 1.0.40 until a 1.0.41 gate
-PASS is promoted.
+clamps, STAPM-only movement, and missing/non-finite samples. The exact gated ZIP
+comes from `6bf8144`, SHA256
+`f376e1a28746a376e0f2f8a0ff72ed87c70bd5271821885b1ef36ec7098dc847`
+(793,163 bytes). Binary identities: GUI
+`27b17ece3b9a313ac0affd911848d79c37a0301a5535c04182cfc58a76715cfc`,
+worker
+`e14c58c83493546c34f3a6b691b536bdf916c3a052867fb60c6bb9865141f258`,
+probe
+`00369735f7d3623592ad4806973a115161744e42c304ca3cbd52d322300ec353`.
 
 - [x] Rust GUI 69 tests, probe 7 tests, formatting, and Clippy pass.
 - [x] C++ 4 policy/cleanup/worker-safety tests and worker request bounds pass.
 - [x] Helper contract and Markdown/document links pass; `verify-docs.ps1`
       checked 53 files and 40 relative links, and `git diff --check` is clean.
-- [ ] Four source files and related documentation are committed from a clean
-      tree; unrelated untracked demo assets stay out.
-- [ ] Clean `build-package.ps1 -Version 1.0.41` produces the exact candidate
+- [x] Source commit `6bf8144` contains the four release commits; unrelated
+      untracked demo assets stay out.
+- [x] Clean `build-package.ps1 -Version 1.0.41` produced the exact candidate
       ZIP and records its SHA256, source commit, and binary identities.
-- [ ] Formal native gate passes with reproducibility, shell integration,
+- [x] Formal native gate passed with reproducibility, shell integration,
       no-change policy, and worker-hang checks.
-- [ ] Exact ZIP promotes with rollback and live probe read-back; current-stable
+- [x] Exact ZIP promoted with rollback and live probe read-back; current-stable
       documentation is updated to real 1.0.41 evidence.
-
-## Deployed Candidate Override (2026-11-18)
-
-Current target: **1.0.40**, status **DEPLOYED_PENDING_HOSTED_CI_AND_PUBLICATION**.
-The exact gated ZIP comes from `ca64f37`, SHA256
-`957f8a56dbf31d9d914d1c6eb1dec75262af8bd38e26b438d565315dbac0da8e`
-(793,042 bytes). Binary identities: GUI `27b17ece`, worker `6e9cc6a9`,
-probe `00369735`. It is deployed to `C:\RyzenAdj`; the previous 1.0.39 tree is
-preserved at `C:\RyzenAdj.before-20261118-001504`.
+- [x] Rollback to the previous stable `1.0.40` tree:
+      `C:\RyzenAdj.before-20261118-032150`. A second same-version promotion
+      left `C:\RyzenAdj.before-20261118-032310`; it also contains `1.0.41`
+      and is not the previous-stable rollback.
+- [x] Live state: GUI PID `44884`, worker PID `31924`, `enabled=true`, all six
+      battery/AC targets at `15 W`, AC STAPM/Fast/Slow read-back
+      `15/15/15 W`.
+- [x] Night policy 23:00-07:00 is `15/15 W`; day policy 07:00-23:00 is battery
+      `25 W` / AC `45 W`:
+      `evidence/hardware/v1.0.41-night-policy-restore-2026-11-18.json`.
+- [ ] Hosted Windows CI for `6bf8144` has not been run for 1.0.41; do not reuse
+      earlier release runs.
+- [ ] Real OS 100%/150% DPI transitions, second AMD device, and clean-Windows
+      WinRing0 baseline remain pending.
+- [ ] Owner approves final GitHub Release and Bilibili publication.
 
 Current package gates:
+
+- [x] Formal release gate PASS:
+      `evidence/packaging/v1.0.41-release-gate-2026-11-18.json`.
+- [x] Clean package and fixture policy isolation PASS:
+      `evidence/packaging/v1.0.41-clean-2026-11-18.json`,
+      `evidence/packaging/v1.0.41-fixture-policy-isolation-2026-11-18.json`.
+- [x] Shell integration and byte reproducibility PASS:
+      `evidence/packaging/v1.0.41-shell-integration-2026-11-18.json`,
+      `evidence/build/reproducibility-1.0.41-2026-11-18.json`.
+- [x] Current-value no-change policy and worker-hang replacement PASS:
+      `evidence/hardware/v1.0.41-power-policy-no-change-2026-11-18.json`,
+      `evidence/hardware/v1.0.41-worker-hang-2026-11-18.json`.
+- [x] DPI 100/125/150, 1366x768/200% work area, and maximize-scroll fixtures
+      PASS: `evidence/ui/native-dpi-100-125-150-2026-11-18.json`,
+      `evidence/ui/native-workarea-200-1366x768-2026-11-18.json`,
+      `evidence/ui/native-maximize-scroll-2026-11-18.json`.
+- [x] Public-sanitization scan PASS:
+      `evidence/release/public-sanitization-1.0.41-2026-11-18.json`.
+- [x] Deployment and promotion records:
+      `evidence/packaging/v1.0.41-deployment-2026-11-18.json`,
+      `evidence/packaging/v1.0.41-promotion-2026-11-18.json`.
+
+## Previous Stable 1.0.40 (Rollback)
+
+Previous target: **1.0.40**. Its full tree is preserved at
+`C:\RyzenAdj.before-20261118-032150`. The exact gated ZIP comes from
+`ca64f37`, SHA256
+`957f8a56dbf31d9d914d1c6eb1dec75262af8bd38e26b438d565315dbac0da8e`
+(793,042 bytes). Binary identities: GUI `27b17ece`, worker `6e9cc6a9`,
+probe `00369735`.
 
 - [x] Formal release gate PASS:
       `evidence/packaging/v1.0.40-release-gate-2026-11-17.json`.
@@ -62,7 +104,7 @@ Current package gates:
       WinRing0 baseline remain pending.
 - [ ] Owner approves final GitHub Release and Bilibili publication.
 
-Current review media is historical 1.0.39 fixture material, not a live 1.0.40
+Current review media is historical 1.0.39 fixture material, not a live 1.0.41
 package capture: `artifacts/media/promo-review-20261117-v2/amd-mobile-power-review-v2-silent.mp4`
 (39.5 s, `DRAFT_FOR_HUMAN_REVIEW`). Its preset demo uses the hardware-free
 `preset-success` fixture. See `PROMO_VIDEO.md`.

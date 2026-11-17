@@ -1,12 +1,16 @@
 # Native Release Candidate Status
 
-Status: `STABLE_LOCAL_DEPLOYED_1.0.40_CANDIDATE_1.0.41_PENDING`
+Status: `STABLE_LOCAL_DEPLOYED_1.0.41_PENDING_PUBLICATION_REVIEW`
 
 This document tracks the native Rust GUI + C++ worker package and its
-stable-local deployment. `C:\RyzenAdj` currently holds `1.0.40`
-(source commit `ca64f37`, pipe-stall watchdog fix). The previous `1.0.39`
-tree is preserved as `C:\RyzenAdj.before-20261118-001504`; the `1.0.33` tree
-remains at `C:\RyzenAdj.before-20261117-035509`.
+stable-local deployment. `C:\RyzenAdj` currently holds `1.0.41`
+(source commit `6bf8144`, limits-aware drift repair). The real rollback to the
+previous stable `1.0.40` tree is `C:\RyzenAdj.before-20261118-032150`.
+A later same-version promotion left
+`C:\RyzenAdj.before-20261118-032310`, which also contains `1.0.41` and is not
+the previous-stable rollback. The `1.0.39` tree is preserved as
+`C:\RyzenAdj.before-20261118-001504`; the `1.0.33` tree remains at
+`C:\RyzenAdj.before-20261117-035509`.
 `1.0.30-native` (source commit `2f04605`, BOM-tolerant state loading) previously
 held this target. `1.0.29-native` is
 preserved as `C:\RyzenAdj.before-20261114-072507`, `1.0.28-native` as
@@ -41,17 +45,18 @@ previous native `1.0.17-native` build is preserved as
 `C:\RyzenAdj.before-20261111-232010`, and the .NET `1.0.4` package as
 `C:\RyzenAdj.before-20261111-223017`.
 
-Decision (2026-11-18): the native line has a hardware-gated stable-local
-candidate for the verified 8845HS platform, and `C:\RyzenAdj` contains the
-`1.0.40` package (source `ca64f37`) with the full post-1.0.39 safety
-remediation. Broader AMD generation support remains experimental. Public
-release remains `READY_FOR_HUMAN_REVIEW` and is not approved; real OS DPI
-transitions, a second AMD device, a clean Windows WinRing0 baseline, and owner
-media review are still open. Current per-gate status for 1.0.40 is tracked in
-`RELEASE_CHECKLIST.md`. Evidence:
-`docs/evidence/packaging/v1.0.40-release-gate-2026-11-17.json`,
-`docs/evidence/packaging/v1.0.40-deployment-2026-11-18.json`,
-`docs/evidence/hardware/v1.0.40-night-policy-restore-2026-11-18.json`.
+Decision (2026-11-18): the native line has a fully gated stable-local
+deployment for the verified 8845HS platform, and `C:\RyzenAdj` contains the
+`1.0.41` package (source `6bf8144`) with the full post-1.0.39 safety
+remediation and limits-aware drift repair. Broader AMD generation support
+remains experimental. Public release remains `READY_FOR_HUMAN_REVIEW` and is
+not approved; real OS DPI transitions, a second AMD device, a clean Windows
+WinRing0 baseline, hosted CI for this source, and owner media review are still
+open. Current per-gate status for 1.0.41 is tracked in `RELEASE_CHECKLIST.md`.
+Evidence:
+`docs/evidence/packaging/v1.0.41-release-gate-2026-11-18.json`,
+`docs/evidence/packaging/v1.0.41-deployment-2026-11-18.json`,
+`docs/evidence/hardware/v1.0.41-night-policy-restore-2026-11-18.json`.
 
 Note (2026-11-12): `1.0.18-native` is the first package gated with
 `-VerifyWorkerHang`, which runs the maintained hang verifier against the
@@ -105,11 +110,11 @@ fixture renders the complete shell with black surfaces, white text, yellow
 structure, and black text on yellow primary actions without changing Windows
 accessibility settings.
 
-## Pending Candidate 1.0.41
+## Stable Candidate 1.0.41
 
-Candidate `1.0.41` is source-complete and awaiting its clean commit, package
-build, and formal hardware gate. It adds limits-aware drift repair to the C++
-worker policy controller:
+The exact `1.0.41` package passed the formal gate, was promoted from a clean
+source tree, and is deployed to `C:\RyzenAdj`. It adds limits-aware drift repair
+to the C++ worker policy controller:
 
 - After a successful apply, Fast or Slow above the configured ceiling plus the
   read-back tolerance re-applies the same line target.
@@ -118,10 +123,35 @@ worker policy controller:
   writes; failed repairs retain the five-second backoff.
 - A power-line change still applies the new line target immediately.
 
-The stable deployment remains `1.0.40`; no 1.0.41 ZIP, deployment hash, or
-hardware PASS is claimed until the release gate records them.
+```text
+artifacts/native-packages/amd-mobile-power-v1.0.41-win-x64-native-preview.zip
+```
 
-## Stable Candidate 1.0.40
+- Size: `793,163` bytes.
+- SHA256:
+  `f376e1a28746a376e0f2f8a0ff72ed87c70bd5271821885b1ef36ec7098dc847`.
+- Source commit: `6bf8144ebdfbf1805eaac8a4472ee2f939560e2d`.
+- Working tree at build time: clean.
+- Binary identities: GUI
+  `27b17ece3b9a313ac0affd911848d79c37a0301a5535c04182cfc58a76715cfc`,
+  worker
+  `e14c58c83493546c34f3a6b691b536bdf916c3a052867fb60c6bb9865141f258`,
+  probe
+  `00369735f7d3623592ad4806973a115161744e42c304ca3cbd52d322300ec353`.
+- Formal gate: `Verification=PASS` for package runtime/compatibility/headless/
+  install, shell integration, current-value no-change policy, worker-hang,
+  DPI 100/125/150, 1366x768/200% work area, maximize scroll, and byte
+  reproducibility. Stable GUI recovery is also `PASS`.
+- Deployed live state: GUI PID `44884`, worker PID `31924`, automatic policy
+  `enabled=true`, battery and AC targets all six limits at `15 W`, and current
+  AC STAPM/Fast/Slow read-back `15/15/15 W`.
+- Policy schedule: night 23:00-07:00 is `15/15 W`; day 07:00-23:00 is battery
+  `25 W` / AC `45 W`.
+- Rollback: `C:\RyzenAdj.before-20261118-032150` contains the previous stable
+  `1.0.40` tree. `C:\RyzenAdj.before-20261118-032310` is a second same-version
+  promotion backup containing `1.0.41`.
+
+## Previous Stable Candidate 1.0.40
 
 ```text
 artifacts/native-packages/amd-mobile-power-v1.0.40-win-x64-native-preview.zip
@@ -147,21 +177,30 @@ artifacts/native-packages/amd-mobile-power-v1.0.40-win-x64-native-preview.zip
   `lastAttemptSucceeded=true`; day 07:00 battery 25 W / AC 45 W, night
   23:00 both lines 10 W. AC read-back at 00:40 was STAPM/Fast/Slow
   `10/10/10 W` with measured `9.999/10.004/9.997 W`.
-- The exact ZIP is deployed to `C:\RyzenAdj`; the previous `1.0.39` tree is
-  preserved at `C:\RyzenAdj.before-20261118-001504`.
+- The exact ZIP was deployed to `C:\RyzenAdj` before the `1.0.41` promotion.
+  Its full tree is preserved at `C:\RyzenAdj.before-20261118-032150`; the
+  previous `1.0.39` tree remains at
+  `C:\RyzenAdj.before-20261118-001504`.
 
-Current candidate records:
+## Evidence Records
+
+Current 1.0.41 records:
 
 ```text
-docs/evidence/packaging/v1.0.40-release-gate-2026-11-17.json
-docs/evidence/packaging/v1.0.40-clean-2026-11-17.json
-docs/evidence/packaging/v1.0.40-shell-integration-2026-11-17.json
-docs/evidence/build/reproducibility-1.0.40-2026-11-17.json
-docs/evidence/hardware/v1.0.40-worker-hang-2026-11-17.json
-docs/evidence/hardware/v1.0.40-power-policy-no-change-2026-11-17.json
-docs/evidence/packaging/v1.0.40-deployment-2026-11-18.json
-docs/evidence/hardware/v1.0.40-night-policy-restore-2026-11-18.json
-docs/evidence/hardware/remediation-policy-script-contract-2026-11-18.json
+docs/evidence/packaging/v1.0.41-release-gate-2026-11-18.json
+docs/evidence/packaging/v1.0.41-clean-2026-11-18.json
+docs/evidence/packaging/v1.0.41-shell-integration-2026-11-18.json
+docs/evidence/packaging/v1.0.41-fixture-policy-isolation-2026-11-18.json
+docs/evidence/build/reproducibility-1.0.41-2026-11-18.json
+docs/evidence/hardware/v1.0.41-worker-hang-2026-11-18.json
+docs/evidence/hardware/v1.0.41-power-policy-no-change-2026-11-18.json
+docs/evidence/hardware/v1.0.41-night-policy-restore-2026-11-18.json
+docs/evidence/packaging/v1.0.41-deployment-2026-11-18.json
+docs/evidence/packaging/v1.0.41-promotion-2026-11-18.json
+docs/evidence/ui/native-dpi-100-125-150-2026-11-18.json
+docs/evidence/ui/native-workarea-200-1366x768-2026-11-18.json
+docs/evidence/ui/native-maximize-scroll-2026-11-18.json
+docs/evidence/release/public-sanitization-1.0.41-2026-11-18.json
 ```
 
 These are local release/deployment records, not a public release. The latest
@@ -170,8 +209,8 @@ prepared review bundle under `artifacts/native-release-review/` remains
 
 ## Deployed Safety Remediation
 
-The 1.0.40 package includes the safety remediation that was source-only after
-the 1.0.39 freeze:
+The 1.0.41 package includes the safety remediation introduced after the 1.0.39
+freeze and the limits-aware drift repair:
 
 - Rust worker client: 5 s overlapped pipe I/O timeout with cancellation and
   reap, a 1 MiB response cap, and a 2 s busy-pipe retry.
@@ -201,16 +240,15 @@ the 1.0.39 freeze:
   NaN/Inf telemetry filtering; a persistent last-applied target that drives the
   firmware-clamp flag (0.5 W STAPM / 0.75 W PPT tolerance); and safe signed
   32-bit integer request parsing.
-- Local verification at the 1.0.40 freeze: Rust `cargo test --release` 69
+- Local verification at the 1.0.41 freeze: Rust `cargo test --release` 69
   passed (37 library + 32 GUI); probe 7/7; C++ `power_limit_policy`,
   `power_policy`, `hardware_cleanup`, and `worker_safety` tests all PASS
   (driver-free).
-
-Residual risk in deployed 1.0.40: the packaged policy controller caches
-`last_applied_target` and does not re-read the actual limits on every tick, so
-an external firmware/EC reset can drift until the next power-line change or
-scheduled policy run. Source candidate 1.0.41 implements the limits-aware
-re-assert and must not reuse the 1.0.40 hashes.
+- Deployed policy behavior: 1.0.40 cached `last_applied_target` and did not
+  re-read the actual limits on every tick. Stable 1.0.41 now checks STAPM,
+  Fast, and Slow each enabled-policy tick and re-asserts a target only when
+  Fast or Slow is above the configured high-side tolerance. Lower firmware
+  clamps and STAPM-only movement do not force writes.
 
 Historical candidate `1.0.7-native` remains recorded with package SHA256
 `a018e1af1a82a5be1dc1cee4fa54cf419d35a778cd056a16a5a35a34262635c4`

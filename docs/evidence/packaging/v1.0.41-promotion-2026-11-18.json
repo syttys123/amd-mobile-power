@@ -1,0 +1,26 @@
+{
+  "Verification": "PASS",
+  "Package": "D:\\amd-mobile-power\\artifacts\\native-packages\\amd-mobile-power-v1.0.41-win-x64-native-preview.zip",
+  "PackageSHA256": "f376e1a28746a376e0f2f8a0ff72ed87c70bd5271821885b1ef36ec7098dc847",
+  "PackageVersion": "1.0.41",
+  "Target": "C:\\RyzenAdj",
+  "Backup": "C:\\RyzenAdj.before-20261118-032310",
+  "PreviousStableBackup": "C:\\RyzenAdj.before-20261118-032150",
+  "PreviousStableVersion": "1.0.40",
+  "BackupNote": "The recorded Backup directory is a same-version promotion copy containing 1.0.41. The previous stable 1.0.40 rollback is PreviousStableBackup.",
+  "GuiArguments": "--simple-mode --max-target-watts 45",
+  "ShortcutsUpdated": [
+    "%USERPROFILE%\\Desktop\\功耗设置 5-60W.lnk"
+  ],
+  "ShortcutArguments": [
+    {
+      "Path": "%USERPROFILE%\\Desktop\\功耗设置 5-60W.lnk",
+      "Before": "--simple-mode --max-target-watts 45",
+      "After": "--simple-mode --max-target-watts 45",
+      "Dropped": []
+    }
+  ],
+  "LaunchVerification": "Skipped",
+  "Launched": false,
+  "RecordedAt": "2026-11-18T03:23:14.8415250+08:00"
+}
