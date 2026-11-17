@@ -1,0 +1,36 @@
+{
+  "SchemaVersion": 1,
+  "CaptureMode": "read-only-no-write-controls",
+  "Fixture": "worker-offline",
+  "FixtureApplyRequested": false,
+  "Consent": null,
+  "FixtureApplyStatus": null,
+  "DpiFixture": 200,
+  "UniformTargetWatts": null,
+  "PolicyBatteryWatts": null,
+  "PolicyAcWatts": null,
+  "PolicySeeded": false,
+  "BatteryOnly": false,
+  "FocusControlId": null,
+  "ControlChecks": {
+    "TargetAndPresetEnabled": false,
+    "DiagnosticsEnabled": true
+  },
+  "Simple": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\verify\\remediation-200\\remediation-200-simple-2026-11-17.png",
+    "Width": 1202,
+    "Height": 759,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "4352f24e1bf977546b4e62eff23f91a494dd1448475780192c8654f8e0d27bf2"
+  },
+  "Advanced": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\verify\\remediation-200\\remediation-200-advanced-2026-11-17.png",
+    "Width": 1562,
+    "Height": 1399,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "aaeb2c32178bb939f80127a77eb77a45bcf2df228e6dbf30bf0af738787c9175"
+  },
+  "SimpleClientSize": "1200x720",
+  "AdvancedClientSize": "1560x1360",
+  "RecordedAt": "2026-11-17T20:15:19.5047870+08:00"
+}

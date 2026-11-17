@@ -21,6 +21,41 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-17 (1.0.40 candidate built; read-only gates PASS, hardware gate pending):
+
+- Built candidate `amd-mobile-power-v1.0.40-win-x64-native-preview.zip` from
+  clean source `cdb91b5`: 792411 bytes, SHA256
+  `033748fdfcb829d871e27cbee41312dee82fa71734f723399cc98247c702121c`.
+  GUI `068a0488`, worker `6e9cc6a9`, probe `00369735`; 19 checksum entries.
+- Fixed two candidate blockers found by the gate: fixture single-instance
+  mutexes are now keyed by the isolated pipe name (second instance wakes the
+  first fixture window instead of spawning a new one), and control background
+  brushes follow `palette().surface` via the per-DC stock brush instead of the
+  stock WHITE_BRUSH (high-contrast edit/label surfaces no longer flash white).
+- Read-only gates PASS: packaged runtime verification (minimize/restore,
+  close-to-tray, tray restore, single-instance wake, view modes, top-most,
+  write controls, preset editing, battery-only toggle, focus notifications,
+  target draft retention, minimum resize, advanced scroll, diagnostics export,
+  explicit exit), install flow, compatibility collector/markdown, headless
+  probe, DPI 100/125/150 fixtures, 1366x728/200% work-area fixture, public
+  sanitization (745 tracked text / 13 package text / 7 binaries), and
+  independent reproducibility (GUI/probe/worker/ZIP double hashes match).
+- The 200% work-area screenshot's light content band is the documented default
+  theme (`color.canvas #F2F5F2`, `color.surface #FFFFFF`, dark top bar), not a
+  white-screen regression; the transient white-flash path remains fixed.
+- Hardware: a current-value no-change policy gate through
+  `apply-power-policy-direct.ps1` PASSed against the deployed worker
+  (`battery=25 ac=45 guiSynced=True line=ac fastSlow=45/45`). The packaged
+  1.0.40 worker write/read-back gate, worker-hang gate, shell-integration gate
+  and formal release-gate record are still pending; no deployment or publication
+  was performed. Stable `C:\RyzenAdj` remains 1.0.39 and the day/night policy
+  remains 07:00 25/45 W, 23:00 15/15 W.
+- Known incomplete: the fake-GUI contract harness still fails with a fake-worker
+  write timeout (`evidence/hardware/remediation-policy-script-contract-2026-11-17.json`);
+  the real current-value no-change gate is the authoritative script evidence.
+  Next task: run the supervised packaged hardware/worker-hang/shell gates,
+  produce the formal 1.0.40 release-gate record, then promote with rollback.
+
 2026-11-17 (full functional-matrix audit remediation, source-only):
 
 - Rust GUI: worker client now uses overlapped pipe I/O with a 5 s deadline,

@@ -1,0 +1,19 @@
+﻿{
+    "Verification":  "FAIL",
+    "HardwareEnabled":  false,
+    "RealWorkerContacted":  false,
+    "Checks":  {
+                   "compile-fakes":  {
+                                         "pass":  true,
+                                         "detail":  "fake GUI + probe compiled"
+                                     },
+                   "harness-error":  {
+                                         "pass":  false,
+                                         "detail":  "worker write timed out for getPowerPolicy within 8000 ms"
+                                     }
+               },
+    "Failed":  [
+                   "harness-error"
+               ],
+    "RecordedAt":  "2026-11-17T19:57:29.6967286+08:00"
+}
