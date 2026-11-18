@@ -54,6 +54,16 @@ not authoritative.
   claimed. Main-agent frame/asset inspection and deterministic gates pass, but
   owner review and publication approval remain required. No GitHub Release or
   Bilibili upload occurred.
+- Focused media commit `161a5e6` was pushed to `origin/release/1.0.33`.
+  The refreshed `artifacts/native-release-review/v1.0.42` bundle contains the
+  exact 55-second video, current cover/contact sheet, launch copy, and 1.0.42
+  candidate dossier; all 31 bundle entries pass checksum verification.
+  Publication readiness remains `LocalReadiness=PASS`,
+  `PublicReleaseReadiness=READY_FOR_HUMAN_REVIEW` in
+  `docs/evidence/release/native-publication-readiness-1.0.42-media-2026-11-18.json`.
+  A trailing-comma parser defect in the readiness helper was fixed, and hosted
+  CI reuse now excludes only capture/review helpers while still invalidating
+  runtime/build inputs. Both PowerShell hosts parse the helper successfully.
 - Media work did not change the stable deployment or saved policy. At the
   07:00 transition the live worker returned day targets battery 25 W / AC
   45 W and restarted the supervised tray as GUI PID `15440`, worker PID

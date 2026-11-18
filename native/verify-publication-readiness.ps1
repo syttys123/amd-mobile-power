@@ -266,7 +266,7 @@ $packagedUiEvidencePath = Resolve-EvidencePath $uiEvidenceDir @(
 )
 $mediaEvidencePath = Resolve-EvidencePath $mediaEvidenceDir @(
     "native-promo-$Version-review-*.json",
-    "native-promo-$Version-draft-*.json",
+    "native-promo-$Version-draft-*.json"
 )
 $compatibilityIndexPath = Join-Path `
     $repositoryRoot `
@@ -589,7 +589,11 @@ if (Test-Path -LiteralPath $hostedCiEvidencePath -PathType Leaf) {
             )
             $nativeChangedSince = @(
                 $changedSince | Where-Object {
-                    $_ -match '^(native/|\.github/|build-ryzenadj\.ps1$|build\.ps1$)' -or
+                    $_ -match '^\.github/' -or
+                    $_ -match '^build-ryzenadj\.ps1$' -or
+                    $_ -match '^build\.ps1$' -or
+                    ($_ -match '^native/' -and
+                        $_ -notmatch '^native/(capture-rust-gui-redesign|prepare-release-review|verify-publication-readiness)\.ps1$') -or
                     $_ -match '(^|/)Cargo\.(toml|lock)$'
                 }
             ).Count -gt 0
@@ -647,6 +651,7 @@ $result = [ordered]@{
         Verification = $hostedCiGate
         RunId = if ($null -ne $hostedCiEvidence) { $hostedCiEvidence.runId } else { $null }
         Commit = if ($null -ne $hostedCiEvidence) { $hostedCiEvidence.commit } else { $null }
+        Scope = "Build/runtime inputs only; capture and review-bundle helpers do not invalidate an unchanged packaged binary"
     }
     BlockersFromLocalChecks = @($blockers)
     Note = "No GitHub login, Bilibili login, upload, publication, or power write was performed by this check. The shortcut launch audit runs the deployed GUI with an isolated LOCALAPPDATA and a unique worker pipe, then stops it."

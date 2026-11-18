@@ -31,6 +31,9 @@ The exact gated ZIP comes from `927a1bb`, SHA256
 - [x] Current 55-second silent 1.0.42 review cut, exact-frame cover/contact
       sheet, launch copy, and candidate dossier are prepared; full decode and
       identity/event/layout/luminance gates pass.
+- [x] Focused media commit `161a5e6` is pushed; the refreshed 31-entry review
+      bundle passes every checksum and publication readiness reports
+      `LocalReadiness=PASS`, `READY_FOR_HUMAN_REVIEW`.
 - [ ] Independent pojia visual audit: three attempts blocked by upstream
       `insufficient_user_quota`; do not record this as an independent PASS.
 - [ ] Second AMD device, real OS DPI sessions, clean-Windows WinRing0 baseline,

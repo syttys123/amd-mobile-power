@@ -221,6 +221,7 @@ docs/evidence/packaging/v1.0.42-deployment-2026-11-18.json
 docs/evidence/ui/native-packaged-1.0.42-ui-2026-11-18.json
 docs/evidence/release/public-sanitization-1.0.42-2026-11-18.json
 docs/evidence/release/native-publication-readiness-1.0.42-2026-11-18.json
+docs/evidence/release/native-publication-readiness-1.0.42-media-2026-11-18.json
 ```
 
 Historical 1.0.41 records:
