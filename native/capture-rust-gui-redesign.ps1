@@ -11,6 +11,8 @@ param(
     [string]$DpiFixture,
     [ValidateRange(5, 60)]
     [int]$UniformTargetWatts,
+    [ValidateRange(5, 60)]
+    [int]$FixtureTargetWatts = 12,
     [ValidateRange(0, 60)]
     [int]$PolicyBatteryWatts,
     [ValidateRange(0, 60)]
@@ -46,6 +48,11 @@ public static class AmdMobilePowerUiCapture {
     [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "SendMessageW")]
     public static extern IntPtr ReadText(IntPtr hwnd, uint message, UIntPtr capacity,
         System.Text.StringBuilder text);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "SendMessageW")]
+    public static extern IntPtr WriteText(IntPtr hwnd, uint message,
+        UIntPtr wParam, string text);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "SetWindowTextW")]
+    public static extern bool SetWindowTitle(IntPtr hwnd, string title);
     [DllImport("user32.dll")]
     public static extern bool SetProcessDpiAwarenessContext(IntPtr value);
 
@@ -525,6 +532,13 @@ try {
     if ($window -eq [IntPtr]::Zero) {
         throw "Rust GUI did not create the redesign window in time."
     }
+    # Fixture pipe names isolate instances but are not useful in published
+    # screenshots. Keep the visible title short; evidence still records the
+    # isolated fixture and capture mode.
+    if ($Fixture -and -not [AmdMobilePowerUiCapture]::SetWindowTitle(
+        $window, "AMD Mobile Power")) {
+        throw "Could not set the isolated fixture window title."
+    }
 
     [void](Focus-CaptureWindow -Window $window -FocusControlId $FocusControlId)
     [AmdMobilePowerUiCapture]::SetWindowPos(
@@ -539,8 +553,17 @@ try {
     [void](Focus-CaptureWindow -Window $window -FocusControlId $FocusControlId)
     Start-Sleep -Milliseconds 500
     if ($ApplyFixtureTarget) {
+        $targetEdit = [AmdMobilePowerUiCapture]::GetDlgItem($window, 316)
+        if ($targetEdit -eq [IntPtr]::Zero) {
+            throw "Simple target edit was not found for fixture apply."
+        }
+        [AmdMobilePowerUiCapture]::WriteText(
+            $targetEdit, 0x000C, [UIntPtr]::Zero,
+            [string]$FixtureTargetWatts) | Out-Null
+        # The visible simple-mode button is 317. Command 104 belongs to the
+        # hidden advanced apply button and does not read this edit field.
         [AmdMobilePowerUiCapture]::PostMessage(
-            $window, 0x0111, [UIntPtr]::new(104), [IntPtr]::Zero) | Out-Null
+            $window, 0x0111, [UIntPtr]::new(317), [IntPtr]::Zero) | Out-Null
         $applyDeadline = [DateTime]::UtcNow.AddSeconds(5)
         $fixtureApplyStatus = ''
         do {
@@ -699,6 +722,12 @@ try {
             Fixture = if ($Fixture) { $Fixture } else { $null }
             FixtureApplyRequested = [bool]$ApplyFixtureTarget
             Consent = $consentCapture
+            FixtureTargetWatts = if ($ApplyFixtureTarget) {
+                $FixtureTargetWatts
+            }
+            else {
+                $null
+            }
             FixtureApplyStatus = if ($ApplyFixtureTarget) { $fixtureApplyStatus } else { $null }
             DpiFixture = if ($DpiFixture) { [int]$DpiFixture } else { $null }
             UniformTargetWatts = if ($UniformTargetWatts -gt 0) {

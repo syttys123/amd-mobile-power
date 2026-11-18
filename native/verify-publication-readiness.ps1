@@ -267,8 +267,6 @@ $packagedUiEvidencePath = Resolve-EvidencePath $uiEvidenceDir @(
 $mediaEvidencePath = Resolve-EvidencePath $mediaEvidenceDir @(
     "native-promo-$Version-review-*.json",
     "native-promo-$Version-draft-*.json",
-    "native-promo-review-v2-*.json",
-    "native-promo-draft-*.json"
 )
 $compatibilityIndexPath = Join-Path `
     $repositoryRoot `

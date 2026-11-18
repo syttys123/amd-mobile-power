@@ -1,0 +1,30 @@
+{
+  "Version": "1.0.42",
+  "GuiSha256": "612a883e89bb33cb2ef538cb86a833f3073c8f6144a54ecd2efe1bc35a1d0baf",
+  "Clips": {
+    "consent": {
+      "Manifest": "../../../artifacts/media/promo-1.0.42-consent-flow-debug2/flow-manifest.json",
+      "LeadSeconds": 0.35
+    },
+    "simple": {
+      "Manifest": "../../../artifacts/media/promo-1.0.42-final-simple/frames-manifest.json",
+      "LeadSeconds": 0.35
+    },
+    "presets": {
+      "Manifest": "../../../artifacts/media/promo-1.0.42-final-presets/frames-manifest.json",
+      "LeadSeconds": 0.35,
+      "ClipOffset": 0.7,
+      "ClipEnd": 7.8
+    },
+    "policy": {
+      "Manifest": "../../../artifacts/media/promo-1.0.42-final-policy/frames-manifest.json",
+      "LeadSeconds": 0.35,
+      "ClipOffset": 0.5,
+      "ClipEnd": 9.6
+    },
+    "diagnostics": {
+      "Manifest": "../../../artifacts/media/promo-1.0.42-diagnostics-flow/flow-manifest.json",
+      "LeadSeconds": 0.35
+    }
+  }
+}

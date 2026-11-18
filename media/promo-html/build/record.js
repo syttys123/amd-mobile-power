@@ -1,267 +1,198 @@
-// Frame-exact Playwright recorder for the promo HTML timeline.
-// Usage:
-//   node record.js <html-path> <frames-dir> [--fps 30] [--width 1920]
-//       [--height 1080] [--clip-frames <dir>] [--clip-scene ui-demo]
-//           [--clip-fps 30] [--clip-lead 0.4] [--clip-manifest <json>]
-//           [--clip-events <json>]
-// Captures one PNG per frame and writes a ffmpeg concat file.
-// When --clip-frames is given, frames extracted from the recorded GUI demo
-// clip (clip-%04d.png or frame-%04d.png) are injected into the named scene's
-// #live-demo-frame <img> element. With --clip-manifest, injection follows the
-// captured per-frame timestamps and the synthetic pointer uses the recorded
-// button centers and first visual-change frames instead of assuming uniform
-// frame timing.
-
+// Frame-exact multi-clip recorder. Every clip is bound to its own manifest;
+// no uniform-frame assumption or synthetic success state is allowed.
 const { chromium } = require("playwright");
 const fs = require("fs");
 const path = require("path");
 
 function arg(name, fallback) {
-  const i = process.argv.indexOf(name);
-  return i === -1 ? fallback : process.argv[i + 1];
+  const index = process.argv.indexOf(name);
+  return index === -1 ? fallback : process.argv[index + 1];
 }
 
 const htmlPath = path.resolve(process.argv[2]);
 const framesDir = path.resolve(process.argv[3]);
-const fps = parseInt(arg("--fps", "30"), 10);
-const width = parseInt(arg("--width", "1920"), 10);
-const height = parseInt(arg("--height", "1080"), 10);
-const clipFramesDir = arg("--clip-frames", null);
-const clipSceneId = arg("--clip-scene", "ui-demo");
-const clipFps = parseInt(arg("--clip-fps", "30"), 10);
-const clipLead = parseFloat(arg("--clip-lead", "0.4"));
-const clipEventsPath = arg("--clip-events", null);
-const clipManifestPath = arg("--clip-manifest", null);
+const configPath = path.resolve(arg("--clips-config", ""));
+const fps = Number(arg("--fps", "30"));
+const width = Number(arg("--width", "1920"));
+const height = Number(arg("--height", "1080"));
+if (!fs.existsSync(configPath)) throw new Error("--clips-config is required");
+
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, "utf8").replace(/^\uFEFF/, ""));
+}
+
+function dataUrl(file) {
+  return `data:image/png;base64,${fs.readFileSync(file).toString("base64")}`;
+}
+
+function frameFiles(directory) {
+  return fs.readdirSync(directory)
+    .filter(name => /^(frame|clip)-\d+\.png$/i.test(name)).sort();
+}
+
+function validateManifest(manifest, files, kind) {
+  if (!manifest.SimulatedData || manifest.HardwareAccess === true) {
+    throw new Error(`${kind}: fixture must be simulated and hardware-free`);
+  }
+  if (!Array.isArray(manifest.Frames) || manifest.Frames.length !== files.length) {
+    throw new Error(`${kind}: frame count mismatch`);
+  }
+  manifest.Frames.forEach((frame, index) => {
+    if (frame.Index !== index || frame.Path !== files[index] ||
+        !Number.isFinite(frame.At) || frame.At < 0 ||
+        (index && frame.At <= manifest.Frames[index - 1].At)) {
+      throw new Error(`${kind}: invalid frame ${index}`);
+    }
+  });
+  const events = kind === "diagnostics" ? [manifest.Event] : manifest.Events;
+  if (!Array.isArray(events) || !events.length) throw new Error(`${kind}: events missing`);
+  events.forEach((event, index) => {
+    if (event.Completed !== true || !Number.isFinite(event.ActualAt) ||
+        !Number.isInteger(event.VisualFrameIndex) ||
+        event.VisualFrameIndex < 0 || event.VisualFrameIndex >= files.length ||
+        Math.abs(manifest.Frames[event.VisualFrameIndex].At - event.VisualAt) > 1e-6 ||
+        event.VisualAt < event.ActualAt ||
+        !Number.isFinite(event.ClickX) || event.ClickX < 0 || event.ClickX > 1 ||
+        !Number.isFinite(event.ClickY) || event.ClickY < 0 || event.ClickY > 1 ||
+        (index && event.ActualAt <= events[index - 1].ActualAt)) {
+      throw new Error(`${kind}: invalid event ${index}`);
+    }
+  });
+  return events;
+}
 
 (async () => {
   fs.mkdirSync(framesDir, { recursive: true });
-
-  let clipFrames = [];
-  if (clipFramesDir) {
-    clipFrames = fs
-      .readdirSync(clipFramesDir)
-      .filter((f) => /^(clip|frame)-\d+\.png$/i.test(f))
-      .sort();
-    if (clipFrames.length === 0) {
-      throw new Error(`No clip frames in ${clipFramesDir}`);
+  const config = readJson(configPath);
+  const clips = {};
+  const posters = {};
+  for (const [kind, entry] of Object.entries(config.Clips)) {
+    const manifestPath = path.resolve(path.dirname(configPath), entry.Manifest);
+    const manifest = readJson(manifestPath);
+    const directory = path.resolve(entry.FrameDirectory || manifest.FrameDirectory);
+    const files = frameFiles(directory);
+    const events = validateManifest(manifest, files, kind);
+    if (kind === "simple" && (manifest.Fixture !== "preset-success" ||
+        events.length !== 3 || events.some((event, index) =>
+          event.Command !== [102, 103, 101][index] ||
+          event.ExpectedWatts !== [25, 45, 10][index]))) {
+      throw new Error("simple: expected clean 25/45/10 W preset-success events");
     }
-  }
-
-  let clipManifest = null;
-  let clipFrameTimes = null;
-  let clickTimes = null;
-  let clickPoints = null;
-  const expectedCommands = [102, 103, 101];
-  const expectedWatts = [25, 45, 10];
-
-  if (clipManifestPath) {
-    clipManifest = JSON.parse(
-      fs.readFileSync(path.resolve(clipManifestPath), "utf8").replace(/^\uFEFF/, "")
-    );
-    if (!clipManifest.SimulatedData || clipManifest.Fixture !== "preset-success") {
-      throw new Error("The main preset demo requires the preset-success fixture");
+    if (kind === "consent" && (manifest.Flow !== "consent-unlock" ||
+        events.length !== 2 || events[0].Control !== 401 || events[1].Control !== 402)) {
+      throw new Error("consent: expected checkbox then confirm flow");
     }
-    if (!Number.isFinite(clipManifest.ClientWidth) || clipManifest.ClientWidth <= 0 ||
-        !Number.isFinite(clipManifest.ClientHeight) || clipManifest.ClientHeight <= 0) {
-      throw new Error("Clip manifest is missing the captured client size");
+    if (kind === "policy" && (manifest.DemoType !== "policy" || events.length !== 8)) {
+      throw new Error("policy: expected eight-step dual-line/battery-only flow");
     }
-    if (!Array.isArray(clipManifest.Frames) || clipManifest.Frames.length !== clipFrames.length) {
-      throw new Error("Clip manifest frame count does not match the frame directory");
+    if (kind === "presets" && (manifest.DemoType !== "presets" || events.length !== 6)) {
+      throw new Error("presets: expected six-step edit/save/apply flow");
     }
-    clipFrameTimes = clipManifest.Frames.map((frame, index) => {
-      if (frame.Index !== index || frame.Path !== clipFrames[index] ||
-          !Number.isFinite(frame.At) || frame.At < 0 ||
-          (index > 0 && frame.At <= clipManifest.Frames[index - 1].At)) {
-        throw new Error(`Invalid clip manifest frame ${index}`);
-      }
-      return frame.At;
-    });
-    const events = clipManifest.Events;
-    if (!Array.isArray(events) || events.length !== 3 ||
-        events.some((event, index) =>
-          event.Completed !== true ||
-          event.Command !== expectedCommands[index] ||
-          event.ExpectedWatts !== expectedWatts[index] ||
-          !Number.isFinite(event.ActualAt) || event.ActualAt < 0 ||
-          !Number.isInteger(event.VisualFrameIndex) ||
-          event.VisualFrameIndex < 0 || event.VisualFrameIndex >= clipFrameTimes.length ||
-          Math.abs(clipFrameTimes[event.VisualFrameIndex] - event.VisualAt) > 1e-6 ||
-          event.VisualAt < event.ActualAt ||
-          !Number.isFinite(event.ClickX) || event.ClickX < 0 || event.ClickX > 1 ||
-          !Number.isFinite(event.ClickY) || event.ClickY < 0 || event.ClickY > 1 ||
-          (index > 0 && event.ActualAt <= events[index - 1].ActualAt))) {
-      throw new Error("Invalid recorded preset events in clip manifest");
+    if (kind === "diagnostics" && (manifest.Flow !== "diagnostics-export" ||
+        manifest.Privacy?.containsLocalPaths !== false ||
+        manifest.Privacy?.containsAccountNames !== false ||
+        manifest.Privacy?.containsProcessIds !== false ||
+        manifest.Privacy?.uploaded !== false)) {
+      throw new Error("diagnostics: export/privacy contract failed");
     }
-    clickTimes = events.map((event) => event.VisualAt + clipLead);
-    clickPoints = events.map((event) => ({ x: event.ClickX, y: event.ClickY }));
-  } else if (clipEventsPath) {
-    const evidence = JSON.parse(
-      fs.readFileSync(path.resolve(clipEventsPath), "utf8").replace(/^\uFEFF/, "")
-    );
-    const events = evidence.Events;
-    if (!evidence.SimulatedData || evidence.Fixture !== "preset-success" ||
-        !Array.isArray(events) || events.length !== 3 ||
-        events.some((event, index) => event.Completed !== true ||
-          event.Command !== expectedCommands[index] ||
-          !Number.isFinite(event.ActualAt) || event.ActualAt < 0 ||
-          (index > 0 && event.ActualAt <= events[index - 1].ActualAt))) {
-      throw new Error("Invalid recorded preset events");
-    }
-    clickTimes = events.map((event) => event.ActualAt + clipLead);
-  }
-
-  if (clipFrames.length > 0 && clipSceneId === "ui-demo" && !clickTimes) {
-    throw new Error("The ui-demo scene requires --clip-manifest or --clip-events");
+    const lead = Number(entry.LeadSeconds ?? 0.35);
+    clips[kind] = {
+      kind, manifestPath, directory, files,
+      times: manifest.Frames.map(frame => frame.At),
+      urls: files.map(file => dataUrl(path.join(directory, file))),
+      Events: events.map(event => ({
+        ...event, VisualAt: event.VisualAt - (entry.ClipOffset || 0),
+      })),
+      LeadSeconds: lead,
+      ClientWidth: manifest.ClientWidth,
+      ClientHeight: manifest.ClientHeight,
+      Fixture: manifest.Fixture,
+      GuiSha256: manifest.GuiSha256 || manifest.GuiSHA256,
+      ClipOffset: entry.ClipOffset || 0,
+      ClipEnd: entry.ClipEnd || null,
+    };
+    posters[kind] = clips[kind].urls[0];
   }
 
   const browser = await chromium.launch();
   try {
-  const page = await browser.newPage({ viewport: { width, height } });
-  await page.goto(`file:///${htmlPath.replace(/\\/g, "/")}`);
-  await page.waitForFunction(() => typeof window.__totalDuration === "function");
-  if (clickTimes) {
-    await page.evaluate(({ times, points, clientSize }) => {
-      window.__PRESET_CLICK_TIMES__ = times;
-      if (points) window.__PRESET_CLICK_POINTS__ = points;
-      if (clientSize) window.__CLIP_CLIENT_SIZE__ = clientSize;
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.goto(`file:///${htmlPath.replace(/\\/g, "/")}`);
+    await page.waitForFunction(() => typeof window.__totalDuration === "function");
+    await page.evaluate(({ clips: metadata, posters: images }) => {
+      window.__CLIPS__ = metadata;
+      window.__POSTERS__ = images;
     }, {
-      times: clickTimes,
-      points: clickPoints,
-      clientSize: clipManifest ? {
-        width: clipManifest.ClientWidth,
-        height: clipManifest.ClientHeight,
-      } : null,
+      clips: Object.fromEntries(Object.entries(clips).map(([kind, clip]) => [kind, {
+        Events: clip.Events, LeadSeconds: clip.LeadSeconds,
+        ClientWidth: clip.ClientWidth, ClientHeight: clip.ClientHeight,
+      }])),
+      posters,
     });
-  }
-
-  const total = await page.evaluate(() => window.__totalDuration());
-  const scenes = await page.evaluate(() => window.__SCENES__);
-  const frameCount = Math.ceil(total * fps);
-  console.log(
-    JSON.stringify({ total, fps, frameCount, width, height, clipFrames: clipFrames.length })
-  );
-
-  // Locate the clip scene's time window.
-  let clipStart = null;
-  let clipEnd = null;
-  if (clipFrames.length > 0) {
-    let cursor = 0;
-    for (const scene of scenes) {
-      if (scene.id === clipSceneId) {
-        clipStart = cursor;
-        clipEnd = cursor + scene.duration;
-        break;
-      }
-      cursor += scene.duration;
-    }
-    if (clipStart === null) {
-      throw new Error(`Scene ${clipSceneId} not found in storyboard`);
-    }
-    if (clipManifest) {
-      const sceneDuration = clipEnd - clipStart;
-      if (sceneDuration - clipLead > clipManifest.DurationSeconds) {
-        throw new Error("Clip manifest is shorter than the ui-demo scene");
-      }
-      if (clickTimes.some((time) => time < 0 || time >= sceneDuration)) {
-        throw new Error("Recorded click times fall outside the ui-demo scene");
-      }
-    }
-  }
-
-  const concatLines = [];
-  const frameDuration = 1 / fps;
-
-  // Cache clip frames as data URLs up front: the scene renderer wipes the
-  // DOM on every seek, so the <img> must be re-populated every single frame.
-  const clipDataUrls = clipFrames.map((f) => {
-    const png = fs.readFileSync(path.join(clipFramesDir, f));
-    return `data:image/png;base64,${png.toString("base64")}`;
-  });
-
-  for (let i = 0; i < frameCount; i++) {
-    const t = i * frameDuration;
-    await page.evaluate((s) => window.__seek(s), t);
-
-    if (clipStart !== null && t >= clipStart && t < clipEnd) {
-      const clipTime = t - clipStart - clipLead;
-      let clipIndex = 0;
-      if (clipFrameTimes) {
-        for (let j = 0; j < clipFrameTimes.length; j++) {
-          if (clipFrameTimes[j] <= clipTime + 1e-9) clipIndex = j;
+    const total = await page.evaluate(() => window.__totalDuration());
+    const scenes = await page.evaluate(() => window.__timeline);
+    const frameCount = Math.ceil(total * fps);
+    const concat = [];
+    for (let index = 0; index < frameCount; index++) {
+      const time = index / fps;
+      await page.evaluate(seconds => window.__seek(seconds), time);
+      const scene = scenes.find(item => time >= item.start && time < item.end) || scenes.at(-1);
+      if (scene.clip) {
+        const clip = clips[scene.clip];
+        const local = time - scene.start + (scene.clipOffset || 0);
+        if (scene.clipEnd && local > scene.clipEnd) {
+          throw new Error(`${scene.id}: clip end exceeded`);
+        }
+        let clipIndex = 0;
+        for (let j = 0; j < clip.times.length; j++) {
+          if (clip.times[j] <= local + 1e-9) clipIndex = j;
           else break;
         }
-      } else {
-        clipIndex = Math.max(
-          0,
-          Math.min(clipFrames.length - 1, Math.floor(clipTime * clipFps))
-        );
+        const id = `${scene.clip}-frame`;
+        await page.evaluate(({ id, source }) => {
+          const image = document.getElementById(id);
+          if (!image) throw new Error(`Missing frame element ${id}`);
+          image.src = source;
+        }, { id, source: clip.urls[clipIndex] });
       }
-      await page.evaluate((src) => {
-        const img = document.getElementById("live-demo-frame");
-        if (img) img.src = src;
-      }, clipDataUrls[clipIndex]);
-      await page.evaluate(() => {
-        const img = document.getElementById("live-demo-frame");
-        if (!img) throw new Error("Demo frame element missing");
-        return img.decode();
+      await page.evaluate(async () => {
+        for (const image of document.images) {
+          if (!image.getAttribute("src")) throw new Error("Empty image source");
+          await image.decode();
+          if (!image.naturalWidth) throw new Error("Image has no pixels");
+        }
       });
+      const name = `frame-${String(index).padStart(5, "0")}.png`;
+      await page.screenshot({ path: path.join(framesDir, name), type: "png" });
+      concat.push(`file '${name}'`, `duration ${(1 / fps).toFixed(6)}`);
+      if (index % 60 === 0) process.stdout.write(`\rframe ${index}/${frameCount}`);
     }
-
-    await page.evaluate(async () => {
-      await Promise.all(Array.from(document.images).map(async image => {
-        if (!image.getAttribute("src")) return;
-        await image.decode();
-        if (!image.naturalWidth) throw new Error("Rendered image has no pixels");
-      }));
-    });
-
-    const name = `frame-${String(i).padStart(5, "0")}.png`;
-    const file = path.join(framesDir, name);
-    await page.screenshot({ path: file, type: "png" });
-    concatLines.push(`file '${name}'`);
-    concatLines.push(`duration ${frameDuration.toFixed(6)}`);
-    if (i % 60 === 0) {
-      process.stdout.write(`\rframe ${i}/${frameCount}`);
-    }
-  }
-  // concat demuxer needs the last file repeated without a duration line.
-  const lastName = `frame-${String(frameCount - 1).padStart(5, "0")}.png`;
-  concatLines.push(`file '${lastName}'`);
-
-  fs.writeFileSync(
-    path.join(framesDir, "concat.txt"),
-    concatLines.join("\n") + "\n",
-    "utf8"
-  );
-  fs.writeFileSync(
-    path.join(framesDir, "render-manifest.json"),
-    JSON.stringify({
-      SchemaVersion: 1,
-      Fps: fps,
-      FrameCount: frameCount,
-      TotalSeconds: total,
-      Width: width,
-      Height: height,
-      Scenes: scenes,
-      Clip: clipManifest ? {
-        ManifestPath: path.resolve(clipManifestPath),
-        Fixture: clipManifest.Fixture,
-        FrameCount: clipFrames.length,
-        LeadSeconds: clipLead,
-        ClickTimes: clickTimes,
-        ClickPoints: clickPoints,
-        FrameTimes: clipFrameTimes,
-        ClientWidth: clipManifest.ClientWidth,
-        ClientHeight: clipManifest.ClientHeight,
-      } : null,
+    concat.push(`file 'frame-${String(frameCount - 1).padStart(5, "0")}.png'`);
+    fs.writeFileSync(path.join(framesDir, "concat.txt"), concat.join("\n") + "\n");
+    fs.writeFileSync(path.join(framesDir, "render-manifest.json"), JSON.stringify({
+      SchemaVersion: 2,
+      Version: config.Version,
+      GuiSha256: config.GuiSha256,
+      Fps: fps, Width: width, Height: height,
+      TotalSeconds: total, FrameCount: frameCount, Scenes: scenes,
+      Clips: Object.fromEntries(Object.entries(clips).map(([kind, clip]) => [kind, {
+        ManifestPath: clip.manifestPath,
+        FrameDirectory: clip.directory,
+        Fixture: clip.Fixture,
+        GuiSha256: clip.GuiSha256,
+        FrameCount: clip.files.length,
+        LeadSeconds: clip.LeadSeconds,
+        ClipOffset: clip.ClipOffset,
+        ClipEnd: clip.ClipEnd,
+        Events: clip.Events,
+      }])),
       RecordedAt: new Date().toISOString(),
-    }, null, 2) + "\n",
-    "utf8"
-  );
-
-  console.log(`\nDone. ${frameCount} frames -> ${framesDir}`);
-  } finally { await browser.close(); }
-})().catch((err) => {
-  console.error(err);
-  process.exit(1);
+    }, null, 2) + "\n");
+    console.log(`\nDone. ${frameCount} frames -> ${framesDir}`);
+  } finally {
+    await browser.close();
+  }
+})().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
 });

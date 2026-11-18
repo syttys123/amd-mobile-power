@@ -1,6 +1,24 @@
 # UI Screenshot Evidence
 
-Last captured: 2026-11-11
+Last captured: 2026-11-18
+
+## Current 1.0.42 Review Assets
+
+The current public-facing reference images use the deployed 1.0.42 GUI in an
+isolated hardware-free fixture. The capture helper replaces the internal pipe
+title with `AMD Mobile Power`, so no GUID or local path appears in the image.
+
+| State | Asset | Evidence |
+| --- | --- | --- |
+| Simple policy dashboard | `media/promo-html/assets/simple-1.0.42.png` | `docs/evidence/ui/promo-1.0.42-clean-assets-2026-11-18.json` |
+| Advanced policy dashboard | `media/promo-html/assets/advanced-1.0.42.png` | same evidence; battery 25 W / external 45 W |
+| Battery-only policy | `artifacts/media/promo-1.0.42-battery-only/promo-1.0.42-battery-only-advanced-2026-11-18.png` | `docs/evidence/ui/promo-1.0.42-battery-only-2026-11-18.json` |
+| Read-only and consent | `artifacts/media/promo-1.0.42-clean-consent/` | `docs/evidence/ui/promo-1.0.42-clean-consent-2026-11-18.json` |
+| Firmware clamp | `media/promo-html/assets/firmware-clamp-1.0.42-client.png` | `docs/evidence/ui/promo-1.0.42-clean-firmware-2026-11-18.json`; requested 12 W, STAPM 10 W, Fast/Slow 12 W |
+
+The earlier `promo-1.0.42-policy-assets`, `promo-1.0.42-consent`, and
+`promo-1.0.42-firmware` captures exposed a truncated fixture title and are
+retained only as failure evidence. They are not used by the current video.
 
 Machine-readable evidence:
 `docs/evidence/ui/screenshot-baseline-2026-11-10.json`.

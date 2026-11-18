@@ -1,102 +1,114 @@
-# Promotional Video Draft
+# Promotional Video Review
 
-The current review cut is the 39.5-second v2 render generated from the
-HTML/Playwright pipeline in `media/promo-html`. The main preset interaction is
-a screen recording of an isolated development fixture GUI running the
-hardware-free `preset-success` fixture; the consent dialog, advanced policy
-panel, and device panel are isolated 1.0.39 captures. Only the pointer,
-captions, and transitions are composited. Rendering and reviewing the video
-never write power limits.
+## Current 1.0.42 Review Cut
 
-This v2 cut supersedes the earlier `promo-1.0.39-review` render. That first
-1.0.39 review mixed the `firmware-clamp` fixture into the main preset demo (so
-25/45 W clicks still showed a 10 W STAPM ceiling), assumed uniform clip-frame
-pointer timing, and carried a false music credit. The firmware limitation is
-now a separate scene, the pointer is bound to recorded visual-change frames,
-and the music credit was removed.
+The current review cut is a 55-second silent, subtitled video generated from
+the HTML/Playwright pipeline in `media/promo-html`. Every GUI interaction uses
+the deployed 1.0.42 executable in an isolated hardware-free fixture. The
+running tray GUI, worker pipe, saved policy, and hardware limits are not used
+by the recorder.
 
-## Current Draft
-
-- Duration: 39.5 seconds (exactly 1185 frames).
-- Format: 1920x1080, 30 fps, H.264 video; silent review render.
-- Size: 3,382,806 bytes.
-- SHA256:
-  `99d618749ac31b965681b3d964cc37b0b9ff4255ffc67838d0a713ac5760d82c`.
-- Scenes: 7, in order: hook, safety, ui-demo, firmware, auto-policy, compat,
-  closing.
-- Narration: none. Simplified-Chinese subtitles are burned into the video.
-- Audio: none in the current review render.
+- Duration: 55.0 seconds, exactly 1650 frames.
+- Format: 1920x1080, 30 fps, H.264, no audio track.
 - Status: `DRAFT_FOR_HUMAN_REVIEW`; not approved for upload.
+- Scenes: hook, safety, ui-demo, presets, auto-policy, firmware, compat,
+  closing.
+- Subtitles: Simplified Chinese, burned into the video.
+- Music: none. The earlier synthesized music was removed.
 
-Local render:
+Local render and evidence paths are recorded in
+`docs/evidence/media/native-promo-1.0.42-review-2026-11-18.json`.
 
-```text
-artifacts/media/promo-review-20261117-v2/amd-mobile-power-review-v2-silent.mp4
-```
+## What The Video Demonstrates
 
-Machine-readable evidence:
-`docs/evidence/media/native-promo-review-v2-2026-11-17.json`.
+1. Read-only default, consent checkbox, enabled confirm button, and the
+   resulting unlocked state. The application owns the normal worker restart;
+   the video does not ask users to run a special command.
+2. Immediate 25 / 45 / 10 W preset application with matching target and
+   STAPM/Fast/Slow read-back. Current draw remains below the requested cap.
+3. Editing preset 1 from 10 W to 12 W, saving it, and applying the updated
+   button. The clip later restores 10 W in the isolated fixture.
+4. Battery 25 W / external 45 W policy, enable/save, battery-only save, and
+   restoration of dual-line control. It explicitly notes that power banks are
+   usually reported as external power.
+5. A separate firmware-clamp example: requested 12 W, STAPM effective limit
+   10 W, Fast/Slow effective limits 12 W.
+6. Diagnostics export click and visible success state. The exported fixture
+   report contains no local paths, account names, process IDs, serial numbers,
+   logs, or upload behavior.
+7. The compatibility boundary: only one physical 8845HS has complete evidence;
+   other AMD models remain experimental until verified.
 
-The main preset demo uses the `preset-success` fixture: clicking 25 / 45 / 10 W
-reads back 25/25/25, 45/45/45 and 10/10/10 W with no firmware clamp, while
-current draw stays below the requested cap. Pointer clicks are bound to
-recorded visual-change frames and actual button centers
-(`demo-sync-review.json`, PASS). The separate firmware scene uses the
-`firmware-clamp` fixture. All GUI captures use a development fixture build with
-an isolated single-instance mutex, not the deployed `C:\RyzenAdj` 1.0.39
-package; the data is simulated and no hardware is touched. The auto-policy
-scene states the write-unlock prerequisite and notes that power banks are
-usually seen as external power.
+The auto-policy scene demonstrates configuration and saved scope. It does not
+claim to show a physical unplug/replug transition; that hardware behavior has
+separate supervised evidence outside the video.
 
-## Review Assets
+## Capture And Pointer Contract
 
-Scene keyframes are under
-`artifacts/media/promo-review-20261117-v2/keyframes`. Click before/click/after
-GUI crops are under `artifacts/media/promo-review-20261117-v2/click-crops`.
-The luminance screens are
-`artifacts/media/promo-review-20261117-v2/luminance-review.json` (whole frame)
-and `artifacts/media/promo-review-20261117-v2/luminance-gui-region-review.json`
-(GUI region); both report no isolated spikes or near-white frames. These are
-downscaled luminance heuristics, not proof of absence of local flicker.
+`media/promo-native/capture-live-demo.ps1` records simple, advanced preset, and
+advanced policy clips. Each event stores the real control center, action,
+dispatch time, first visible-change frame, changed-pixel count, and nonblank
+baseline count. A blank baseline or an action without a visible change fails
+the capture. The old empty-bitmap baseline bug is covered by regression tests.
+
+`capture-consent-flow.ps1` records the real modal checkbox/confirm sequence.
+`capture-diagnostics-flow.ps1` records the export command and checks the
+isolated JSON privacy block. Fixture window titles are sanitized before
+capture; internal pipe GUIDs are not published.
+
+The multi-clip recorder binds each pointer to its own manifest and actual
+control coordinates. It never assumes uniform clip timing. Scene transitions
+crossfade over an opaque previous scene, avoiding the black boundary frames
+found in the historical v2 cut.
 
 ## Verification
 
-The evidence file records the video hash, codec, dimensions, frame rate,
-duration, full-decode result, scene count, demo-sync contract, keyframe
-review, visual crop review and luminance screening. Re-check a local file
-without editing it:
+The current evidence records:
+
+- exact video SHA256, size, codec, dimensions, frame rate, and full decode;
+- 1.0.42 GUI identity across all five clips;
+- event/visual-frame/pointer bindings and feature coverage;
+- 24 rendered keyframes plus focused interaction crops;
+- DOM text/image bounds at three points per scene;
+- whole-frame, GUI-region, and 960x540 luminance screens;
+- attempted independent pojia visual/claim audit (blocked by upstream quota;
+  not counted as an independent PASS);
+- PowerShell 5.1 and 7 capture-contract results;
+- document-link and whitespace checks.
+
+Luminance screening is a heuristic, not proof that every local pixel is
+flicker-free. The cover and contact sheet are generated from the exact rendered
+frame sequence by `build/make-review-assets.js`; historical assets are not
+substituted. Human owner review remains required before publication.
+
+## Rebuild
 
 ```powershell
-ffprobe -v error -show_entries `
-  format=duration,size -show_entries `
-  stream=codec_name,width,height,r_frame_rate,sample_rate,channels `
-  -of json artifacts\media\promo-review-20261117-v2\amd-mobile-power-review-v2-silent.mp4
-ffmpeg -v error -i artifacts\media\promo-review-20261117-v2\amd-mobile-power-review-v2-silent.mp4 -f null -
-Get-FileHash `
-  artifacts\media\promo-review-20261117-v2\amd-mobile-power-review-v2-silent.mp4 `
-  -Algorithm SHA256
+# Record isolated clips with the deployed GUI.
+.\media\promo-native\capture-live-demo.ps1 -GuiExecutable C:\RyzenAdj\amd-mobile-power-gui.exe -Mode simple -DemoType legacy -UiFixture preset-success
+.\media\promo-native\capture-live-demo.ps1 -GuiExecutable C:\RyzenAdj\amd-mobile-power-gui.exe -Mode advanced -DemoType presets -UiFixture preset-success
+.\media\promo-native\capture-live-demo.ps1 -GuiExecutable C:\RyzenAdj\amd-mobile-power-gui.exe -Mode advanced -DemoType policy -UiFixture preset-success
+.\media\promo-native\capture-consent-flow.ps1 -GuiExecutable C:\RyzenAdj\amd-mobile-power-gui.exe
+.\media\promo-native\capture-diagnostics-flow.ps1 -GuiExecutable C:\RyzenAdj\amd-mobile-power-gui.exe
+
+# Update build/clips-1.0.42.json to the reviewed manifests, then render.
+node .\media\promo-html\build\record.js `
+  .\media\promo-html\index.html `
+  .\artifacts\media\promo-1.0.42-review-final\frames `
+  --clips-config .\media\promo-html\build\clips-1.0.42.json
 ```
 
-The full decode must produce no output and exit with code 0.
+Encode exactly the manifest frame count with FFmpeg, then run
+`verify-demo-sync.js`, `review-layout.js`, `review-keyframes.js`, full decode,
+and luminance screening. Do not substitute historical assets or reuse an old
+video hash after changing copy, timing, or captures.
 
-## Rebuild Notes
+## Publication Gate
 
-The HTML pipeline lives in `media/promo-html`:
-
-- `index.html` and `src/scenes.js` define scene order, durations, and subtitle
-  text.
-- `build/record.js` drives Chromium through Playwright and records frames.
-- The current review render is silent; audio can be added after owner review.
-- Frames are encoded with FFmpeg; the historical working files stay under the
-  ignored `media/promo-html/build` directory.
-
-## Review Gate
-
-- The video is labelled as a development preview.
-- It states that only one physical AMD laptop has full evidence.
-- It does not claim universal AMD laptop support.
-- It does not imply that development builds are ready for unsupervised writes.
+- Keep the simulated-data disclosure visible.
+- Do not claim universal AMD support or a physical power-bank distinction.
+- Do not add music without a suitable license and owner approval.
 - No terminal, personal path, account name, notification, or unrelated desktop
-  content appears.
-- The project owner reviews pacing, subtitles, audio, claims, and cover before
-  any authenticated upload.
+  content may appear.
+- The owner reviews pacing, subtitles, claims, and cover before any GitHub
+  Release or authenticated Bilibili upload.

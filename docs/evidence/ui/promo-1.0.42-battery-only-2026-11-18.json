@@ -1,0 +1,37 @@
+{
+  "SchemaVersion": 1,
+  "CaptureMode": "write-controls-visible-policy-seeded",
+  "Fixture": "preset-success",
+  "FixtureApplyRequested": false,
+  "Consent": null,
+  "FixtureApplyStatus": null,
+  "DpiFixture": 125,
+  "UniformTargetWatts": null,
+  "PolicyBatteryWatts": 25,
+  "PolicyAcWatts": 45,
+  "PolicySeeded": true,
+  "BatteryOnly": true,
+  "FocusControlId": null,
+  "ControlChecks": {
+    "TargetAndPresetEnabled": true,
+    "DiagnosticsEnabled": true,
+    "BatteryOnlyVisible": true
+  },
+  "Simple": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\promo-1.0.42-battery-only\\promo-1.0.42-battery-only-simple-2026-11-18.png",
+    "Width": 752,
+    "Height": 489,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "a0e4402d48d2aa46ff5a47964d2b7e134bd420dbc748933c64fd53d8d8574d85"
+  },
+  "Advanced": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\promo-1.0.42-battery-only\\promo-1.0.42-battery-only-advanced-2026-11-18.png",
+    "Width": 977,
+    "Height": 889,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "42a493cf63396fbc838ddf1e063bc6e4b05436aa7a401bbac846fe398dce5a05"
+  },
+  "SimpleClientSize": "750x450",
+  "AdvancedClientSize": "975x850",
+  "RecordedAt": "2026-11-18T06:32:19.7406170+08:00"
+}

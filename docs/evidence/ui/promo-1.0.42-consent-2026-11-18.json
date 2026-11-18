@@ -1,0 +1,42 @@
+{
+  "SchemaVersion": 1,
+  "CaptureMode": "read-only-no-write-controls",
+  "Fixture": "firmware-clamp",
+  "FixtureApplyRequested": false,
+  "Consent": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\promo-1.0.42-consent\\promo-1.0.42-consent-consent-2026-11-18.png",
+    "Width": 809,
+    "Height": 792,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "5b304a00fd920370da39a53b5fc73adacb46967a08e4e4ffc6a9b36d37b5eaa1"
+  },
+  "FixtureApplyStatus": null,
+  "DpiFixture": null,
+  "UniformTargetWatts": null,
+  "PolicyBatteryWatts": null,
+  "PolicyAcWatts": null,
+  "PolicySeeded": false,
+  "BatteryOnly": false,
+  "FocusControlId": null,
+  "ControlChecks": {
+    "TargetAndPresetEnabled": false,
+    "DiagnosticsEnabled": true
+  },
+  "Simple": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\promo-1.0.42-consent\\promo-1.0.42-consent-simple-2026-11-18.png",
+    "Width": 752,
+    "Height": 489,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "5800a3c7edb27de6bd6025c3d2c38d1e2ea79ace3c130ad4b47b79ef3072ed87"
+  },
+  "Advanced": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\promo-1.0.42-consent\\promo-1.0.42-consent-advanced-2026-11-18.png",
+    "Width": 977,
+    "Height": 889,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "377daa888f319c380ac1c3674888b62e695b9857d3c1b6ef045296c5ee84e17a"
+  },
+  "SimpleClientSize": null,
+  "AdvancedClientSize": null,
+  "RecordedAt": "2026-11-18T06:14:44.8639905+08:00"
+}

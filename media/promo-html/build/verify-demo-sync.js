@@ -1,93 +1,123 @@
-// Contract gate for the preset demo: the main clip must use the clean
-// preset-success fixture, pointer clicks must bind to recorded visual-change
-// frames, and the review copy must not reintroduce known misleading claims.
+// Multi-clip identity, event, pointer and claim gate for the 1.0.42 review.
 const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
 
-function readJson(file) {
-  return JSON.parse(fs.readFileSync(file, "utf8").replace(/^\uFEFF/, ""));
-}
-
-const clip = readJson(process.argv[2]);
-const render = readJson(process.argv[3]);
-const engine = fs.readFileSync(process.argv[4], "utf8");
-const scenesText = fs.readFileSync(process.argv[5], "utf8");
+const renderPath = path.resolve(process.argv[2]);
+const configPath = path.resolve(process.argv[3]);
+const enginePath = path.resolve(process.argv[4]);
+const scenesPath = path.resolve(process.argv[5]);
+const outputPath = process.argv[6] ? path.resolve(process.argv[6]) : null;
+const readJson = file => JSON.parse(fs.readFileSync(file, "utf8").replace(/^\uFEFF/, ""));
+const sha256 = file => crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+const render = readJson(renderPath);
+const config = readJson(configPath);
+const engine = fs.readFileSync(enginePath, "utf8");
+const scenes = fs.readFileSync(scenesPath, "utf8");
 const errors = [];
 const check = (condition, message) => { if (!condition) errors.push(message); };
 
-check(clip.SimulatedData === true, "Clip must be simulated fixture data");
-check(clip.Fixture === "preset-success", "Main demo must use preset-success");
-check(render.Clip && render.Clip.Fixture === "preset-success", "Render must use preset-success");
-check(Array.isArray(clip.Frames) && clip.Frames.length > 0, "Clip frames missing");
-check(clip.Frames.every((frame, index) =>
-  frame.Index === index && Number.isFinite(frame.At) &&
-  (index === 0 || frame.At > clip.Frames[index - 1].At)), "Clip timestamps not monotonic");
+check(render.Version === "1.0.42", "Render version must be 1.0.42");
+check(config.Version === "1.0.42", "Config version must be 1.0.42");
+check(render.GuiSha256 === config.GuiSha256, "GUI identity mismatch");
+check(render.FrameCount === Math.ceil(render.TotalSeconds * render.Fps), "Frame count mismatch");
+check(render.TotalSeconds >= 30 && render.TotalSeconds <= 70, "Review duration out of range");
+const required = ["hook", "safety", "ui-demo", "presets", "auto-policy", "firmware", "compat", "closing"];
+const ids = render.Scenes.map(scene => scene.id);
+check(JSON.stringify(ids) === JSON.stringify(required), "Scene order mismatch");
+check(ids.indexOf("safety") < ids.indexOf("ui-demo"), "Safety must precede writes");
 
-const expected = [
-  { command: 102, watts: 25 },
-  { command: 103, watts: 45 },
-  { command: 101, watts: 10 },
-];
-check(Array.isArray(clip.Events) && clip.Events.length === 3, "Expected three preset events");
-clip.Events.forEach((event, index) => {
-  const want = expected[index];
-  check(event.Command === want.command && event.ExpectedWatts === want.watts,
-    `Event ${index} preset mismatch`);
-  check(event.Completed === true, `Event ${index} incomplete`);
-  check(Number.isInteger(event.VisualFrameIndex) &&
-    event.VisualFrameIndex >= 0 && event.VisualFrameIndex < clip.Frames.length,
-    `Event ${index} visual frame out of range`);
-  check(Math.abs(clip.Frames[event.VisualFrameIndex].At - event.VisualAt) < 1e-6,
-    `Event ${index} visual timestamp mismatch`);
-  check(event.VisualAt >= event.ActualAt, `Event ${index} visual precedes command`);
-  check(event.ClickX >= 0 && event.ClickX <= 1 && event.ClickY >= 0 && event.ClickY <= 1,
-    `Event ${index} click point out of bounds`);
-});
-
-if (render.Clip) {
-  const lead = render.Clip.LeadSeconds;
-  clip.Events.forEach((event, index) => {
-    check(Math.abs(render.Clip.ClickTimes[index] - (event.VisualAt + lead)) < 1e-6,
-      `Render click ${index} not bound to visual frame`);
-    check(Math.abs(render.Clip.ClickPoints[index].x - event.ClickX) < 1e-9 &&
-      Math.abs(render.Clip.ClickPoints[index].y - event.ClickY) < 1e-9,
-      `Render click ${index} point mismatch`);
+for (const kind of ["consent", "simple", "presets", "policy", "diagnostics"]) {
+  const clip = render.Clips?.[kind];
+  check(Boolean(clip), `${kind}: render clip missing`);
+  if (!clip) continue;
+  const source = readJson(clip.ManifestPath);
+  check(source.SimulatedData === true && source.HardwareAccess !== true,
+    `${kind}: must be simulated and hardware-free`);
+  const sourceGuiHash = source.GuiSha256 || source.GuiSHA256;
+  check(clip.GuiSha256 === config.GuiSha256 && sourceGuiHash === config.GuiSha256,
+    `${kind}: GUI hash mismatch`);
+  check(clip.FrameCount === source.FrameCount, `${kind}: frame count mismatch`);
+  check(source.Frames.every((frame, index) =>
+    frame.Index === index && Number.isFinite(frame.At) &&
+    (!index || frame.At > source.Frames[index - 1].At)),
+  `${kind}: frame timestamps invalid`);
+  const events = kind === "diagnostics" ? [source.Event] : source.Events;
+  check(Array.isArray(events) && events.length > 0, `${kind}: events missing`);
+  events.forEach((event, index) => {
+    check(event.Completed === true, `${kind}: event ${index} incomplete`);
+    check(event.VisualAt >= event.ActualAt, `${kind}: visual precedes action ${index}`);
+    check(Number.isInteger(event.VisualFrameIndex) &&
+      Math.abs(source.Frames[event.VisualFrameIndex].At - event.VisualAt) < 1e-6,
+    `${kind}: visual frame binding ${index}`);
+    check(event.ClickX >= 0 && event.ClickX <= 1 && event.ClickY >= 0 && event.ClickY <= 1,
+      `${kind}: pointer bounds ${index}`);
+    const rendered = clip.Events[index];
+    check(rendered && Math.abs(rendered.VisualAt -
+      (event.VisualAt - clip.ClipOffset)) < 1e-6,
+    `${kind}: render event offset ${index}`);
+    check(rendered && rendered.ClickX === event.ClickX && rendered.ClickY === event.ClickY,
+      `${kind}: render pointer identity ${index}`);
   });
+  if (kind === "simple") {
+    check(source.Fixture === "preset-success", "simple: wrong fixture");
+    check(events.length === 3 && events.every((event, index) =>
+      event.Command === [102, 103, 101][index] &&
+      event.ExpectedWatts === [25, 45, 10][index]), "simple: preset sequence mismatch");
+    const scene = render.Scenes.find(item => item.id === "ui-demo");
+    check(scene.duration >= Math.max(...clip.Events.map(event =>
+      event.VisualAt + clip.LeadSeconds)) + 1, "simple: insufficient readback tail");
+  }
+  if (kind === "consent") {
+    check(events.length === 2 && events[0].Control === 401 && events[1].Control === 402,
+      "consent: checkbox/confirm sequence mismatch");
+  }
+  if (kind === "policy") {
+    check(events.length === 8 && events.some(event =>
+      event.Control === 318 || event.ControlId === 318),
+      "policy: battery-only operation missing");
+  }
+  if (kind === "diagnostics") {
+    check(source.Privacy?.containsLocalPaths === false &&
+      source.Privacy?.containsAccountNames === false &&
+      source.Privacy?.containsProcessIds === false &&
+      source.Privacy?.uploaded === false, "diagnostics: privacy contract failed");
+  }
 }
 
-const ids = render.Scenes.map(scene => scene.id);
-const required = ["hook", "safety", "ui-demo", "firmware", "auto-policy", "compat", "closing"];
-check(required.every(id => ids.includes(id)), "Missing required scene");
-check(ids.indexOf("safety") < ids.indexOf("ui-demo"), "Safety must precede the write demo");
-check(ids.indexOf("firmware") > ids.indexOf("ui-demo"), "Firmware caveat must follow the clean demo");
-const uiScene = render.Scenes.find(scene => scene.id === "ui-demo");
-const lastClick = Math.max(...render.Clip.ClickTimes);
-check(uiScene && uiScene.duration >= lastClick + 1.0, "Demo ends too soon after the last click");
-
-const banned = [
-  "目标已写入，但固件回读低于请求值",
-  "Music: Deliberate Thought",
-  "下载即用",
-  "全自动",
-  "ONE-CLICK PRESETS",
-];
-for (const text of banned) {
-  check(!engine.includes(text) && !scenesText.includes(text), `Misleading copy present: ${text}`);
+const firmware = path.resolve(path.dirname(enginePath), "../assets/firmware-clamp-1.0.42-client.png");
+check(fs.existsSync(firmware), "Firmware 1.0.42 asset missing");
+const firmwareEvidence = readJson(path.resolve(path.dirname(enginePath),
+  "../../../docs/evidence/ui/promo-1.0.42-clean-firmware-2026-11-18.json"));
+check(firmwareEvidence.FixtureTargetWatts === 12 &&
+  firmwareEvidence.FixtureApplyStatus.includes("固件限制"),
+"Firmware evidence must show a requested 12 W clamp");
+check(firmwareEvidence.Simple.Width === 752 && firmwareEvidence.Simple.Height === 489,
+  "Firmware source capture dimensions changed");
+check(fs.existsSync(path.resolve(path.dirname(enginePath),
+  "../assets/firmware-clamp-1.0.42.png")), "Reviewed firmware source asset missing");
+for (const banned of ["1.0.39", "Music:", "下载即用", "全 AMD 通用", "插拔自动切换"]) {
+  check(!engine.includes(banned) && !scenes.includes(banned), `Misleading/stale copy: ${banned}`);
 }
 check(engine.includes("模拟数据"), "Simulated-data disclosure missing");
-check(scenesText.includes("默认只读"), "Read-only default disclosure missing");
-check(scenesText.includes("解锁后"), "Auto-policy unlock prerequisite missing");
+check(scenes.includes("默认只读"), "Read-only default disclosure missing");
+check(scenes.includes("仅电池"), "Battery-only feature disclosure missing");
+check(engine.includes("充电宝") || scenes.includes("充电宝"),
+  "Power-bank limitation missing");
+check(scenes.includes("一台 8845HS"), "Single-device compatibility limit missing");
 
 const result = {
   Verification: errors.length ? "FAIL" : "PASS",
   Errors: errors,
-  ClipFixture: clip.Fixture,
-  ClickTimes: render.Clip ? render.Clip.ClickTimes : null,
-  ClickPoints: render.Clip ? render.Clip.ClickPoints : null,
-  SceneOrder: ids,
+  Version: render.Version,
+  GuiSha256: render.GuiSha256,
   DurationSeconds: render.TotalSeconds,
+  Frames: render.FrameCount,
+  SceneOrder: ids,
+  ClipKinds: Object.keys(render.Clips),
+  FirmwareAssetSha256: sha256(firmware),
+  Scope: "Identity, manifest/event/pointer bindings, claims and asset hash; visual review remains separate",
 };
-if (process.argv[6]) {
-  fs.writeFileSync(process.argv[6], JSON.stringify(result, null, 2) + "\n", "utf8");
-}
+if (outputPath) fs.writeFileSync(outputPath, JSON.stringify(result, null, 2) + "\n");
 console.log(JSON.stringify(result, null, 2));
-if (errors.length) process.exit(1);
+if (errors.length) process.exitCode = 1;

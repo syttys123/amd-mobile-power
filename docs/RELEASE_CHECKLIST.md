@@ -28,6 +28,11 @@ The exact gated ZIP comes from `927a1bb`, SHA256
 - [x] Hosted Windows CI run `44181123711` for `927a1bb` completed successfully.
 - [x] Deployed GUI/tray/mode/write-control regression and publication-readiness
       local checks PASS. Current battery read-back is 15/15/15 W.
+- [x] Current 55-second silent 1.0.42 review cut, exact-frame cover/contact
+      sheet, launch copy, and candidate dossier are prepared; full decode and
+      identity/event/layout/luminance gates pass.
+- [ ] Independent pojia visual audit: three attempts blocked by upstream
+      `insufficient_user_quota`; do not record this as an independent PASS.
 - [ ] Second AMD device, real OS DPI sessions, clean-Windows WinRing0 baseline,
       owner media review, and explicit publication approval.
 
@@ -157,10 +162,16 @@ probe `00369735`.
       WinRing0 baseline remain pending.
 - [ ] Owner approves final GitHub Release and Bilibili publication.
 
-Current review media is historical 1.0.39 fixture material, not a live 1.0.41
-package capture: `artifacts/media/promo-review-20261117-v2/amd-mobile-power-review-v2-silent.mp4`
-(39.5 s, `DRAFT_FOR_HUMAN_REVIEW`). Its preset demo uses the hardware-free
-`preset-success` fixture. See `PROMO_VIDEO.md`.
+Current review media was rebuilt from the deployed 1.0.42 GUI in isolated,
+hardware-free fixtures. The historical 1.0.39 v2 cut remains archived but is
+not release media for 1.0.42. The current cut adds consent confirmation, preset
+editing, dual-line/battery-only policy operations, diagnostics export, and
+crossfades without black boundary frames. The 55-second silent review cut,
+capture contracts, layout/keyframe/luminance checks, and full decode are
+recorded in `evidence/media/native-promo-1.0.42-review-2026-11-18.json`.
+Independent agent audit is blocked by provider quota; owner approval remains
+pending. See
+`PROMO_VIDEO.md` before approving publication.
 
 ## Historical Checklist
 

@@ -1,0 +1,37 @@
+{
+  "SchemaVersion": 1,
+  "CaptureMode": "write-controls-visible-no-write-requested",
+  "Fixture": "firmware-clamp",
+  "FixtureApplyRequested": true,
+  "Consent": null,
+  "FixtureTargetWatts": 12,
+  "FixtureApplyStatus": "固件限制：目标 12 W，实际以上限回读为准。\n请求 STAPM / Fast / Slow：12 / 12 / 12 W。",
+  "DpiFixture": 125,
+  "UniformTargetWatts": null,
+  "PolicyBatteryWatts": null,
+  "PolicyAcWatts": null,
+  "PolicySeeded": false,
+  "BatteryOnly": false,
+  "FocusControlId": null,
+  "ControlChecks": {
+    "TargetAndPresetEnabled": true,
+    "DiagnosticsEnabled": true
+  },
+  "Simple": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\promo-1.0.42-clean-firmware\\promo-1.0.42-clean-firmware-simple-2026-11-18.png",
+    "Width": 752,
+    "Height": 489,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "0fb9bd95661fa3918eaa6ddfed842e1667fbbe2d656d904b097a076b1c13892e"
+  },
+  "Advanced": {
+    "Path": "D:\\amd-mobile-power\\artifacts\\media\\promo-1.0.42-clean-firmware\\promo-1.0.42-clean-firmware-advanced-2026-11-18.png",
+    "Width": 977,
+    "Height": 889,
+    "CaptureMethod": "PrintWindow(exact-frame-crop)",
+    "SHA256": "b008e35d31eba474b242d05e2fa66fb05eaf6dcb76b0f955fbcae40053e37bdb"
+  },
+  "SimpleClientSize": "750x450",
+  "AdvancedClientSize": "975x850",
+  "RecordedAt": "2026-11-18T06:36:09.5637863+08:00"
+}

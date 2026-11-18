@@ -1,788 +1,314 @@
-// AMD Mobile Power promo engine.
-// Exposes window.__seek(seconds) and window.__totalDuration() so the
-// Playwright recorder can drive frame-exact captures.
-
-const SCENE_DEFS = window.__SCENES__ || [];
-const FPS = 30;
-
-function buildTimeline(scenes) {
-  let t = 0;
-  return scenes.map((scene) => {
-    const start = t;
-    const end = t + scene.duration;
-    t = end;
-    return { ...scene, start, end };
-  });
-}
-
-const timeline = buildTimeline(SCENE_DEFS);
-const TOTAL = TOTAL_DURATION();
-
-function TOTAL_DURATION() {
-  return timeline.length ? timeline[timeline.length - 1].end : 0;
-}
-
-function clamp01(v) {
-  return Math.max(0, Math.min(1, v));
-}
-
-function easeInOut(t) {
-  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-}
-function easeOut(t) {
-  return 1 - Math.pow(1 - t, 3);
-}
-function easeIn(t) {
-  return t * t * t;
-}
-
-function sceneAt(time) {
-  for (const scene of timeline) {
-    if (time >= scene.start && time < scene.end) return scene;
-  }
-  return timeline[timeline.length - 1];
-}
-
-function renderScene(scene, localTime, root) {
-  const renderer = SCENE_RENDERERS[scene.id];
-  if (renderer) renderer(scene, localTime, root);
-  if (scene.narration) drawCaption(scene, localTime, root);
-}
-
-// Burned-in subtitle band: the video has no voice track, so the narration
-// text carries the story. Fades in shortly after the scene cut and out
-// before the next one.
-function drawCaption(scene, t, root) {
-  const fadeIn = clamp01((t - 0.45) / 0.35);
-  const fadeOut = clamp01((scene.duration - 0.35 - t) / 0.35);
-  const fade = Math.min(fadeIn, fadeOut);
-  if (fade <= 0) return;
-  const band = el("div", {
-    position: "absolute", left: "0", right: "0", bottom: "0",
-    padding: "34px 120px 36px", display: "flex", justifyContent: "center",
-    background:
-      "linear-gradient(180deg, rgba(8,14,17,0) 0%, rgba(8,14,17,0.78) 45%, rgba(8,14,17,0.88) 100%)",
-    opacity: String(fade),
-  });
-  const text = txt(scene.narration, {
-    color: "#e8f0ec", fontSize: "31px", fontWeight: "500",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    letterSpacing: "0.5px", textAlign: "center", lineHeight: "1.55",
-    maxWidth: "1620px",
-  });
-  band.append(text);
-  root.append(band);
-}
-
-const SCENE_RENDERERS = {};
-
-function el(tag, style, children) {
-  const node = document.createElement(tag);
-  if (style) Object.assign(node.style, style);
-  if (children) node.append(...children);
-  return node;
-}
-
-function txt(content, style) {
-  const node = document.createElement("div");
-  node.textContent = content;
-  if (style) Object.assign(node.style, style);
-  return node;
-}
-
-function fadeSlide(scene, localTime, inDur = 0.45, outDur = 0.45) {
-  const inA = clamp01(localTime / inDur);
-  const outA = clamp01((scene.duration - localTime) / outDur);
-  return Math.min(inA, outA);
-}
-
-function slideUp(node, localTime, delay, dist = 40) {
-  const t = clamp01((localTime - delay) / 0.55);
-  const eased = easeOut(t);
-  node.style.opacity = String(eased);
-  node.style.transform = `translateY(${(1 - eased) * dist}px)`;
-}
-
-SCENE_RENDERERS.hook = (scene, t, root) => {
-  root.innerHTML = "";
-  const opacity = fadeSlide(scene, t);
-  const wrap = el("div", {
-    position: "absolute", inset: "0", opacity: String(opacity),
-    display: "flex", alignItems: "center",
-    padding: "0 100px 0 120px",
-    background: "linear-gradient(160deg,#0b1216 0%,#0d1a1c 55%,#0a1a14 100%)",
-  });
-
-  const left = el("div", {
-    display: "flex", flexDirection: "column", justifyContent: "center",
-    width: "1150px", flexShrink: "0",
-  });
-
-  const eyebrow = txt("给 AMD 轻薄本的功耗开关", {
-    color: "#45d6a8", fontSize: "26px", fontWeight: "700",
-    letterSpacing: "6px", marginBottom: "28px",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  slideUp(eyebrow, t, 0.1);
-
-  const title = el("div", {});
-  title.innerHTML = "插电要性能<br>电池要续航";
-  Object.assign(title.style, {
-    color: "#f1f7f4", fontSize: "118px", fontWeight: "900", lineHeight: "1.1",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    letterSpacing: "0px", marginBottom: "32px",
-  });
-  slideUp(title, t, 0.22);
-
-  const sub = txt("AMD 轻薄本 · 功耗上限管理 · 预设一键应用", {
-    color: "#a6b8b0", fontSize: "34px", fontWeight: "400",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  slideUp(sub, t, 0.38);
-
-  const bar = el("div", {
-    position: "absolute", left: "120px", top: "120px",
-    width: "64px", height: "6px", background: "#45d6a8", borderRadius: "3px",
-  });
-  slideUp(bar, t, 0.0);
-
-  // Brand icon on the right with a soft accent ring.
-  const iconWrap = el("div", {
-    flex: "1", display: "flex", alignItems: "center", justifyContent: "center",
-  });
-  const ring = el("div", {
-    width: "380px", height: "380px", borderRadius: "50%",
-    border: "2px solid rgba(69,214,168,0.35)",
-    boxShadow: "0 0 90px rgba(69,214,168,0.18), inset 0 0 60px rgba(69,214,168,0.08)",
-    display: "flex", alignItems: "center", justifyContent: "center",
-  });
-  const icon = el("img", { width: "220px", height: "220px" });
-  icon.src = "../../assets/amd-mobile-power-256.png";
-  ring.append(icon);
-  iconWrap.append(ring);
-  const ringPop = clamp01((t - 0.45) / 0.6);
-  const ringEased = easeOut(ringPop);
-  iconWrap.style.opacity = String(ringEased);
-  iconWrap.style.transform = `scale(${0.85 + 0.15 * ringEased})`;
-
-  left.append(eyebrow, title, sub);
-  wrap.append(bar, left, iconWrap);
-  root.append(wrap);
+// AMD Mobile Power review-film engine. The recorder owns time; rendering is
+// deterministic and every embedded GUI frame comes from a checked manifest.
+const SCENES = window.__SCENES__ || [];
+const FONT = "'Microsoft YaHei UI','Segoe UI',sans-serif";
+const C = {
+  canvas: "#0b1216", surface: "#111b20", text: "#f1f7f4",
+  muted: "#a6b8b0", faint: "#71847c", accent: "#45d6a8", line: "#2b3c42",
 };
+let cursor = 0;
+const timeline = SCENES.map(scene => {
+  const start = cursor;
+  cursor += scene.duration;
+  return { ...scene, start, end: cursor };
+});
+const TOTAL = cursor;
+const clamp = value => Math.max(0, Math.min(1, value));
+const ease = value => 1 - Math.pow(1 - clamp(value), 3);
 
-SCENE_RENDERERS.problem = (scene, t, root) => {
-  root.innerHTML = "";
-  const opacity = fadeSlide(scene, t);
-  const wrap = el("div", {
-    position: "absolute", inset: "0", opacity: String(opacity),
-    display: "flex", flexDirection: "column", justifyContent: "center",
-    padding: "0 120px", background: "linear-gradient(180deg,#0b1216 0%,#0c1418 100%)",
-  });
+function node(tag, style = {}, children = []) {
+  const item = document.createElement(tag);
+  Object.assign(item.style, style);
+  item.append(...children);
+  return item;
+}
 
-  const eyebrow = txt("三种场景 三种功率", {
-    color: "#45d6a8", fontSize: "24px", fontWeight: "700",
-    letterSpacing: "6px", marginBottom: "32px",
-  });
-  slideUp(eyebrow, t, 0.05);
+function text(value, style = {}) {
+  const item = node("div", { fontFamily: FONT, ...style });
+  item.textContent = value;
+  return item;
+}
 
-  const title = el("div", {});
-  title.innerHTML = "按需选瓦数<br>各有各的爽";
-  Object.assign(title.style, {
-    color: "#f1f7f4", fontSize: "96px", fontWeight: "900", lineHeight: "1.1",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    marginBottom: "56px",
-  });
-  slideUp(title, t, 0.18);
+function sceneAt(seconds) {
+  return timeline.find(scene => seconds >= scene.start && seconds < scene.end) ||
+    timeline[timeline.length - 1];
+}
 
-  const cards = [
-    { label: "插电 · 示例", value: "45 W", hint: "性能取向", tone: "#45d6a8", delay: 0.5 },
-    { label: "日常 · 示例", value: "25 W", hint: "按机型调整", tone: "#ffb45a", delay: 0.68 },
-    { label: "省电 · 示例", value: "10 W", hint: "预设可编辑", tone: "#7fb2ff", delay: 0.86 },
-  ];
-  const row = el("div", { display: "flex", gap: "36px" });
-  for (const card of cards) {
-    const box = el("div", {
-      flex: "1", background: "rgba(255,255,255,0.04)",
-      border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px",
-      padding: "40px 40px 34px", display: "flex", flexDirection: "column", gap: "14px",
-    });
-    const label = txt(card.label, {
-      color: "#a6b8b0", fontSize: "26px", fontWeight: "500",
-      fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    });
-    const value = txt(card.value, {
-      color: card.tone, fontSize: "72px", fontWeight: "900",
-      fontFamily: "'Segoe UI',sans-serif", letterSpacing: "-1px",
-    });
-    const hint = txt(card.hint, {
-      color: "#7d8f88", fontSize: "24px", fontWeight: "400",
-      fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    });
-    box.append(label, value, hint);
-    slideUp(box, t, card.delay);
-    row.append(box);
-  }
+function background() {
+  return node("div", {
+    position: "absolute", inset: "0", overflow: "hidden",
+    background: `linear-gradient(145deg,${C.canvas} 0%,#0e191d 58%,#0b1815 100%)`,
+  });
+}
 
-  wrap.append(eyebrow, title, row);
-  root.append(wrap);
-};
+function heading(eyebrow, title, body, width = 650) {
+  const wrap = node("div", {
+    width: `${width}px`, flexShrink: "0", display: "flex",
+    flexDirection: "column", justifyContent: "center",
+  });
+  wrap.append(
+    text(eyebrow, {
+      color: C.accent, fontSize: "24px", fontWeight: "700",
+      letterSpacing: "3px", marginBottom: "24px",
+    }),
+    text(title, {
+      color: C.text, fontSize: "76px", fontWeight: "800",
+      lineHeight: "1.24", whiteSpace: "pre-line", marginBottom: "28px",
+    }),
+    text(body, {
+      color: C.muted, fontSize: "28px", lineHeight: "1.6",
+      whiteSpace: "pre-line",
+    }),
+  );
+  return wrap;
+}
 
-SCENE_RENDERERS["ui-demo"] = (scene, t, root) => {
-  root.innerHTML = "";
-  const opacity = fadeSlide(scene, t, 0.35, 0.35);
-  const wrap = el("div", {
-    position: "absolute", inset: "0", opacity: String(opacity),
-    background: "linear-gradient(180deg,#0b1216 0%,#0c1418 100%)",
-    display: "flex", alignItems: "center", padding: "0 90px 0 110px", gap: "70px",
+function badge(label) {
+  return text(label, {
+    color: C.accent, fontSize: "17px", fontWeight: "700",
+    padding: "7px 12px", border: `1px solid ${C.accent}`,
+    borderRadius: "6px", background: "rgba(69,214,168,0.08)",
+    whiteSpace: "nowrap",
   });
+}
 
-  const head = el("div", {
-    display: "flex", flexDirection: "column", width: "520px", flexShrink: "0",
+function imageFrame(id, source, width, height, label, detail) {
+  const wrap = node("div", {
+    width: `${width}px`, flexShrink: "0", display: "flex",
+    flexDirection: "column", gap: "14px",
   });
-  const eyebrow = txt("一键预设", {
-    color: "#45d6a8", fontSize: "22px", fontWeight: "700",
-    letterSpacing: "5px", marginBottom: "20px",
+  const head = node("div", {
+    height: "44px", display: "flex", alignItems: "center",
+    justifyContent: "space-between", gap: "16px",
+  }, [
+    text(label, { color: C.text, fontSize: "21px", fontWeight: "700" }),
+    badge(detail),
+  ]);
+  const frame = node("div", {
+    width: `${width}px`, height: `${height}px`, position: "relative",
+    overflow: "hidden", borderRadius: "8px", background: C.surface,
+    border: `1px solid ${C.line}`, boxShadow: "0 22px 54px rgba(0,0,0,0.38)",
   });
-  const title = el("div", {});
-  title.innerHTML = "快捷预设<br>自由编辑";
-  Object.assign(title.style, {
-    color: "#f1f7f4", fontSize: "72px", fontWeight: "900", lineHeight: "1.12",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    marginBottom: "28px",
-  });
-  const sub = txt("当前功耗 · 温度 · 上限 实时可见", {
-    color: "#a6b8b0", fontSize: "26px",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  head.append(eyebrow, title, sub);
-  slideUp(head, t, 0.1);
-
-  // The right column holds the captured client area at 1050x630. If the
-  // capture aspect differs, object-fit leaves a small letterbox; pointer
-  // coordinates are mapped into the actual displayed image rectangle.
-  const frameWidth = 1050;
-  const frameHeight = 630;
-  const frameWrap = el("div", {
-    width: `${frameWidth}px`, height: `${frameHeight}px`, flexShrink: "0",
-    position: "relative", borderRadius: "14px", overflow: "hidden",
-    border: "1px solid rgba(69,214,168,0.25)",
-    boxShadow: "0 24px 64px rgba(0,0,0,0.5)", background: "#10181d",
-  });
-  const img = el("img", {
+  const image = node("img", {
     width: "100%", height: "100%", objectFit: "contain", display: "block",
   });
-  img.id = "live-demo-frame";
-  img.src = window.__CLIP_POSTER__ || "";
-  frameWrap.append(img);
-  const fixtureLabel = txt("界面演示 · 模拟数据", {
-    marginTop: "22px", color: "#a6b8b0",
-    fontSize: "18px", fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  head.append(fixtureLabel);
+  image.id = id;
+  image.src = source || "";
+  image.dataset.role = "gui-frame";
+  frame.append(image);
+  wrap.append(head, frame);
+  return { wrap, frame, image };
+}
 
-  let displayWidth = frameWidth;
-  let displayHeight = frameHeight;
-  let offsetX = 0;
-  let offsetY = 0;
-  if (window.__CLIP_CLIENT_SIZE__) {
-    const imageAspect = window.__CLIP_CLIENT_SIZE__.width / window.__CLIP_CLIENT_SIZE__.height;
-    const frameAspect = frameWidth / frameHeight;
-    if (imageAspect > frameAspect) {
-      displayWidth = frameWidth;
-      displayHeight = frameWidth / imageAspect;
-      offsetY = (frameHeight - displayHeight) / 2;
-    } else {
-      displayHeight = frameHeight;
-      displayWidth = frameHeight * imageAspect;
-      offsetX = (frameWidth - displayWidth) / 2;
-    }
-  }
+function displayedImageRect(frame, image) {
+  const box = frame.getBoundingClientRect();
+  const naturalWidth = image.naturalWidth || box.width;
+  const naturalHeight = image.naturalHeight || box.height;
+  const scale = Math.min(box.width / naturalWidth, box.height / naturalHeight);
+  const width = naturalWidth * scale;
+  const height = naturalHeight * scale;
+  return { x: (box.width - width) / 2, y: (box.height - height) / 2, width, height };
+}
 
-  // Synthetic pointer: the PrintWindow capture never includes the real
-  // cursor, so the demo draws one whose clicks line up with the recorded
-  // preset presses. The recorder supplies the first visual-change frame and
-  // the actual button center for each press; fallback coordinates are only
-  // for opening the HTML preview without a recorded manifest.
-  const clicks = [
-    { t: 2.0, x: 0.26, y: 0.59 },
-    { t: 5.0, x: 0.43, y: 0.59 },
-    { t: 8.0, x: 0.59, y: 0.59 },
-  ];
-  if (window.__PRESET_CLICK_TIMES__) {
-    clicks.forEach((click, index) => { click.t = window.__PRESET_CLICK_TIMES__[index]; });
-  }
-  if (window.__PRESET_CLICK_POINTS__) {
-    clicks.forEach((click, index) => {
-      click.x = window.__PRESET_CLICK_POINTS__[index].x;
-      click.y = window.__PRESET_CLICK_POINTS__[index].y;
-    });
-  }
-  const idleStart = { x: 0.62, y: 0.78 };
-  const cursor = el("div", {
-    position: "absolute", left: "0", top: "0", zIndex: "5",
-    width: "30px", height: "34px", pointerEvents: "none",
-    filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.45))",
-  });
-  cursor.innerHTML =
-    '<svg width="30" height="34" viewBox="0 0 20 23">' +
-    '<path d="M2 2 L2 18 L6.5 14.2 L9.2 20.6 L12.4 19.1 L9.8 13 L16 12.4 Z" ' +
-    'fill="#ffffff" stroke="#0b1216" stroke-width="1.4" stroke-linejoin="round"/></svg>';
-
-  // Cursor path: idle until the first click window, then ease to each
-  // button, arriving exactly on the click.
-  let segment = -1;
+function drawPointer(frame, image, events, localTime, lead = 0.35) {
+  if (!events || !events.length) return;
+  const rect = displayedImageRect(frame, image);
+  const clicks = events.map(event => ({
+    t: event.VisualAt + lead, x: event.ClickX, y: event.ClickY,
+  }));
+  let index = -1;
   for (let i = 0; i < clicks.length; i++) {
-    if (t >= clicks[i].t - 0.6) segment = i;
+    if (localTime >= clicks[i].t - 0.7) index = i;
   }
-  let cx = idleStart.x;
-  let cy = idleStart.y;
-  if (segment >= 0) {
-    const from = segment === 0 ? idleStart : clicks[segment - 1];
-    const to = clicks[segment];
-    const p = clamp01((t - (to.t - 0.6)) / 0.6);
-    const eased = easeInOut(p);
-    cx = from.x + (to.x - from.x) * eased;
-    cy = from.y + (to.y - from.y) * eased;
+  let point = { x: 0.82, y: 0.82 };
+  if (index >= 0) {
+    const to = clicks[index];
+    const from = index === 0 ? point : clicks[index - 1];
+    const progress = ease((localTime - (to.t - 0.7)) / 0.7);
+    point = {
+      x: from.x + (to.x - from.x) * progress,
+      y: from.y + (to.y - from.y) * progress,
+    };
   }
-  const appear = clamp01((t - 0.55) / 0.3);
-  const press = clicks.some((c) => t >= c.t && t < c.t + 0.12) ? 0.86 : 1;
-  cursor.style.opacity = String(appear);
-  cursor.style.transform =
-    `translate(${offsetX + cx * displayWidth}px, ${offsetY + cy * displayHeight}px) scale(${press})`;
-  frameWrap.append(cursor);
-
-  // Click ripple at each pressed button.
+  const pointer = node("div", {
+    position: "absolute", left: "0", top: "0", width: "30px", height: "34px",
+    zIndex: "4", pointerEvents: "none",
+    filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.55))",
+    transform: `translate(${rect.x + point.x * rect.width}px,${rect.y + point.y * rect.height}px)`,
+  });
+  pointer.innerHTML = '<svg width="30" height="34" viewBox="0 0 20 23"><path d="M2 2 L2 18 L6.5 14.2 L9.2 20.6 L12.4 19.1 L9.8 13 L16 12.4 Z" fill="#fff" stroke="#0b1216" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+  frame.append(pointer);
   for (const click of clicks) {
-    const age = t - click.t;
-    if (age < 0 || age > 0.5) continue;
-    const phase = age / 0.5;
-    const ring = el("div", {
-      position: "absolute", left: "0", top: "0", zIndex: "4",
-      width: "56px", height: "56px", borderRadius: "50%",
-      border: "2px solid rgba(69,214,168,0.9)",
-      transform: `translate(${offsetX + click.x * displayWidth - 28}px, ${offsetY + click.y * displayHeight - 28}px) scale(${0.45 + 1.1 * easeOut(phase)})`,
-      opacity: String((1 - phase) * 0.85),
-      pointerEvents: "none",
-    });
-    frameWrap.append(ring);
+    const age = localTime - click.t;
+    if (age < 0 || age > 0.38) continue;
+    const phase = age / 0.38;
+    frame.append(node("div", {
+      position: "absolute", left: "0", top: "0", width: "48px", height: "48px",
+      borderRadius: "50%", border: `2px solid ${C.accent}`,
+      opacity: String((1 - phase) * 0.8), zIndex: "3", pointerEvents: "none",
+      transform: `translate(${rect.x + click.x * rect.width - 24}px,${rect.y + click.y * rect.height - 24}px) scale(${0.45 + ease(phase)})`,
+    }));
   }
+}
 
-  const framePop = clamp01((t - 0.15) / 0.5);
-  const frameEased = easeOut(framePop);
-  frameWrap.style.opacity = String(frameEased);
-  frameWrap.style.transform = `translateY(${(1 - frameEased) * 30}px)`;
+function caption(scene, localTime, root) {
+  if (!scene.narration) return;
+  const opacity = Math.min(
+    clamp((localTime - 0.18) / 0.22),
+    clamp((scene.duration - localTime - 0.18) / 0.22),
+  );
+  if (opacity <= 0) return;
+  root.append(node("div", {
+    position: "absolute", left: "0", right: "0", bottom: "0", zIndex: "8",
+    minHeight: "112px", padding: "28px 110px 30px",
+    display: "flex", justifyContent: "center", alignItems: "center",
+    background: "linear-gradient(180deg,rgba(8,14,17,0),rgba(8,14,17,.92) 38%,#080e11)",
+    opacity: String(opacity),
+  }, [text(scene.narration, {
+    color: C.text, fontSize: "30px", fontWeight: "500", lineHeight: "1.5",
+    textAlign: "center", maxWidth: "1660px",
+  })]));
+}
 
-  wrap.append(head, frameWrap);
+const renderers = {};
+
+renderers.hook = (scene, t, root) => {
+  const wrap = background();
+  Object.assign(wrap.style, {
+    display: "flex", alignItems: "center", padding: "0 120px 90px", gap: "80px",
+  });
+  const left = heading("AMD MOBILE POWER", "插电要性能\n电池要续航",
+    "一个原生 Windows 功耗面板\n看清实时功耗，也看清实际上限", 1080);
+  left.children[1].style.fontSize = "108px";
+  const icon = node("img", { width: "260px", height: "260px" });
+  icon.src = "../../assets/amd-mobile-power-256.png";
+  const iconBox = node("div", {
+    flex: "1", display: "flex", alignItems: "center", justifyContent: "center",
+  }, [node("div", {
+    width: "390px", height: "390px", borderRadius: "50%",
+    border: `2px solid ${C.line}`, display: "flex",
+    alignItems: "center", justifyContent: "center", background: C.surface,
+  }, [icon])]);
+  wrap.append(left, iconBox);
   root.append(wrap);
 };
 
-SCENE_RENDERERS.safety = (scene, t, root) => {
-  root.innerHTML = "";
-  const opacity = fadeSlide(scene, t);
-  const wrap = el("div", {
-    position: "absolute", inset: "0", opacity: String(opacity),
-    display: "flex", alignItems: "center",
-    padding: "0 80px", gap: "50px",
-    background: "linear-gradient(180deg,#0b1216 0%,#0c1418 100%)",
+function clipScene(scene, t, root, options) {
+  const wrap = background();
+  Object.assign(wrap.style, {
+    display: "flex", alignItems: "center", padding: "0 90px 112px",
+    gap: options.gap || 64,
   });
+  const left = heading(options.eyebrow, options.title, options.body,
+    options.leftWidth || 620);
+  const shot = imageFrame(options.id, options.poster, options.width, options.height,
+    options.label || "1.0.42 界面演示", "模拟数据 · 未写硬件");
+  wrap.append(left, shot.wrap);
+  root.append(wrap);
+  const config = window.__CLIPS__ && window.__CLIPS__[scene.clip];
+  if (config) {
+    drawPointer(shot.frame, shot.image, config.Events,
+      t + (scene.clipOffset || 0), config.LeadSeconds || 0.35);
+  }
+}
 
-  const left = el("div", {
-    display: "flex", flexDirection: "column", justifyContent: "center",
-    width: "800px", flexShrink: "0",
-  });
+renderers.safety = (scene, t, root) => clipScene(scene, t, root, {
+  id: "consent-frame", poster: window.__POSTERS__?.consent,
+  eyebrow: "写入之前", title: "默认只读\n确认后才改",
+  body: "勾选须知后，确认按钮才会亮起。\n确认后由程序接管后台服务重启；\n不想改时，点锁形按钮即可恢复只读。",
+  width: 790, height: 760, leftWidth: 760, gap: 70,
+  label: "真实确认流程 · 隔离界面",
+});
 
-  const eyebrow = txt("安全第一", {
-    color: "#45d6a8", fontSize: "24px", fontWeight: "700",
-    letterSpacing: "6px", marginBottom: "32px",
-  });
-  slideUp(eyebrow, t, 0.05);
+renderers["ui-demo"] = (scene, t, root) => clipScene(scene, t, root, {
+  id: "simple-frame", poster: window.__POSTERS__?.simple,
+  eyebrow: "快捷预设", title: "点一下就应用\n改完自动核对",
+  body: "25 W：日常使用\n45 W：插电性能取向\n10 W：更低上限，偏重续航\n瓦数只是上限，不代表实时功耗恒定。",
+  width: 1050, height: 630, leftWidth: 570,
+});
 
-  const title = el("div", {});
-  title.innerHTML = "默认只读<br>改前确认";
-  Object.assign(title.style, {
-    color: "#f1f7f4", fontSize: "88px", fontWeight: "900", lineHeight: "1.1",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    marginBottom: "48px",
-  });
-  slideUp(title, t, 0.18);
+renderers.presets = (scene, t, root) => clipScene(scene, t, root, {
+  id: "presets-frame", poster: window.__POSTERS__?.presets,
+  eyebrow: "预设可编辑", title: "不是固定三档\n按你的习惯改",
+  body: "示例：10 W → 12 W\n保存后，快捷按钮同步更新。\n随后点击 12 W，目标与回读一起变化。",
+  width: 930, height: 810, leftWidth: 680,
+});
 
-  const items = [
-    ["只看不改", "默认什么都不会动"],
-    ["自动核对", "改完立刻检查是否生效"],
-    ["说清楚", "没生效会直接提示"],
-  ];
-  const list = el("div", { display: "flex", flexDirection: "column", gap: "20px" });
-  items.forEach(([head, body], i) => {
-    const row = el("div", { display: "flex", alignItems: "baseline", gap: "24px" });
-    const dot = el("div", {
-      width: "10px", height: "10px", borderRadius: "50%",
-      background: "#45d6a8", flexShrink: "0", transform: "translateY(-4px)",
-    });
-    const content = el("div", {
-      display: "flex", alignItems: "baseline", gap: "20px", flexWrap: "wrap",
-    });
-    const h = txt(head, {
-      color: "#f1f7f4", fontSize: "38px", fontWeight: "700",
-      fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    });
-    const b = txt(body, {
-      color: "#a6b8b0", fontSize: "28px", fontWeight: "400",
-      fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    });
-    content.append(h, b);
-    row.append(dot, content);
-    slideUp(row, t, 0.35 + i * 0.18);
-    list.append(row);
-  });
+renderers["auto-policy"] = (scene, t, root) => clipScene(scene, t, root, {
+  id: "policy-frame", poster: window.__POSTERS__?.policy,
+  eyebrow: "自动电源策略", title: "电池和外接\n分别设上限",
+  body: "示例：电池 25 W / 外接 45 W。\n勾选“仅电池”后，外接线路不写入。\n充电宝通常也会被识别为外接电源。",
+  width: 930, height: 810, leftWidth: 680,
+});
 
-  // Right: mock write-gate card (read-only by default, explicit unlock).
-  const card = el("div", {
-    width: "820px", flexShrink: "0", background: "#0e1518",
-    border: "1px solid rgba(69,214,168,0.24)", borderRadius: "14px",
-    overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.45)",
-    display: "flex", flexDirection: "column",
+renderers.firmware = (scene, t, root) => {
+  const wrap = background();
+  Object.assign(wrap.style, {
+    display: "flex", alignItems: "center", padding: "0 90px 112px", gap: "70px",
   });
-  const shotHead = el("div", {
-    display: "flex", alignItems: "center", justifyContent: "space-between",
-    padding: "16px 20px", background: "rgba(255,255,255,0.035)",
-  });
-  const shotTitle = txt("1.0.39 解锁确认 · 模拟数据", {
-    color: "#f1f7f4", fontSize: "21px", fontWeight: "700",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  const shotBadge = txt("默认只读", {
-    color: "#45d6a8", fontSize: "16px", fontWeight: "700",
-    padding: "6px 12px", border: "1px solid rgba(69,214,168,0.45)",
-    borderRadius: "999px", background: "rgba(69,214,168,0.1)",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  shotHead.append(shotTitle, shotBadge);
-  const shot = el("img", {
-    width: "100%", height: "auto", display: "block",
-  });
-  shot.src = "assets/unlock-dialog-1.0.39-fixture.png";
-  card.append(shotHead, shot);
-  const cardPop = clamp01((t - 0.5) / 0.6);
-  const cardEased = easeOut(cardPop);
-  card.style.opacity = String(cardEased);
-  card.style.transform = `translateY(${(1 - cardEased) * 30}px)`;
-
-  left.append(eyebrow, title, list);
-  wrap.append(left, card);
+  const left = heading("固件限制", "没完全生效\n界面会直说",
+    "目标 12 W\nSTAPM 实际上限 10 W\nFast / Slow 实际上限 12 W\n最终看回读，不把请求值当结果。", 700);
+  const shot = imageFrame("firmware-frame", "assets/firmware-clamp-1.0.42-client.png",
+    1000, 600, "固件限制示例", "模拟数据 · STAPM 受限");
+  wrap.append(left, shot.wrap);
   root.append(wrap);
 };
 
-SCENE_RENDERERS.compat = (scene, t, root) => {
-  root.innerHTML = "";
-  const opacity = fadeSlide(scene, t);
-  const wrap = el("div", {
-    position: "absolute", inset: "0", opacity: String(opacity),
-    display: "flex", alignItems: "center",
-    padding: "0 80px", gap: "60px",
-    background: "linear-gradient(180deg,#0b1216 0%,#0c1418 100%)",
-  });
+renderers.compat = (scene, t, root) => clipScene(scene, t, root, {
+  id: "diagnostics-frame", poster: window.__POSTERS__?.diagnostics,
+  eyebrow: "兼容性与诊断", title: "先识别机型\n再决定是否试写",
+  body: "目前只有一台 8845HS 完整实测。\n其他 AMD 型号仍是待验证配置。\n诊断可导出，且不上传、不含本地路径。",
+  width: 1050, height: 630, leftWidth: 570,
+});
 
-  const left = el("div", {
-    display: "flex", flexDirection: "column", justifyContent: "center",
-    width: "920px", flexShrink: "0",
+renderers.closing = (scene, t, root) => {
+  const wrap = background();
+  Object.assign(wrap.style, {
+    display: "flex", flexDirection: "column", alignItems: "center",
+    justifyContent: "center", padding: "0 140px 100px", textAlign: "center",
   });
-
-  const eyebrow = txt("兼容性", {
-    color: "#45d6a8", fontSize: "24px", fontWeight: "700",
-    letterSpacing: "6px", marginBottom: "32px",
-  });
-  slideUp(eyebrow, t, 0.05);
-
-  const title = el("div", {});
-  title.innerHTML = "识别 AMD 平台<br>逐步验证机型";
-  Object.assign(title.style, {
-    color: "#f1f7f4", fontSize: "88px", fontWeight: "900", lineHeight: "1.1",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    marginBottom: "48px",
-  });
-  slideUp(title, t, 0.18);
-
-  const stats = [
-    ["8845HS", "已实测可用"],
-    ["其他型号", "兼容性待验证"],
-    ["诊断", "一键导出"],
-  ];
-  const row = el("div", { display: "flex", gap: "36px" });
-  stats.forEach(([num, label], i) => {
-    const box = el("div", { flex: "1", display: "flex", flexDirection: "column", gap: "14px" });
-    const n = txt(num, {
-      color: "#45d6a8", fontSize: "56px", fontWeight: "900",
-      fontFamily: "'Segoe UI',sans-serif", letterSpacing: "-1px",
-    });
-    const l = txt(label, {
-      color: "#a6b8b0", fontSize: "24px",
-      fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    });
-    box.append(n, l);
-    slideUp(box, t, 0.4 + i * 0.16);
-    row.append(box);
-  });
-
-  // Candidate UI captured with isolated fixture data.
-  const card = el("div", {
-    width: "620px", flexShrink: "0", background: "#f7f7f8",
-    border: "1px solid rgba(69,214,168,0.28)", borderRadius: "14px",
-    overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.45)",
-    display: "flex", flexDirection: "column",
-  });
-  const shotHead = el("div", {
-    display: "flex", alignItems: "center", justifyContent: "space-between",
-    padding: "16px 20px", background: "#111a1e",
-  });
-  const shotTitle = txt("1.0.39 界面演示 · 模拟数据", {
-    color: "#f1f7f4", fontSize: "21px", fontWeight: "700",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  const shotBadge = txt("平台可写", {
-    color: "#45d6a8", fontSize: "16px", fontWeight: "700",
-    padding: "6px 12px", border: "1px solid rgba(69,214,168,0.45)",
-    borderRadius: "999px", background: "rgba(69,214,168,0.1)",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  shotHead.append(shotTitle, shotBadge);
-  const shot = el("img", {
-    width: "100%", height: "auto", display: "block",
-  });
-  shot.src = "assets/device-panel-1.0.39-fixture.png";
-  card.append(shotHead, shot);
-  const cardPop = clamp01((t - 0.5) / 0.6);
-  const cardEased = easeOut(cardPop);
-  card.style.opacity = String(cardEased);
-  card.style.transform = `translateY(${(1 - cardEased) * 30}px)`;
-
-  left.append(eyebrow, title, row);
-  wrap.append(left, card);
+  wrap.append(
+    text("开源 · 免费 · 便携运行", {
+      color: C.accent, fontSize: "25px", fontWeight: "700", marginBottom: "28px",
+    }),
+    text("AMD Mobile Power", {
+      color: C.text, fontSize: "96px", fontWeight: "800", marginBottom: "28px",
+    }),
+    text("github.com/syttys123/amd-mobile-power", {
+      color: C.accent, fontSize: "32px", fontWeight: "600", marginBottom: "28px",
+    }),
+    text("审查版 · 无声字幕 · 尚未公开发布", {
+      color: C.faint, fontSize: "20px",
+    }),
+  );
   root.append(wrap);
 };
 
-SCENE_RENDERERS.firmware = (scene, t, root) => {
-  root.innerHTML = "";
-  const opacity = fadeSlide(scene, t);
-  const wrap = el("div", {
-    position: "absolute", inset: "0", opacity: String(opacity),
-    display: "flex", alignItems: "center",
-    padding: "0 80px", gap: "50px",
-    background: "linear-gradient(180deg,#0b1216 0%,#0c1418 100%)",
-  });
-
-  const left = el("div", {
-    display: "flex", flexDirection: "column", justifyContent: "center",
-    width: "800px", flexShrink: "0",
-  });
-  const eyebrow = txt("固件限制", {
-    color: "#ffb45a", fontSize: "24px", fontWeight: "700",
-    letterSpacing: "6px", marginBottom: "32px",
-  });
-  slideUp(eyebrow, t, 0.05);
-  const title = el("div", {});
-  title.innerHTML = "没生效<br>会直说";
-  Object.assign(title.style, {
-    color: "#f1f7f4", fontSize: "88px", fontWeight: "900", lineHeight: "1.1",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    marginBottom: "48px",
-  });
-  slideUp(title, t, 0.18);
-  const items = [
-    ["分开显示", "目标值和实际上限不混在一起"],
-    ["明确提示", "固件压低上限时会说明"],
-    ["以回读为准", "最终看实际生效值"],
-  ];
-  const list = el("div", { display: "flex", flexDirection: "column", gap: "20px" });
-  items.forEach(([head, body], i) => {
-    const row = el("div", { display: "flex", alignItems: "baseline", gap: "24px" });
-    const dot = el("div", {
-      width: "10px", height: "10px", borderRadius: "50%",
-      background: "#ffb45a", flexShrink: "0", transform: "translateY(-4px)",
-    });
-    const content = el("div", { display: "flex", alignItems: "baseline", gap: "20px", flexWrap: "wrap" });
-    const h = txt(head, {
-      color: "#f1f7f4", fontSize: "38px", fontWeight: "700",
-      fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    });
-    const b = txt(body, {
-      color: "#a6b8b0", fontSize: "28px", fontWeight: "400",
-      fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    });
-    content.append(h, b);
-    row.append(dot, content);
-    slideUp(row, t, 0.35 + i * 0.18);
-    list.append(row);
-  });
-
-  const card = el("div", {
-    width: "820px", flexShrink: "0", background: "#0e1518",
-    border: "1px solid rgba(255,180,90,0.28)", borderRadius: "14px",
-    overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.45)",
-    display: "flex", flexDirection: "column",
-  });
-  const shotHead = el("div", {
-    display: "flex", alignItems: "center", justifyContent: "space-between",
-    padding: "16px 20px", background: "rgba(255,255,255,0.035)",
-  });
-  const shotTitle = txt("固件限制演示 · 模拟数据", {
-    color: "#f1f7f4", fontSize: "21px", fontWeight: "700",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  const shotBadge = txt("STAPM 受限", {
-    color: "#ffb45a", fontSize: "16px", fontWeight: "700",
-    padding: "6px 12px", border: "1px solid rgba(255,180,90,0.45)",
-    borderRadius: "999px", background: "rgba(255,180,90,0.1)",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  shotHead.append(shotTitle, shotBadge);
-  const shot = el("img", { width: "100%", height: "auto", display: "block" });
-  shot.src = "assets/firmware-clamp-demo.png";
-  card.append(shotHead, shot);
-  const cardPop = clamp01((t - 0.5) / 0.6);
-  const cardEased = easeOut(cardPop);
-  card.style.opacity = String(cardEased);
-  card.style.transform = `translateY(${(1 - cardEased) * 30}px)`;
-
-  left.append(eyebrow, title, list);
-  wrap.append(left, card);
-  root.append(wrap);
-};
-
-SCENE_RENDERERS["auto-policy"] = (scene, t, root) => {
-  root.innerHTML = "";
-  const opacity = fadeSlide(scene, t);
-  const wrap = el("div", {
-    position: "absolute", inset: "0", opacity: String(opacity),
-    display: "flex", alignItems: "center",
-    padding: "0 80px", gap: "50px",
-    background: "linear-gradient(180deg,#0b1216 0%,#0c1418 100%)",
-  });
-
-  const left = el("div", {
-    display: "flex", flexDirection: "column", justifyContent: "center",
-    width: "800px", flexShrink: "0",
-  });
-
-  const eyebrow = txt("自动切换", {
-    color: "#45d6a8", fontSize: "24px", fontWeight: "700",
-    letterSpacing: "6px", marginBottom: "32px",
-  });
-  slideUp(eyebrow, t, 0.05);
-
-  const title = el("div", {});
-  title.innerHTML = "插拔电源<br>自动切换";
-  Object.assign(title.style, {
-    color: "#f1f7f4", fontSize: "96px", fontWeight: "900", lineHeight: "1.1",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    marginBottom: "40px",
-  });
-  slideUp(title, t, 0.18);
-
-  const sub = txt("解锁后，给电池和插电各设一个瓦数", {
-    color: "#a6b8b0", fontSize: "28px",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  slideUp(sub, t, 0.34);
-  const note = txt("也可以只管电池，插电不动。充电宝通常会被识别为外接电源。", {
-    color: "#7d8f88", fontSize: "22px", marginTop: "18px",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  slideUp(note, t, 0.5);
-
-  // Candidate policy controls captured with isolated fixture data.
-  const card = el("div", {
-    width: "820px", flexShrink: "0", background: "#f7f7f8",
-    border: "1px solid rgba(69,214,168,0.28)", borderRadius: "14px",
-    overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.45)",
-    display: "flex", flexDirection: "column",
-  });
-  const shotHead = el("div", {
-    display: "flex", alignItems: "center", justifyContent: "space-between",
-    padding: "16px 20px", background: "#111a1e",
-  });
-  const shotTitle = txt("1.0.39 界面演示 · 模拟数据", {
-    color: "#f1f7f4", fontSize: "21px", fontWeight: "700",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  const shotBadge = txt("电池 25 W / 插电 45 W", {
-    color: "#45d6a8", fontSize: "16px", fontWeight: "700",
-    padding: "6px 12px", border: "1px solid rgba(69,214,168,0.45)",
-    borderRadius: "999px", background: "rgba(69,214,168,0.1)",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  shotHead.append(shotTitle, shotBadge);
-  const shot = el("img", {
-    width: "100%", height: "auto", display: "block",
-  });
-  shot.src = "assets/advanced-left-panel-1.0.39-fixture.png";
-  card.append(shotHead, shot);
-  const cardPop = clamp01((t - 0.35) / 0.6);
-  const cardEased = easeOut(cardPop);
-  card.style.opacity = String(cardEased);
-  card.style.transform = `translateY(${(1 - cardEased) * 30}px)`;
-
-  left.append(eyebrow, title, sub, note);
-  wrap.append(left, card);
-  root.append(wrap);
-};
-
-SCENE_RENDERERS.closing = (scene, t, root) => {
-  root.innerHTML = "";
-  const opacity = fadeSlide(scene, t, 0.4, 0.6);
-  const wrap = el("div", {
-    position: "absolute", inset: "0", opacity: String(opacity),
-    display: "flex", flexDirection: "column", justifyContent: "center",
-    alignItems: "center", padding: "0 120px",
-    background: "linear-gradient(160deg,#0b1216 0%,#0a1a14 100%)",
-    textAlign: "center",
-  });
-
-  const eyebrow = txt("开源 · 免费", {
-    color: "#45d6a8", fontSize: "24px", fontWeight: "700",
-    letterSpacing: "6px", marginBottom: "32px",
-  });
-  slideUp(eyebrow, t, 0.05);
-
-  const title = el("div", {});
-  title.innerHTML = "开源免费<br>欢迎反馈";
-  Object.assign(title.style, {
-    color: "#f1f7f4", fontSize: "108px", fontWeight: "900", lineHeight: "1.1",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-    marginBottom: "36px",
-  });
-  slideUp(title, t, 0.2);
-
-  const repo = txt("github.com/syttys123/amd-mobile-power", {
-    color: "#45d6a8", fontSize: "32px", fontWeight: "600",
-    fontFamily: "'Segoe UI',sans-serif", marginBottom: "20px",
-  });
-  slideUp(repo, t, 0.38);
-
-  const note = txt(
-    "开源免费 · 便携运行 · 欢迎反馈机型", {
-    color: "#a6b8b0", fontSize: "24px",
-    fontFamily: "'Microsoft YaHei UI','Segoe UI',sans-serif",
-  });
-  slideUp(note, t, 0.5);
-
-  const credit = txt(
-    "审查版 · 无声 · 未发布", {
-    color: "#5c6b65", fontSize: "16px",
-    fontFamily: "'Segoe UI',sans-serif", marginTop: "18px",
-  });
-  slideUp(credit, t, 0.62);
-
-  wrap.append(eyebrow, title, repo, note, credit);
-  root.append(wrap);
-};
-
-window.__totalDuration = () => TOTAL_DURATION();
-window.__seek = (seconds) => {
+function renderAt(seconds) {
   const root = document.getElementById("root");
-  if (!root) return;
   const scene = sceneAt(seconds);
-  const localTime = seconds - scene.start;
-  renderScene(scene, localTime, root);
-};
+  const local = seconds - scene.start;
+  const index = timeline.indexOf(scene);
+  root.replaceChildren();
+  const base = node("div", { position: "absolute", inset: "0" });
+  root.append(base);
+  renderers[scene.id](scene, local, base);
 
-window.__seek(0);
+  // Crossfade over an opaque previous scene. Both layers are never
+  // transparent together, so boundaries cannot dip to black.
+  const crossfade = 0.24;
+  if (index > 0 && local < crossfade) {
+    const previous = timeline[index - 1];
+    const under = node("div", { position: "absolute", inset: "0", zIndex: "1" });
+    renderers[previous.id](previous, previous.duration, under);
+    base.style.zIndex = "2";
+    base.style.opacity = String(clamp(local / crossfade));
+    root.insertBefore(under, base);
+  }
+  caption(scene, local, root);
+}
+
+window.__totalDuration = () => TOTAL;
+window.__seek = renderAt;
+window.__timeline = timeline;
+renderAt(0);

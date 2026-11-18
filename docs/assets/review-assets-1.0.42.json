@@ -1,0 +1,51 @@
+{
+  "Verification": "PASS",
+  "Version": "1.0.42",
+  "RenderManifest": "D:\\amd-mobile-power\\artifacts\\media\\promo-1.0.42-review-final2\\frames\\render-manifest.json",
+  "Cover": "D:\\amd-mobile-power\\docs\\assets\\bilibili-cover-1.0.42-2026-11-18.png",
+  "CoverFrame": 52,
+  "ContactSheet": "D:\\amd-mobile-power\\docs\\assets\\native-promo-1.0.42-contact-sheet-2026-11-18.png",
+  "Samples": [
+    {
+      "id": "hook",
+      "seconds": 1.75,
+      "frame": 52
+    },
+    {
+      "id": "safety",
+      "seconds": 7.75,
+      "frame": 232
+    },
+    {
+      "id": "ui-demo",
+      "seconds": 17.75,
+      "frame": 532
+    },
+    {
+      "id": "presets",
+      "seconds": 27,
+      "frame": 810
+    },
+    {
+      "id": "auto-policy",
+      "seconds": 35,
+      "frame": 1050
+    },
+    {
+      "id": "firmware",
+      "seconds": 41.75,
+      "frame": 1252
+    },
+    {
+      "id": "compat",
+      "seconds": 47.5,
+      "frame": 1425
+    },
+    {
+      "id": "closing",
+      "seconds": 53,
+      "frame": 1590
+    }
+  ],
+  "Scope": "Assets are copied/composed from the exact rendered frame sequence; visual approval remains separate"
+}

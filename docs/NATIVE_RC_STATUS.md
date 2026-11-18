@@ -243,14 +243,17 @@ docs/evidence/release/public-sanitization-1.0.41-2026-11-18.json
 ```
 
 These are local release/deployment records, not a public release. The latest
-prepared review bundle under `artifacts/native-release-review/` remains
-`v1.0.42` (`REVIEW_ONLY`). Its video is the historical silent 1.0.39 fixture
-draft, not a live 1.0.42 capture; owner review and publication approval remain
-required.
+prepared review bundle under `artifacts/native-release-review/` uses the
+55-second 1.0.42 silent fixture review cut and exact-frame cover/contact sheet.
+The historical 1.0.39 draft is archived only. Current media evidence is
+`docs/evidence/media/native-promo-1.0.42-review-2026-11-18.json`. Independent
+pojia audit attempts were blocked by upstream quota; automated checks and
+main-agent inspection are not an independent PASS. Owner review and publication
+approval remain required.
 
 ## Deployed Safety Remediation
 
-The 1.0.41 package includes the safety remediation introduced after the 1.0.39
+The 1.0.42 package includes the safety remediation introduced after the 1.0.39
 freeze and the limits-aware drift repair:
 
 - Rust worker client: 5 s overlapped pipe I/O timeout with cancellation and

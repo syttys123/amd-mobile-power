@@ -53,22 +53,29 @@ function Resolve-DefaultFile {
 }
 
 $today = Get-Date -Format "yyyy-MM-dd"
-$newestPromoVideo = Get-NewestFile `
-    -Directory (Join-Path $artifactsRoot "media\promo-html-v1") `
-    -Filter "*.mp4"
+$newestPromoVideo = Get-ChildItem `
+    -LiteralPath (Join-Path $artifactsRoot "media") `
+    -Directory `
+    -Filter "promo-$Version-review*" `
+    -ErrorAction SilentlyContinue |
+    ForEach-Object {
+        Get-ChildItem -LiteralPath $_.FullName -Filter "*.mp4" -File
+    } |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 1
 $newestCover = Get-NewestFile `
     -Directory (Join-Path $repositoryRoot "docs\assets") `
-    -Filter "bilibili-cover-*.png"
+    -Filter "bilibili-cover-$Version-*.png"
 $newestContactSheet = Get-NewestFile `
     -Directory (Join-Path $repositoryRoot "docs\assets") `
-    -Filter "native-promo-*-contact-sheet-*.png"
+    -Filter "native-promo-$Version-contact-sheet-*.png"
 
 $VideoPath = Resolve-DefaultFile -Provided $VideoPath -Candidates @(
     $(if ($newestPromoVideo) { $newestPromoVideo.FullName })
 )
 $MediaEvidencePath = Resolve-DefaultFile -Provided $MediaEvidencePath -Candidates @(
-    (Join-Path $repositoryRoot "docs\evidence\media\native-promo-$Version-draft-$today.json"),
-    (Join-Path $repositoryRoot "docs\evidence\media\native-promo-draft-$today.json")
+    (Join-Path $repositoryRoot "docs\evidence\media\native-promo-$Version-review-$today.json"),
+    (Join-Path $repositoryRoot "docs\evidence\media\native-promo-$Version-draft-$today.json")
 )
 $BilibiliCoverPath = Resolve-DefaultFile -Provided $BilibiliCoverPath -Candidates @(
     $(if ($newestCover) { $newestCover.FullName })
@@ -81,8 +88,7 @@ $LaunchCopyPath = Resolve-DefaultFile -Provided $LaunchCopyPath -Candidates @(
     (Join-Path $repositoryRoot "docs\NATIVE_LAUNCH_COPY_ZH.md")
 )
 $ReleaseCandidatePath = Resolve-DefaultFile -Provided $ReleaseCandidatePath -Candidates @(
-    (Join-Path $repositoryRoot "docs\NATIVE_RELEASE_CANDIDATE_$($Version)_ZH.md"),
-    (Join-Path $repositoryRoot "docs\NATIVE_RELEASE_CANDIDATE_ZH.md")
+    (Join-Path $repositoryRoot "docs\NATIVE_RELEASE_CANDIDATE_$($Version)_ZH.md")
 )
 if (-not $OutputDirectory) {
     $OutputDirectory = Join-Path `

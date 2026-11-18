@@ -21,6 +21,45 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-18 (1.0.42 media rebuild and capture-contract remediation):
+
+- Replaced the historical 1.0.39 promo assets with a 55-second silent,
+  subtitled review cut made from the deployed 1.0.42 GUI in isolated
+  hardware-free fixtures. The new story shows consent confirmation, immediate
+  25/45/10 W presets, editing 10 W to 12 W and applying it, dual-line policy
+  save, battery-only save/restoration, firmware clamping, and diagnostics
+  export. It explicitly states the single-device compatibility boundary and
+  the power-bank/external-power limitation.
+- Fixed two real capture defects instead of accepting false PASS evidence:
+  the visual-change baseline was an empty bitmap, and fixture cleanup failed
+  on Windows-created cache subdirectories. Baselines now use captured nonblank
+  pixels; cleanup validates the complete owned tree and rejects reparse points
+  before deleting only owned files/directories. The contract passes 17/17 in
+  PowerShell 5.1 and 7. The screenshot helper also sanitizes fixture titles
+  and uses the visible simple apply control 317 for the 12 W clamp capture.
+- The final video is 1920x1080, 30 fps, exactly 1650 frames, H.264, no audio.
+  Full decode, multi-clip identity/event/pointer gate, 24-frame layout gate,
+  24 rendered keyframes, whole-frame/GUI-region/960x540 luminance screens, and
+  document links pass. Crossfades keep an opaque previous scene underneath;
+  frame sampling found no black boundary dip or near-white flash.
+- Rebuilt the version-bound cover and eight-scene contact sheet from the exact
+  rendered frame sequence. The review-bundle helper now searches all
+  `promo-1.0.42-review*` directories and refuses to fall back to another
+  version's cover, contact sheet, or candidate dossier. A current 1.0.42
+  Chinese candidate dossier is included.
+- Current media evidence:
+  `docs/evidence/media/native-promo-1.0.42-review-2026-11-18.json`.
+  Three independent `pojia-1017` audit attempts were rejected by the configured
+  upstream with HTTP 403 `insufficient_user_quota`; no independent-agent PASS is
+  claimed. Main-agent frame/asset inspection and deterministic gates pass, but
+  owner review and publication approval remain required. No GitHub Release or
+  Bilibili upload occurred.
+- Media work did not change the stable deployment or saved policy. At the
+  07:00 transition the live worker returned day targets battery 25 W / AC
+  45 W and restarted the supervised tray as GUI PID `15440`, worker PID
+  `46620`; the current external line read back Fast/Slow 45 W with STAPM
+  clamped by firmware to 25 W. Night remains 23:00-07:00 at 15/15 W.
+
 2026-11-18 (1.0.42 gate PASS and stable-local deployment):
 
 - The policy-line semantic fix, maintenance-script fail-closed checks, and

@@ -1,0 +1,113 @@
+{
+  "SchemaVersion": 2,
+  "Version": "1.0.42",
+  "Status": "DRAFT_FOR_HUMAN_REVIEW",
+  "Video": "artifacts/media/promo-1.0.42-review-final2/amd-mobile-power-1.0.42-review-silent.mp4",
+  "VideoSHA256": "52aeee33e4e308a2d4b9e107e5a526c54402f7d61b44c1dda811670bb50759dc",
+  "VideoBytes": 3463758,
+  "DurationSeconds": 55.0,
+  "Width": 1920,
+  "Height": 1080,
+  "FrameRate": 30,
+  "Frames": 1650,
+  "VideoCodec": "h264",
+  "Audio": "none",
+  "GuiSHA256": "612a883e89bb33cb2ef538cb86a833f3073c8f6144a54ecd2efe1bc35a1d0baf",
+  "SourceCommit": "927a1bbf74e78b061eafb6088e807f4fc5ff365b",
+  "SimulatedData": true,
+  "HardwareAccess": false,
+  "Scenes": [
+    "hook",
+    "safety",
+    "ui-demo",
+    "presets",
+    "auto-policy",
+    "firmware",
+    "compat",
+    "closing"
+  ],
+  "FullDecode": "PASS",
+  "DemoSyncReview": {
+    "Path": "artifacts/media/promo-1.0.42-review-final2/demo-sync-review.json",
+    "Result": "PASS"
+  },
+  "LayoutReview": {
+    "Path": "artifacts/media/promo-1.0.42-review-final2/layout-review.json",
+    "Result": "PASS",
+    "Samples": 24
+  },
+  "KeyframeReview": {
+    "Path": "artifacts/media/promo-1.0.42-review-final2/keyframes",
+    "Result": "PASS",
+    "Samples": 24
+  },
+  "LuminanceReview": {
+    "WholeFrame": {
+      "Path": "artifacts/media/promo-1.0.42-review-final2/luminance-review.json",
+      "Frames": 1650,
+      "Minimum": 37.2618,
+      "Maximum": 89.0514,
+      "IsolatedSpikes": [],
+      "BrightFrames": []
+    },
+    "GuiRegion": {
+      "Path": "artifacts/media/promo-1.0.42-review-final2/luminance-gui-region-review.json",
+      "Frames": 1650,
+      "Minimum": 37.1171,
+      "Maximum": 160.317,
+      "IsolatedSpikes": [],
+      "BrightFrames": []
+    },
+    "Mobile960": {
+      "Path": "artifacts/media/promo-1.0.42-review-final2/luminance-960-review.json",
+      "Frames": 1650,
+      "Minimum": 37.2789,
+      "Maximum": 89.0965,
+      "IsolatedSpikes": [],
+      "BrightFrames": []
+    },
+    "Scope": "Downscaled luminance heuristics; not proof of absence of local flicker"
+  },
+  "CaptureContract": {
+    "PowerShell51": "artifacts/media/capture-contract-ps5-final.json",
+    "PowerShell7": "artifacts/media/capture-contract-ps7-final.json",
+    "Checks": 17,
+    "Result": "PASS"
+  },
+  "Clips": {
+    "Consent": "artifacts/media/promo-1.0.42-consent-flow-debug2/flow-manifest.json",
+    "Simple": "artifacts/media/promo-1.0.42-final-simple/frames-manifest.json",
+    "Presets": "artifacts/media/promo-1.0.42-final-presets/frames-manifest.json",
+    "Policy": "artifacts/media/promo-1.0.42-final-policy/frames-manifest.json",
+    "Diagnostics": "artifacts/media/promo-1.0.42-diagnostics-flow/flow-manifest.json"
+  },
+  "CoverCandidate": "artifacts/media/promo-1.0.42-review-final2/cover-candidate.png",
+  "IndependentVisualAudit": {
+    "Result": "BLOCKED_BY_PROVIDER_QUOTA",
+    "Model": "pojia-1017",
+    "Attempts": 3,
+    "LastError": "HTTP 403 insufficient_user_quota from the configured upstream through CC Switch",
+    "Fallback": "Main-agent rendered-frame and asset review plus deterministic identity/event/layout/luminance gates; not represented as an independent agent PASS",
+    "OwnerReview": "PENDING"
+  },
+  "ReviewAssets": {
+    "Cover": "docs/assets/bilibili-cover-1.0.42-2026-11-18.png",
+    "ContactSheet": "docs/assets/native-promo-1.0.42-contact-sheet-2026-11-18.png",
+    "Evidence": "docs/assets/review-assets-1.0.42.json",
+    "Source": "Exact rendered frame sequence, not historical cover/contact-sheet assets"
+  },
+  "Notes": [
+    "All GUI clips use the deployed 1.0.42 executable with isolated fixture state and pipe names.",
+    "The consent flow ticks the real checkbox, observes confirm enablement, confirms, and observes the unlocked main window.",
+    "Preset clicks are bound to recorded visual-change frames and actual control centers; baselines are captured nonblank pixels.",
+    "The policy clip demonstrates dual-line save, battery-only save, and dual-line restoration; it does not claim a physical unplug/replug recording.",
+    "Firmware limitation is a separate 12 W request with STAPM 10 W and Fast/Slow 12 W read-back.",
+    "Diagnostics export success is recorded and the isolated report privacy block passes.",
+    "Scene transitions crossfade over an opaque previous scene; no black boundary dip was found by frame sampling.",
+    "No synthesized music, voice track, personal path, account name, terminal, or unrelated desktop content is included.",
+    "Stable deployment and day/night policy were not changed by media rendering.",
+    "The independent pojia audit could not run because the configured upstream rejected all attempts for insufficient quota; automated checks and main-agent visual inspection do not replace owner review.",
+    "Public GitHub Release and Bilibili upload remain unapproved."
+  ],
+  "RecordedAt": "2026-11-18T08:30:00+08:00"
+}
