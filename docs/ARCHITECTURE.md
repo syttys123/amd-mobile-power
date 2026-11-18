@@ -165,6 +165,15 @@ The contract test parses this structure and injects body/recovery failures into
 the extracted `catch`/`finally` blocks; it never touches the stable processes
 or hardware.
 
+Host-specific day/night maintenance has three triggers: 07:00, 23:00, and
+current-user logon plus 20 seconds. The logon path uses
+`native/restore-current-policy.ps1` to choose the configured window from the
+local clock, then delegates to the same verified direct-policy helper. This
+closes the gap where an unexpected reboot between boundaries left no GUI,
+worker, or policy ticker. The logon task is limited/interactive, runs on
+battery, ignores overlapping instances, and is installed only by an explicit
+`install-current-policy-task.ps1 -Apply`; it is not a package-wide default.
+
 ## Capability Detection
 
 The worker reports:

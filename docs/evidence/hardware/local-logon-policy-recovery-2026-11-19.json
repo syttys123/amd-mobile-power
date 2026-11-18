@@ -1,0 +1,55 @@
+{
+  "SchemaVersion": 1,
+  "Verification": "PASS",
+  "RecordedAt": "2026-11-19T03:09:15+08:00",
+  "Trigger": "Unexpected shutdown and reboot between scheduled policy boundaries",
+  "SystemEvidence": {
+    "PreviousUnexpectedShutdown": "2026-11-19T02:40:44+08:00",
+    "Boot": "2026-11-19T02:56:49+08:00",
+    "Events": ["Kernel-Power 41", "EventLog 6008"],
+    "InitialGuiWorkerPipe": "absent at 03:02"
+  },
+  "StableDeployment": {
+    "Version": "1.0.42",
+    "SourceCommit": "927a1bbf74e78b061eafb6088e807f4fc5ff365b",
+    "Replaced": false
+  },
+  "Policy": {
+    "Day": {"StartHour": 7, "BatteryWatts": 25, "AcWatts": 45},
+    "Night": {"StartHour": 23, "BatteryWatts": 15, "AcWatts": 15}
+  },
+  "Task": {
+    "Name": "AmdMobilePower CurrentPolicy AtLogon",
+    "Trigger": "Current user logon plus PT20S",
+    "Principal": "Current user, Interactive, Limited",
+    "AllowOnBattery": true,
+    "StopOnBattery": false,
+    "MultipleInstances": "IgnoreNew",
+    "ManualFireLastTaskResult": 0,
+    "RealFutureLogon": "PENDING"
+  },
+  "ManualFireReadBack": {
+    "Window": "night",
+    "Enabled": true,
+    "ObservedLine": "battery",
+    "AttemptLine": "battery",
+    "AppliedLine": "battery",
+    "BatteryTarget": "15/15/15",
+    "AcTarget": "15/15/15",
+    "StapmLimitWatts": 15,
+    "FastLimitWatts": 15,
+    "SlowLimitWatts": 15,
+    "GuiProcessId": 21920,
+    "WorkerProcessId": 13456
+  },
+  "Contracts": {
+    "PowerShell51": "artifacts/policy-current-contract-ps5-final.json",
+    "PowerShell7": "artifacts/policy-current-contract-ps7-final.json",
+    "Checks": 12,
+    "Result": "PASS",
+    "HardwareAccess": false,
+    "ScheduledTaskMutatedByContract": false
+  },
+  "ResidualRisk": "A manual task fire verifies the action and current hardware path; a future real reboot/logon is still needed to verify cold-boot driver timing.",
+  "PublicReleaseApproved": false
+}

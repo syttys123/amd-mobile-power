@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-11-18
+Last updated: 2026-11-19
 
 ## Objective
 
@@ -20,6 +20,33 @@ after each meaningful change. Conversation history and compacted summaries are
 not authoritative.
 
 ## Latest Maintenance Milestone
+
+2026-11-19 (post-reboot policy recovery):
+
+- At 03:02 the stable GUI/worker and pipe were absent. System logs showed an
+  unexpected shutdown at 02:40 and boot at 02:56 (Kernel-Power 41 / EventLog
+  6008); the 23:00 policy task itself had completed successfully at 15/15 W.
+  The existing daily tasks do not run at logon, so a reboot between schedule
+  boundaries left no policy supervisor until the next boundary.
+- Restored the current night policy through the deployed 1.0.42 helper and
+  added `restore-current-policy.ps1`, which selects day 25/45 W or night
+  15/15 W from the local wall clock, including wrapped windows. It delegates
+  all writes/read-back to the existing fail-closed helper.
+- Added an opt-in current-user logon task installer with a 20-second delay,
+  battery-safe settings, limited interactive principal, ignore-new overlap
+  policy, dry-run output, and post-registration read-back. Task Scheduler's
+  SID/qualified-name/short-name identity forms are normalized before comparison.
+- Registered `AmdMobilePower CurrentPolicy AtLogon` on this machine and actually
+  triggered it. LastTaskResult=0; it restarted the tray and confirmed night
+  battery/AC 15/15 W. Final worker read-back was STAPM/Fast/Slow 15/15/15 W,
+  GUI PID `21920`, worker PID `13456`. The stable package was not replaced.
+- The new isolated contract passes 12/12 in PowerShell 5.1 and 7, covering
+  06/07/22/23/00 boundaries, wrapped windows, invalid equal boundaries,
+  installer dry-run/safety settings, account-form normalization, and AST.
+  Existing policy-helper contracts and document links also pass. A real future
+  reboot/logon remains the final end-to-end confirmation; the manual task fire
+  verifies the action and hardware path but cannot simulate firmware state
+  immediately after a cold boot.
 
 2026-11-18 (1.0.42 media rebuild and capture-contract remediation):
 

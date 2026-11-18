@@ -17,6 +17,13 @@
   and a `45 W` ceiling. The armed day/night policy is 07:00 battery `25 W` /
   AC `45 W` and 23:00 `15/15 W`; policy targets and temporary local user caps
   are runtime state and are not part of the release package.
+  On 2026-11-19 a local current-user logon recovery task was added after an
+  unexpected reboot left the tray absent between schedule boundaries:
+  `AmdMobilePower CurrentPolicy AtLogon` runs
+  `native/restore-current-policy.ps1` 20 seconds after logon and selects the
+  same day/night targets from the local clock. It is host maintenance state,
+  not part of the 1.0.42 payload. The installer is dry-run by default and
+  requires `-Apply`; it does not elevate the GUI or replace the deployment.
   Previous deployment history follows.
   `1.0.30-native` (source commit `2f04605`, BOM-tolerant persisted state
   loading) previously held this target; package SHA256
