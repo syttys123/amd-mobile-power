@@ -1,0 +1,70 @@
+{
+  "SchemaVersion": 1,
+  "Scope": "Main-agent visual audit of the 1.0.43 silent review cut; no independent-agent PASS is claimed",
+  "Video": "artifacts/media/promo-1.0.43-review/amd-mobile-power-1.0.43-review-silent.mp4",
+  "VideoSHA256": "d795f85054531b7a8bf69e6bd693de8da6a681d168d0b9c49842f0ce4d75f181",
+  "DurationSeconds": 55.0,
+  "Inspected": [
+    {
+      "Scene": "hook",
+      "Artifacts": ["keyframes/hook-00052.png"],
+      "Result": "PASS",
+      "Notes": "Headline, subtitle and icon are complete; no clipped text."
+    },
+    {
+      "Scene": "safety",
+      "Artifacts": ["keyframes/safety-00232.png"],
+      "Result": "PASS",
+      "Notes": "Consent dialog text is complete; checkbox and confirm states render correctly."
+    },
+    {
+      "Scene": "ui-demo",
+      "Artifacts": ["keyframes/ui-demo-00532.png", "keyframes/ui-demo-00663.png"],
+      "Result": "PASS",
+      "Notes": "Preset sequence 25 W then 45 W then 10 W shows hover before selection and applied read-back; 1.0.43 overlay is correct."
+    },
+    {
+      "Scene": "presets",
+      "Artifacts": ["keyframes/presets-00810.png"],
+      "Result": "PASS",
+      "Notes": "Preset 1 edits to 12 W, saves, and the status line stays complete."
+    },
+    {
+      "Scene": "auto-policy",
+      "Artifacts": ["keyframes/auto-policy-01152.png"],
+      "Result": "PASS",
+      "Notes": "Battery 25 W / external 45 W with battery-only enabled; status reads 仅电池 · 25 W."
+    },
+    {
+      "Scene": "firmware",
+      "Artifacts": ["keyframes/firmware-01252.png"],
+      "Result": "PASS",
+      "Notes": "Target 12 W with STAPM read-back 10 W and Fast/Slow 12 W; firmware-limit banner is complete."
+    },
+    {
+      "Scene": "compat",
+      "Artifacts": ["keyframes/compat-01425.png"],
+      "Result": "PASS",
+      "Notes": "Compact status now reads 诊断已导出 without a dangling colon; privacy and single-device copy are complete."
+    },
+    {
+      "Scene": "closing",
+      "Artifacts": ["keyframes/closing-01635.png"],
+      "Result": "PASS",
+      "Notes": "Repository URL and review-only notice are complete."
+    }
+  ],
+  "NotInspected": [],
+  "DeterministicGates": {
+    "FullDecode": "PASS",
+    "DemoSync": "PASS",
+    "Layout": "PASS",
+    "Luminance": "PASS within the recorded downscaled heuristic scope"
+  },
+  "ResidualRisk": [
+    "No independent pojia visual audit: upstream quota blocked the agent; this file records main-agent inspection only.",
+    "Luminance gates are downscaled heuristics and do not prove absence of local flicker.",
+    "Owner review of pacing, subtitles and claims remains required before publication."
+  ],
+  "RecordedAt": "2026-11-20T07:05:00+08:00"
+}

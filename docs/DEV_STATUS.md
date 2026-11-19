@@ -36,11 +36,12 @@ not authoritative.
 - The compat scene now shows the complete `诊断已导出` status instead of the
   dangling colon; the old 1.0.42 cut remains archived at
   `artifacts/media/promo-1.0.42-review-final2/`.
-- Main-agent keyframe inspection covers ui-demo, auto-policy and compat. The
-  independent pojia audit remains unavailable because of upstream quota, and
-  hook/firmware frames were not re-inspected in this pass; human review is still
+- Main-agent keyframe inspection now covers all eight scenes, including hook
+  and firmware. The independent pojia audit remains unavailable because of
+  upstream quota; human review of pacing, subtitles and claims is still
   required. Evidence:
-  `docs/evidence/media/native-promo-1.0.43-review-2026-11-20.json`.
+  `docs/evidence/media/native-promo-1.0.43-review-2026-11-20.json` and
+  `docs/evidence/media/native-promo-main-agent-audit-1.0.43-2026-11-20.json`.
 - 1.0.43 launch copy and candidate dossier were added, and the review bundle
   under `artifacts/native-release-review/v1.0.43` was refreshed from the exact
   video, cover, contact sheet and media evidence after the media commit.
