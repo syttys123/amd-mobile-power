@@ -53,9 +53,8 @@ deployment for the verified 8845HS platform, and `C:\RyzenAdj` contains the
 experimental. Public release remains `READY_FOR_HUMAN_REVIEW` and is not
 approved; real OS DPI transitions, a second AMD device, a clean Windows
 WinRing0 baseline, and owner media review are still open. Hosted Windows CI
-last passed for the 1.0.42 source in run `44566236809`; the 1.0.43 source needs
-the same workflow after the push. Current per-gate status is tracked in
-`RELEASE_CHECKLIST.md`.
+run `44620445052` for the push containing `bbe5e14` completed successfully on
+2026-11-20. Current per-gate status is tracked in `RELEASE_CHECKLIST.md`.
 Evidence:
 `docs/evidence/packaging/v1.0.43-release-gate-2026-11-20.json`,
 `docs/evidence/packaging/v1.0.43-deployment-2026-11-20.json`,
@@ -78,6 +77,8 @@ from 1.0.42.
 - Gate PASS on 2026-11-20 with battery-line no-change writes (10/10/10 W).
 - Deployed GUI/worker/probe: `84bfa267` / `ffec2afc` / `3e946047`.
 - Rollback: `C:\RyzenAdj.before-20261120-052000-v1.0.42-927a1bb`.
+- Hosted Windows CI run `44620445052` passed (head `d88b356`, package source
+  `bbe5e14`).
 - Live tray: `--tray --simple-mode --max-target-watts 45`, GUI PID `29100`,
   worker PID `16968`, battery line, 10/10/10 W read-back at 05:21.
 - The promotion launch check requires a visible main window; a `--tray` launch
@@ -240,6 +241,7 @@ docs/evidence/packaging/v1.0.43-clean-2026-11-20.json
 docs/evidence/packaging/v1.0.43-shell-integration-2026-11-20.json
 docs/evidence/packaging/v1.0.43-fixture-policy-isolation-2026-11-20.json
 docs/evidence/build/reproducibility-1.0.43-2026-11-20.json
+docs/evidence/build/hosted-ci-1.0.43-2026-11-20.json
 docs/evidence/hardware/v1.0.43-worker-hang-2026-11-20.json
 docs/evidence/hardware/v1.0.43-power-policy-no-change-2026-11-20.json
 docs/evidence/packaging/v1.0.43-deployment-2026-11-20.json

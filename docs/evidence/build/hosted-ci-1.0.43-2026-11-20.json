@@ -1,0 +1,27 @@
+{
+  "SchemaVersion": 1,
+  "Verification": "PASS",
+  "Repository": "syttys123/amd-mobile-power",
+  "Branch": "release/1.0.33",
+  "Commit": "d88b35677faa9c750c89a882715f33204929d299",
+  "PackageSourceCommit": "bbe5e1421387bba21c67bfa51accf824b214f22a",
+  "Workflow": "build",
+  "RunId": 44620445052,
+  "Job": "windows-native",
+  "Status": "completed",
+  "Conclusion": "success",
+  "StartedAt": "2026-11-19T13:36:24Z",
+  "CompletedAt": "2026-11-19T13:42:03Z",
+  "Url": "https://github.com/syttys123/amd-mobile-power/actions/runs/44620445052",
+  "EvidenceSource": "Public GitHub Actions API for run and job status. The head commit contains the 1.0.43 package source commit bbe5e14 plus the deployment documentation commit.",
+  "Coverage": [
+    "PowerShell syntax and document links",
+    "Current-policy day/night maintenance contract",
+    "Release GUI recovery contract with policy-task suspension",
+    "Rust formatting, Clippy, lifecycle tests and release builds",
+    "C++ power-policy, cleanup and worker safety tests",
+    "Reproducibility, public sanitization, headless probe and artifact identity"
+  ],
+  "HardwareAccess": false,
+  "RecordedAt": "2026-11-20T05:50:00+08:00"
+}

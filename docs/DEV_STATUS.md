@@ -45,6 +45,9 @@ not authoritative.
   no-change policy, worker-hang, DPI 100/125/150, 1366x768 at 200% work area,
   maximize/scroll, byte reproducibility, and public sanitization. Evidence:
   `docs/evidence/packaging/v1.0.43-release-gate-2026-11-20.json`.
+- Hosted Windows CI run `44620445052` completed successfully for the pushed
+  head `d88b356`, which contains the 1.0.43 package source `bbe5e14`.
+  Evidence: `docs/evidence/build/hosted-ci-1.0.43-2026-11-20.json`.
 - Promoted to `C:\RyzenAdj` with backup
   `C:\RyzenAdj.before-20261120-052000-v1.0.42-927a1bb`. The first apply used
   the live `--tray` arguments and failed the launch check because a tray-only

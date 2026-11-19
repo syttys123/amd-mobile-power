@@ -8,8 +8,9 @@ UI and hardware access stay behind a narrow named-pipe contract.
 > Status: no public release yet. The current stable-local deployment is
 > `1.0.43` (source `bbe5e14`), validated on one MECHREVO WUJIE15 PRO with
 > a Ryzen 7 8845HS. Its GUI, probe, worker, and portable ZIP rebuild
-> byte-identically from the same commit. The local release gate and deployment
-> pass; the release remains `READY_FOR_HUMAN_REVIEW` and is not approved for
+> byte-identically from the same commit. The local release gate, hosted Windows
+> CI (`44620445052`) and deployment pass; the release remains
+> `READY_FOR_HUMAN_REVIEW` and is not approved for
 > publication.
 > Broader AMD generation support remains experimental until each device has
 > read-only and supervised write evidence.

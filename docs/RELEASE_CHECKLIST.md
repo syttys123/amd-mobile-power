@@ -23,8 +23,10 @@ The exact gated ZIP comes from `bbe5e14`, SHA256
       `C:\RyzenAdj.before-20261120-052000-v1.0.42-927a1bb`; live tray
       `--tray --simple-mode --max-target-watts 45` with 10/10/10 W battery
       read-back at 05:21.
-- [ ] Hosted Windows CI for `bbe5e14`, 1.0.43 media refresh, independent pojia
-      audit, second AMD device, and owner publication approval.
+- [x] Hosted Windows CI run `44620445052` for the push containing `bbe5e14`
+      completed successfully.
+- [ ] 1.0.43 media refresh, independent pojia audit, second AMD device, and
+      owner publication approval.
 
 Current package gates:
 
@@ -34,7 +36,8 @@ Current package gates:
       `evidence/packaging/v1.0.43-clean-2026-11-20.json`,
       `evidence/packaging/v1.0.43-fixture-policy-isolation-2026-11-20.json`,
       `evidence/packaging/v1.0.43-shell-integration-2026-11-20.json`,
-      `evidence/build/reproducibility-1.0.43-2026-11-20.json`.
+      `evidence/build/reproducibility-1.0.43-2026-11-20.json`,
+      `evidence/build/hosted-ci-1.0.43-2026-11-20.json`.
 - [x] Current-value policy and worker-hang replacement:
       `evidence/hardware/v1.0.43-power-policy-no-change-2026-11-20.json`,
       `evidence/hardware/v1.0.43-worker-hang-2026-11-20.json`.
