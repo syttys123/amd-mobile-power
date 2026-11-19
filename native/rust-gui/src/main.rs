@@ -971,6 +971,15 @@ fn current_power_label(app: &GuiApp) -> &'static str {
     }
 }
 
+// Multi-line messages often put the detail on the next line; the compact
+// status bar is single-line and must not end with a dangling separator.
+fn compact_status_line(message: &str) -> Option<&str> {
+    message
+        .lines()
+        .find(|line| !line.trim().is_empty())
+        .map(|line| line.trim_end_matches(['：', ':']).trim_end())
+}
+
 unsafe fn visible_status(app: &GuiApp) -> (String, String, u32, u32) {
     if app.apply_in_flight || app.policy_in_flight {
         return (
@@ -982,7 +991,7 @@ unsafe fn visible_status(app: &GuiApp) -> (String, String, u32, u32) {
     }
     if Instant::now() < app.status_hold_until && !app.status_label.is_null() {
         let message = get_control_text(app.status_label);
-        if let Some(first_line) = message.lines().find(|line| !line.trim().is_empty()) {
+        if let Some(first_line) = compact_status_line(&message) {
             if first_line.starts_with("固件限制：") {
                 return (
                     "固件限制".to_owned(),
@@ -2778,6 +2787,15 @@ fn diagnostics_document(
             "uploaded": false
         }
     })
+}
+
+// The compact status bar is single-line, so the two-line path message must
+// never be reduced to a dangling "诊断已导出：" prefix.
+fn diagnostics_status_lines(path: &std::path::Path) -> (String, String) {
+    (
+        "诊断已导出".to_owned(),
+        format!("诊断已导出：\n{}", path.display()),
+    )
 }
 
 fn export_diagnostics(app: &GuiApp) -> Result<PathBuf, String> {
@@ -6317,13 +6335,15 @@ unsafe extern "system" fn window_proc(
                     }
                 }
                 EXPORT_DIAGNOSTICS => {
-                    let message = match export_diagnostics(app) {
-                        Ok(path) => format!("诊断已导出：\n{}", path.display()),
-                        Err(error) => format!("诊断导出失败。\n{error}"),
+                    let (compact, message) = match export_diagnostics(app) {
+                        Ok(path) => diagnostics_status_lines(&path),
+                        Err(error) => (
+                            "诊断导出失败。".to_owned(),
+                            format!("诊断导出失败。\n{error}"),
+                        ),
                     };
                     if let Some(controls) = app.simple_controls {
-                        let first_line = message.lines().next().unwrap_or("诊断导出");
-                        let text = wide(first_line);
+                        let text = wide(&compact);
                         SetWindowTextW(controls.status, text.as_ptr());
                     }
                     if !app.status_label.is_null() {
@@ -6766,6 +6786,30 @@ mod tests {
             assert!(!text.contains("已应用"));
         }
     }
+    #[test]
+    fn compact_status_line_drops_a_dangling_separator() {
+        assert_eq!(
+            super::compact_status_line("诊断已导出：\nC:\\temp\\report.json"),
+            Some("诊断已导出")
+        );
+        assert_eq!(
+            super::compact_status_line("已应用 10 W / 10 W / 10 W。"),
+            Some("已应用 10 W / 10 W / 10 W。")
+        );
+        assert_eq!(super::compact_status_line("  \n\t"), None);
+    }
+
+    #[test]
+    fn diagnostics_compact_status_has_no_dangling_colon() {
+        let (compact, full) = super::diagnostics_status_lines(std::path::Path::new(
+            r"C:\temp\AmdMobilePower\diagnostics\native-gui-diagnostics-1.json",
+        ));
+        assert_eq!(compact, "诊断已导出");
+        assert!(!compact.ends_with('：'));
+        assert!(full.starts_with("诊断已导出："));
+        assert!(full.contains("native-gui-diagnostics-1.json"));
+    }
+
     #[test]
     fn dpi_unscale_is_symmetric_and_identity_at_100_percent() {
         for value in [1, 8, 12, 31, 560] {
