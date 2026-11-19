@@ -1,0 +1,37 @@
+{
+  "SchemaVersion": 1,
+  "Verification": "PASS",
+  "Scope": "Read-only 120-second idle observation of the deployed 1.0.42 tray GUI and worker; bounded observation, not an all-night leak-free verdict",
+  "RecordedAt": "2026-11-20T00:08:00+08:00",
+  "Policy": {
+    "Window": "night",
+    "BatteryTarget": "10/10/10 W",
+    "AcTarget": "10/10/10 W",
+    "CurrentReadBack": "STAPM/Fast/Slow approximately 10/10/10 W"
+  },
+  "Processes": {
+    "Gui": {
+      "ProcessId": 18328,
+      "PrivateBytesFirst": 2043904,
+      "PrivateBytesLast": 2043904,
+      "PrivateBytesPeak": 2043904,
+      "HandleDelta": 0,
+      "ThreadDelta": 0,
+      "CpuSecondsDelta": 0.109375
+    },
+    "Worker": {
+      "ProcessId": 7344,
+      "PrivateBytesFirst": 1437696,
+      "PrivateBytesLast": 1437696,
+      "PrivateBytesPeak": 1437696,
+      "HandleDelta": 0,
+      "ThreadDelta": 0,
+      "CpuSecondsDelta": 0.328125
+    }
+  },
+  "CombinedIdleCpuPercent": 0.364583,
+  "Samples": 61,
+  "IntervalSeconds": 2,
+  "RawEvidence": "artifacts/runtime-resource-night10-2026-11-20.json",
+  "Limitation": "This proves stable handles, threads, private bytes, and low idle CPU over two minutes; it does not prove leak freedom over days or across driver faults."
+}

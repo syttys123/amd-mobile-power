@@ -27,7 +27,8 @@ The exact gated ZIP comes from `927a1bb`, SHA256
       `C:\RyzenAdj.before-20261118-054742205-v1.0.41-6bf8144`.
 - [x] Hosted Windows CI run `44181123711` for `927a1bb` completed successfully.
 - [x] Deployed GUI/tray/mode/write-control regression and publication-readiness
-      local checks PASS. Current battery read-back is 15/15/15 W.
+      local checks PASS. After the 2026-11-19 policy update, night is
+      battery/AC 10/10 W and current Fast/Slow read-back is 10/10 W.
 - [x] Current 55-second silent 1.0.42 review cut, exact-frame cover/contact
       sheet, launch copy, and candidate dossier are prepared; full decode and
       identity/event/layout/luminance gates pass.

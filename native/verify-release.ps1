@@ -500,7 +500,10 @@ if ($package.SourceCommit -ne $headCommit) {
     $nonPackagedGatePaths = @(
         "native/verify-release.ps1",
         "native/verify-native.ps1",
-        "native/test-release-gui-recovery-contract.ps1"
+        "native/test-release-gui-recovery-contract.ps1",
+        "native/test-current-policy-contract.ps1",
+        "native/restore-current-policy.ps1",
+        "native/install-current-policy-task.ps1"
     )
     $driftPaths = @(
         & git -C $repositoryRoot diff `

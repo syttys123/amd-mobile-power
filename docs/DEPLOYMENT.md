@@ -186,10 +186,10 @@ formal gate passed.
   `docs\evidence\hardware\v1.0.42-night-policy-restore-2026-11-18.json`
 - Deployment evidence:
   `docs\evidence\packaging\v1.0.42-deployment-2026-11-18.json`
-- Live state after deployment: GUI PID `39180` with worker PID `48132`,
-  automatic policy `enabled=true`, battery and AC targets all six limits at
-  `15 W`, and battery STAPM/Fast/Slow read-back `15/15/15 W`. Night is
-  23:00-07:00 at `15/15 W`; day is 07:00-23:00 battery `25 W` / AC `45 W`.
+- Live state after the 2026-11-19 night-policy update: automatic policy
+  `enabled=true`, battery and AC targets all six limits at `10 W`, and AC
+  Fast/Slow read-back `10/10 W`. Night is 23:00-07:00 at `10/10 W`; day is
+  07:00-23:00 battery `25 W` / AC `45 W`.
 - Night-policy read-back evidence:
   `docs\evidence\hardware\v1.0.42-night-policy-restore-2026-11-18.json`.
 
@@ -234,7 +234,7 @@ the full post-1.0.39 safety remediation and the pipe-stall supervision fix.
 - Desktop shortcut: `--simple-mode --max-target-watts 45`.
 - Release-gate recovery is now part of the wrapper contract: after success,
   failure, or interruption, the stable tray is restored from `finally` and
-  re-applies 07:00-23:00 battery 25 W / AC 45 W or night 15/15 W. The gate
+  re-applies 07:00-23:00 battery 25 W / AC 45 W or night 10/10 W. The gate
   records the initial GUI state and uses the helper's opt-in auto-start path;
   it does not leave the package verifier as a second hardware owner. The
   isolated `native/test-release-gui-recovery-contract.ps1` harness injects body

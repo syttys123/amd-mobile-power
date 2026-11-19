@@ -49,6 +49,32 @@ if (-not (Test-Path -LiteralPath $cleanupTests)) {
 }
 & $cleanupTests
 if ($LASTEXITCODE -ne 0) { throw "C++ hardware cleanup tests failed." }
+
+# These maintenance contracts are driver-free and must run in hosted CI before
+# any packaged worker starts. The evidence stays under artifacts.
+$nativeBuildArtifacts = Join-Path $repositoryRoot "artifacts\native-build"
+New-Item -ItemType Directory -Path $nativeBuildArtifacts -Force | Out-Null
+$policyMaintenanceEvidence = Join-Path `
+    $nativeBuildArtifacts `
+    "policy-current-contract.json"
+& (Join-Path $root "test-current-policy-contract.ps1") `
+    -EvidencePath $policyMaintenanceEvidence |
+    Out-Null
+$policyMaintenanceResult = Get-Content `
+    -LiteralPath $policyMaintenanceEvidence `
+    -Raw |
+    ConvertFrom-Json
+if ($policyMaintenanceResult.Verification -ne "PASS" -or
+    $policyMaintenanceResult.HardwareAccess -ne $false -or
+    $policyMaintenanceResult.ScheduledTaskMutated -ne $false) {
+    throw "Current-policy maintenance contract failed."
+}
+$releaseGuiRecoveryContract = (& (Join-Path $root "test-release-gui-recovery-contract.ps1") |
+    Out-String).Trim()
+if ($releaseGuiRecoveryContract -notmatch "release-gui-recovery-contract: PASS") {
+    throw "Release GUI recovery contract failed."
+}
+
 if ($NoBuild) {
     & (Join-Path $root "test-worker-request-bounds.ps1") `
         -WorkerExecutable (Join-Path $cppBuild "Release\amdmobilepower_native_worker.exe")
@@ -420,4 +446,7 @@ if ($VerifyWriteGuard) {
     RustGuiDetails = if ($rustGuiResult) { $rustGuiResult } else { $null }
     NativeWriteGuard = if ($writeGuardResult) { "PASS" } else { "Not requested" }
     NativeWriteGuardDetails = if ($writeGuardResult) { $writeGuardResult } else { $null }
+    PolicyMaintenanceContract = "PASS"
+    PolicyMaintenanceChecks = @($policyMaintenanceResult.Checks).Count
+    ReleaseGuiRecoveryContract = "PASS"
 } | Format-List

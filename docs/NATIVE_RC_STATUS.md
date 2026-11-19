@@ -76,8 +76,9 @@ install-scope contracts, formatting, Clippy, document links, and
 `git diff --check`. The final ZIP is 795,340 bytes, SHA256
 `35384501e2cf4b5808ba8796d212fb4b7394d49455153e817fefed1c11b44998`.
 The formal gate, deployed-GUI regression, and publication-readiness local
-checks PASS. Current battery read-back is 15/15/15 W; night is 15/15 W and day
-is battery 25 W / AC 45 W. No public release or upload occurred.
+checks PASS. After the 2026-11-19 policy update, night is battery/AC `10/10 W`
+and current Fast/Slow read-back is `10/10 W`; day is battery 25 W / AC 45 W.
+No public release or upload occurred.
 
 Note (2026-11-12): `1.0.18-native` is the first package gated with
 `-VerifyWorkerHang`, which runs the maintained hang verifier against the

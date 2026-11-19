@@ -34,6 +34,13 @@ not authoritative.
 - The real 23:00 transition first completed at 15/15 W under the old setting;
   both boundary and watchdog tasks returned 0. The subsequent explicit user
   change converged to 10/10 W without changing the stable package.
+- A 120-second idle observation of deployed GUI PID `18328` and worker PID
+  `7344` kept private bytes at 2,043,904 / 1,437,696 bytes, handle and thread
+  deltas at zero, and combined CPU at about 0.36%. Evidence:
+  `docs/evidence/ui/native-runtime-resource-night10-2026-11-20.json`.
+- The current-policy and release-GUI-recovery contracts are now invoked by
+  `native/verify-native.ps1`, so hosted CI runs them before any packaged worker
+  starts. They remain isolated from hardware and installed tasks.
 
 2026-11-19 (modern-standby missed-boundary watchdog):
 
