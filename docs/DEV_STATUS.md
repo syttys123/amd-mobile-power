@@ -41,6 +41,13 @@ not authoritative.
 - The current-policy and release-GUI-recovery contracts are now invoked by
   `native/verify-native.ps1`, so hosted CI runs them before any packaged worker
   starts. They remain isolated from hardware and installed tasks.
+- GitHub Actions run `44566236809` completed successfully for commit
+  `1644cc2` on the clean `windows-native` runner. Evidence:
+  `docs/evidence/build/hosted-ci-1.0.42-2026-11-20.json`.
+- Publication readiness was refreshed after that run:
+  `LocalReadiness=PASS`, `PublicReleaseReadiness=READY_FOR_HUMAN_REVIEW`,
+  `HostedWindowsCi=PASS`, and no local blockers. Evidence:
+  `docs/evidence/release/native-publication-readiness-1.0.42-current-2026-11-20.json`.
 
 2026-11-19 (modern-standby missed-boundary watchdog):
 

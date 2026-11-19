@@ -26,6 +26,8 @@ The exact gated ZIP comes from `927a1bb`, SHA256
 - [x] Reversible promotion with a new previous-stable backup and live read-back:
       `C:\RyzenAdj.before-20261118-054742205-v1.0.41-6bf8144`.
 - [x] Hosted Windows CI run `44181123711` for `927a1bb` completed successfully.
+- [x] Hosted Windows CI run `44566236809` for `1644cc2` completed successfully
+      with the current-policy and release-recovery contracts in the native gate.
 - [x] Deployed GUI/tray/mode/write-control regression and publication-readiness
       local checks PASS. After the 2026-11-19 policy update, night is
       battery/AC 10/10 W and current Fast/Slow read-back is 10/10 W.
@@ -35,6 +37,9 @@ The exact gated ZIP comes from `927a1bb`, SHA256
 - [x] Focused media commit `161a5e6` is pushed; the refreshed 31-entry review
       bundle passes every checksum and publication readiness reports
       `LocalReadiness=PASS`, `READY_FOR_HUMAN_REVIEW`.
+- [x] Publication readiness refreshed after the current CI run:
+      `evidence/release/native-publication-readiness-1.0.42-current-2026-11-20.json`
+      (`LocalReadiness=PASS`, `HostedWindowsCi=PASS`, no local blockers).
 - [ ] Independent pojia visual audit: three attempts blocked by upstream
       `insufficient_user_quota`; do not record this as an independent PASS.
 - [ ] Second AMD device, real OS DPI sessions, clean-Windows WinRing0 baseline,

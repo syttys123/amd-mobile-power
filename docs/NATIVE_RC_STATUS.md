@@ -215,6 +215,7 @@ docs/evidence/packaging/v1.0.42-shell-integration-2026-11-18.json
 docs/evidence/packaging/v1.0.42-fixture-policy-isolation-2026-11-18.json
 docs/evidence/build/reproducibility-1.0.42-2026-11-18.json
 docs/evidence/build/hosted-ci-1.0.42-2026-11-18.json
+docs/evidence/build/hosted-ci-1.0.42-2026-11-20.json
 docs/evidence/hardware/v1.0.42-worker-hang-2026-11-18.json
 docs/evidence/hardware/v1.0.42-power-policy-no-change-2026-11-18.json
 docs/evidence/hardware/v1.0.42-night-policy-restore-2026-11-18.json
@@ -223,6 +224,7 @@ docs/evidence/ui/native-packaged-1.0.42-ui-2026-11-18.json
 docs/evidence/release/public-sanitization-1.0.42-2026-11-18.json
 docs/evidence/release/native-publication-readiness-1.0.42-2026-11-18.json
 docs/evidence/release/native-publication-readiness-1.0.42-media-2026-11-18.json
+docs/evidence/release/native-publication-readiness-1.0.42-current-2026-11-20.json
 ```
 
 Historical 1.0.41 records:
