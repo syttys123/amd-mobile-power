@@ -1,11 +1,13 @@
 # Native Release Candidate Status
 
-Status: `STABLE_LOCAL_DEPLOYED_1.0.42_PENDING_PUBLICATION`
+Status: `STABLE_LOCAL_DEPLOYED_1.0.43_PENDING_PUBLICATION`
 
 This document tracks the native Rust GUI + C++ worker package and its
-stable-local deployment. `C:\RyzenAdj` currently holds `1.0.42`
-(source commit `927a1bb`, policy-line semantics and reversible-promotion
-hardening). The real rollback to the previous stable `1.0.41` tree is
+stable-local deployment. `C:\RyzenAdj` currently holds `1.0.43`
+(source commit `bbe5e14`, compact diagnostics-status fix and gate
+policy-task suspension). The real rollback to the previous stable `1.0.42` tree
+is `C:\RyzenAdj.before-20261120-052000-v1.0.42-927a1bb`.
+The `1.0.41` tree remains at
 `C:\RyzenAdj.before-20261118-054742205-v1.0.41-6bf8144`.
 The older `1.0.40` rollback remains at
 `C:\RyzenAdj.before-20261118-032150`; the `1.0.39` tree is preserved as
@@ -45,20 +47,44 @@ previous native `1.0.17-native` build is preserved as
 `C:\RyzenAdj.before-20261111-232010`, and the .NET `1.0.4` package as
 `C:\RyzenAdj.before-20261111-223017`.
 
-Decision (2026-11-18): the native line has a fully gated stable-local
+Decision (2026-11-20): the native line has a fully gated stable-local
 deployment for the verified 8845HS platform, and `C:\RyzenAdj` contains the
-`1.0.42` package (source `927a1bb`). Broader AMD generation support remains
+`1.0.43` package (source `bbe5e14`). Broader AMD generation support remains
 experimental. Public release remains `READY_FOR_HUMAN_REVIEW` and is not
 approved; real OS DPI transitions, a second AMD device, a clean Windows
 WinRing0 baseline, and owner media review are still open. Hosted Windows CI
-for this source passed in run `44181123711`. Current per-gate status is tracked
-in `RELEASE_CHECKLIST.md`.
+last passed for the 1.0.42 source in run `44566236809`; the 1.0.43 source needs
+the same workflow after the push. Current per-gate status is tracked in
+`RELEASE_CHECKLIST.md`.
 Evidence:
-`docs/evidence/packaging/v1.0.42-release-gate-2026-11-18.json`,
-`docs/evidence/packaging/v1.0.42-deployment-2026-11-18.json`,
-`docs/evidence/hardware/v1.0.42-night-policy-restore-2026-11-18.json`.
+`docs/evidence/packaging/v1.0.43-release-gate-2026-11-20.json`,
+`docs/evidence/packaging/v1.0.43-deployment-2026-11-20.json`,
+`docs/evidence/hardware/local-night-10w-policy-2026-11-19.json`.
 
-## Stable Candidate 1.0.42
+## Stable Candidate 1.0.43
+
+The exact package passed the formal gate and is deployed to `C:\RyzenAdj`. It
+fixes the compact diagnostics status string so a hardware-free export no longer
+ends with a dangling `诊断已导出：`, and it makes the release gate stop and
+disable the day/night policy tasks for the exclusive hardware section so the
+five-minute watchdog cannot race the isolated verifier worker. Worker, probe,
+icons, packaging, policy semantics, and the runtime UI are otherwise unchanged
+from 1.0.42.
+
+- Package: `amd-mobile-power-v1.0.43-win-x64-native-preview.zip`
+- Package SHA256:
+  `663f49eba5a0506bcacc2830104f48f5f13943372b51f65a84deb137c2c3f6f4`
+- Source commit: `bbe5e1421387bba21c67bfa51accf824b214f22a`
+- Gate PASS on 2026-11-20 with battery-line no-change writes (10/10/10 W).
+- Deployed GUI/worker/probe: `84bfa267` / `ffec2afc` / `3e946047`.
+- Rollback: `C:\RyzenAdj.before-20261120-052000-v1.0.42-927a1bb`.
+- Live tray: `--tray --simple-mode --max-target-watts 45`, GUI PID `29100`,
+  worker PID `16968`, battery line, 10/10/10 W read-back at 05:21.
+- The promotion launch check requires a visible main window; a `--tray` launch
+  fails it. Promote with windowed arguments (or `-NoLaunch`) and start the tray
+  afterwards. The first `--tray` attempt rolled back to 1.0.42 cleanly.
+
+## Previous Stable Candidate 1.0.42
 
 The exact package passed the formal gate and is deployed to `C:\RyzenAdj`. It adds
 explicit policy attempt/applied power-line fields, separates the automatic
@@ -206,7 +232,24 @@ artifacts/native-packages/amd-mobile-power-v1.0.40-win-x64-native-preview.zip
 
 ## Evidence Records
 
-Current 1.0.42 records:
+Current 1.0.43 records:
+
+```text
+docs/evidence/packaging/v1.0.43-release-gate-2026-11-20.json
+docs/evidence/packaging/v1.0.43-clean-2026-11-20.json
+docs/evidence/packaging/v1.0.43-shell-integration-2026-11-20.json
+docs/evidence/packaging/v1.0.43-fixture-policy-isolation-2026-11-20.json
+docs/evidence/build/reproducibility-1.0.43-2026-11-20.json
+docs/evidence/hardware/v1.0.43-worker-hang-2026-11-20.json
+docs/evidence/hardware/v1.0.43-power-policy-no-change-2026-11-20.json
+docs/evidence/packaging/v1.0.43-deployment-2026-11-20.json
+docs/evidence/ui/native-dpi-100-125-150-2026-11-20.json
+docs/evidence/ui/native-workarea-200-1366x768-2026-11-20.json
+docs/evidence/ui/native-maximize-scroll-2026-11-20.json
+docs/evidence/release/public-sanitization-1.0.43-2026-11-20.json
+```
+
+1.0.42 records (previous):
 
 ```text
 docs/evidence/packaging/v1.0.42-release-gate-2026-11-18.json
@@ -253,7 +296,8 @@ The historical 1.0.39 draft is archived only. Current media evidence is
 `docs/evidence/media/native-promo-1.0.42-review-2026-11-18.json`. Independent
 pojia audit attempts were blocked by upstream quota; automated checks and
 main-agent inspection are not an independent PASS. Owner review and publication
-approval remain required.
+approval remain required. A 1.0.43 media refresh is pending: the 1.0.42 compat
+clip still shows the old `诊断已导出：` status string that this release fixes.
 
 ## Deployed Safety Remediation
 

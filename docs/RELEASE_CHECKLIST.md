@@ -1,6 +1,48 @@
 # Release Checklist
 
-## Deployed Stable 1.0.42 (2026-11-18)
+## Deployed Stable 1.0.43 (2026-11-20)
+
+Current target: **1.0.43**, status **STABLE_LOCAL_DEPLOYED_PENDING_PUBLICATION**.
+The exact gated ZIP comes from `bbe5e14`, SHA256
+`663f49eba5a0506bcacc2830104f48f5f13943372b51f65a84deb137c2c3f6f4`
+(803,432 bytes). Binary identities: GUI `84bfa267`, worker `ffec2afc`, probe
+`3e946047`.
+
+- [x] Compact diagnostics status no longer renders a dangling `诊断已导出：`;
+      Rust tests 38/38, `cargo fmt`, `cargo clippy -D warnings`, and a
+      hardware-free fixture capture of the fixed text pass.
+- [x] The release gate stops and disables the three `AmdMobilePower` policy
+      tasks for the exclusive hardware section, records
+      `PolicyTasksSuspended`, and re-enables them in `finally`; the recovery
+      contract passes in PowerShell 5.1 and 7. This removes the intermittent
+      worker exit code 3 caused by the five-minute watchdog restarting the tray.
+- [x] Clean commit, build, package, formal release gate with reproducibility,
+      shell integration, battery-line no-change policy (10/10/10 W),
+      worker-hang, DPI/work-area/maximize fixtures, sanitization, and docs.
+- [x] Reversible promotion with previous-stable backup
+      `C:\RyzenAdj.before-20261120-052000-v1.0.42-927a1bb`; live tray
+      `--tray --simple-mode --max-target-watts 45` with 10/10/10 W battery
+      read-back at 05:21.
+- [ ] Hosted Windows CI for `bbe5e14`, 1.0.43 media refresh, independent pojia
+      audit, second AMD device, and owner publication approval.
+
+Current package gates:
+
+- [x] Formal release gate:
+      `evidence/packaging/v1.0.43-release-gate-2026-11-20.json`.
+- [x] Clean package, fixture isolation, shell integration, reproducibility:
+      `evidence/packaging/v1.0.43-clean-2026-11-20.json`,
+      `evidence/packaging/v1.0.43-fixture-policy-isolation-2026-11-20.json`,
+      `evidence/packaging/v1.0.43-shell-integration-2026-11-20.json`,
+      `evidence/build/reproducibility-1.0.43-2026-11-20.json`.
+- [x] Current-value policy and worker-hang replacement:
+      `evidence/hardware/v1.0.43-power-policy-no-change-2026-11-20.json`,
+      `evidence/hardware/v1.0.43-worker-hang-2026-11-20.json`.
+- [x] Deployment and sanitization:
+      `evidence/packaging/v1.0.43-deployment-2026-11-20.json`,
+      `evidence/release/public-sanitization-1.0.43-2026-11-20.json`.
+
+## Previous Stable 1.0.42 (2026-11-18)
 
 Current target: **1.0.42**, status **STABLE_LOCAL_DEPLOYED_PENDING_PUBLICATION**.
 The exact gated ZIP comes from `927a1bb`, SHA256

@@ -1,0 +1,37 @@
+{
+  "Verification": "PASS",
+  "RustBuildIsolation": "Fresh unique target directory; removed in finally",
+  "RecordedAt": "2026-11-20T05:05:18.0921772+08:00",
+  "Results": {
+    "Gui": {
+      "PreviousArtifact": "84bfa2673a6a8d3a9c40ca40110ca2ca815b0d191638f98d5784f1f1408fe933",
+      "PreviousArtifactMatches": true,
+      "First": "84bfa2673a6a8d3a9c40ca40110ca2ca815b0d191638f98d5784f1f1408fe933",
+      "Second": "84bfa2673a6a8d3a9c40ca40110ca2ca815b0d191638f98d5784f1f1408fe933",
+      "Reproducible": true,
+      "Size": 918016
+    },
+    "Probe": {
+      "PreviousArtifact": "3e9460477921741a5f959bb86b38c05a0a5bf3b7cd1f71bfbfe5d71841b511ef",
+      "PreviousArtifactMatches": true,
+      "First": "3e9460477921741a5f959bb86b38c05a0a5bf3b7cd1f71bfbfe5d71841b511ef",
+      "Second": "3e9460477921741a5f959bb86b38c05a0a5bf3b7cd1f71bfbfe5d71841b511ef",
+      "Reproducible": true,
+      "Size": 344064
+    },
+    "Worker": {
+      "First": "ffec2afc798ba39026857cd1cc287dcdbb2a268e5b53314756b35bef83a8cf0d",
+      "Second": "ffec2afc798ba39026857cd1cc287dcdbb2a268e5b53314756b35bef83a8cf0d",
+      "Reproducible": true,
+      "Size": 151040
+    },
+    "Package": {
+      "Version": "1.0.43",
+      "First": "663f49eba5a0506bcacc2830104f48f5f13943372b51f65a84deb137c2c3f6f4",
+      "Second": "663f49eba5a0506bcacc2830104f48f5f13943372b51f65a84deb137c2c3f6f4",
+      "Reproducible": true,
+      "Size": 803432
+    }
+  },
+  "Failures": []
+}

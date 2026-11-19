@@ -7,9 +7,9 @@ The current implementation is the native line: a Rust GUI
 (`amd-mobile-power-gui.exe`) and a separate C++ worker
 (`amdmobilepower_native_worker.exe`). The earlier .NET WinForms GUI / worker /
 Core stack is legacy and is no longer deployed. The deployed `C:\RyzenAdj`
-package is `1.0.42` (source `927a1bb`); it includes the safety remediation,
+package is `1.0.43` (source `bbe5e14`); it includes the safety remediation,
 limits-aware drift repair, and explicit policy-line semantics described below. Its full gate and deployment passed
-on 2026-11-18. See `NATIVE_RC_STATUS.md` for the exact evidence set.
+on 2026-11-20. See `NATIVE_RC_STATUS.md` for the exact evidence set.
 
 ## Processes
 
@@ -142,16 +142,16 @@ Future service or machine-wide deployment may use:
 
 ```text
 D:\amd-mobile-power    source, tests, CI, experimental builds
-C:\RyzenAdj            current stable-local native deployment (1.0.42)
+C:\RyzenAdj            current stable-local native deployment (1.0.43)
 ```
 
 Promotion is one-way through `native/promote-stable-deployment.ps1` and requires
 the verified package, a recoverable timestamped backup, and the hardware and
 runtime gates in `DEPLOYMENT.md` and `RELEASE_CHECKLIST.md`. Stable deployment
 files are never edited as source. The current stable-local deployment is
-`1.0.42`; public release remains unapproved. The rollback to the previous
-stable `1.0.41` tree is
-`C:\RyzenAdj.before-20261118-054742205-v1.0.41-6bf8144`.
+`1.0.43`; public release remains unapproved. The rollback to the previous
+stable `1.0.42` tree is
+`C:\RyzenAdj.before-20261120-052000-v1.0.42-927a1bb`.
 
 `native/verify-release.ps1` is the release-gate wrapper for this ownership
 boundary. It records the initial stable GUI/arguments, clears only test
@@ -164,6 +164,13 @@ reported as a composite error; it does not replace the original gate failure.
 The contract test parses this structure and injects body/recovery failures into
 the extracted `catch`/`finally` blocks; it never touches the stable processes
 or hardware.
+
+Before the exclusive hardware section the gate stops and disables the three
+`AmdMobilePower` policy tasks, then re-enables them in `finally` and records
+the prior states in the gate evidence. Without that pause the five-minute
+watchdog can restart the tray while an isolated verifier worker holds the
+RyzenAdj owner mutex, which made hardware checks fail intermittently with
+worker exit code 3.
 
 Host-specific day/night maintenance has boundary tasks at 07:00 and 23:00,
 plus a current-policy task triggered at logon and every five minutes. It uses

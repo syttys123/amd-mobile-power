@@ -3,17 +3,17 @@
 ## Directory Roles
 
 - `D:\amd-mobile-power`: development repository and source of truth.
-- `C:\RyzenAdj`: current stable-local native deployment (`1.0.42`,
-  source commit `927a1bb`, policy-line semantics and promotion hardening).
-  Rollback for the previous `1.0.41` tree:
-  `C:\RyzenAdj.before-20261118-054742205-v1.0.41-6bf8144`.
-  `1.0.42` package SHA256:
-  `35384501e2cf4b5808ba8796d212fb4b7394d49455153e817fefed1c11b44998`;
+- `C:\RyzenAdj`: current stable-local native deployment (`1.0.43`,
+  source commit `bbe5e14`, compact diagnostics-status fix and the release-gate
+  policy-task suspension). Rollback for the previous `1.0.42` tree:
+  `C:\RyzenAdj.before-20261120-052000-v1.0.42-927a1bb`.
+  `1.0.43` package SHA256:
+  `663f49eba5a0506bcacc2830104f48f5f13943372b51f65a84deb137c2c3f6f4`;
   deployment evidence:
-  `docs/evidence/packaging/v1.0.42-deployment-2026-11-18.json`.
-  Deployed GUI/worker/probe SHA256 prefixes: `612a883e` / `ffec2afc` /
-  `00369735`. The deployed tray session runs
-  `--simple-mode --max-target-watts 45` with editable presets `10 / 25 / 45 W`
+  `docs/evidence/packaging/v1.0.43-deployment-2026-11-20.json`.
+  Deployed GUI/worker/probe SHA256 prefixes: `84bfa267` / `ffec2afc` /
+  `3e946047`. The deployed tray session runs
+  `--tray --simple-mode --max-target-watts 45` with editable presets `10 / 25 / 45 W`
   and a `45 W` ceiling. The armed day/night policy is 07:00 battery `25 W` /
   AC `45 W` and 23:00 `10/10 W`; policy targets and temporary local user caps
   are runtime state and are not part of the release package.
@@ -24,7 +24,7 @@
   minutes, selecting the same day/night targets from the local clock. Healthy
   read-back skips without a write or tray restart; this also repairs a boundary
   missed during Modern Standby. It is host maintenance state,
-  not part of the 1.0.42 payload. The installer is dry-run by default and
+  not part of the 1.0.43 payload. The installer is dry-run by default and
   requires `-Apply`; it does not elevate the GUI or replace the deployment.
   Previous deployment history follows.
   `1.0.30-native` (source commit `2f04605`, BOM-tolerant persisted state
@@ -85,7 +85,7 @@ The reviewed gate command is:
 
 ```powershell
 .\native\verify-release.ps1 `
-  -Version 1.0.42 `
+  -Version 1.0.43 `
   -VerifyReproducibility `
   -VerifyShellIntegration `
   -ExecuteNoChangePolicy `
@@ -97,12 +97,12 @@ Promotion itself is a dry run followed by an explicit apply:
 
 ```powershell
 .\native\promote-stable-deployment.ps1 `
-  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.42-win-x64-native-preview.zip `
+  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.43-win-x64-native-preview.zip `
   -TargetDirectory C:\RyzenAdj `
   -GuiArguments "--simple-mode --max-target-watts 45"
 
 .\native\promote-stable-deployment.ps1 `
-  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.42-win-x64-native-preview.zip `
+  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.43-win-x64-native-preview.zip `
   -TargetDirectory C:\RyzenAdj `
   -GuiArguments "--simple-mode --max-target-watts 45" `
   -Apply -NoLaunch
@@ -110,6 +110,10 @@ Promotion itself is a dry run followed by an explicit apply:
 
 The helper writes deployment evidence and rolls back on failure. Run the
 publication-readiness verifier after promotion.
+
+The promotion launch check requires a visible main window. Pass windowed GUI
+arguments without `--tray`, or use `-NoLaunch` and start the tray yourself
+afterwards; a pure `--tray` launch has no main window and fails the check.
 
 ## Promotion Flow
 
@@ -133,7 +137,7 @@ The native Rust GUI + C++ worker line uses the tested reversible helper:
 
 ```powershell
 .\native\promote-stable-deployment.ps1 `
-  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.42-win-x64-native-preview.zip `
+  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.43-win-x64-native-preview.zip `
   -TargetDirectory C:\RyzenAdj `
   -GuiArguments "--simple-mode --max-target-watts 45"
 ```
@@ -143,7 +147,7 @@ shortcut plan:
 
 ```powershell
 .\native\promote-stable-deployment.ps1 `
-  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.42-win-x64-native-preview.zip `
+  -PackagePath .\artifacts\native-packages\amd-mobile-power-v1.0.43-win-x64-native-preview.zip `
   -TargetDirectory C:\RyzenAdj `
   -GuiArguments "--simple-mode --max-target-watts 45" `
   -Apply -NoLaunch
@@ -155,6 +159,44 @@ shortcuts while preserving their arguments, writes deployment evidence, and
 rolls back on failure.
 
 ## Current Deployment Evidence
+
+On 2026-11-20, `1.0.43` replaced the `1.0.42` tree at `C:\RyzenAdj` after the
+formal gate passed. It carries the compact diagnostics-status fix (no more
+dangling `诊断已导出：` line) and makes the gate pause the day/night policy
+tasks during hardware verification.
+
+- Package SHA256:
+  `663f49eba5a0506bcacc2830104f48f5f13943372b51f65a84deb137c2c3f6f4`
+- Package size: `803,432` bytes
+- Package source commit: `bbe5e1421387bba21c67bfa51accf824b214f22a`
+- Deployed GUI SHA256:
+  `84bfa2673a6a8d3a9c40ca40110ca2ca815b0d191638f98d5784f1f1408fe933`
+- Deployed worker SHA256:
+  `ffec2afc798ba39026857cd1cc287dcdbb2a268e5b53314756b35bef83a8cf0d`
+- Deployed probe SHA256:
+  `3e9460477921741a5f959bb86b38c05a0a5bf3b7cd1f71bfbfe5d71841b511ef`
+- Rollback to the previous stable `1.0.42` tree:
+  `C:\RyzenAdj.before-20261120-052000-v1.0.42-927a1bb`.
+- Release gate:
+  `docs\evidence\packaging\v1.0.43-release-gate-2026-11-20.json`
+- Clean, shell, reproducibility, hardware, DPI, viewport and sanitization
+  evidence: `docs\evidence\packaging\v1.0.43-clean-2026-11-20.json`,
+  `docs\evidence\packaging\v1.0.43-shell-integration-2026-11-20.json`,
+  `docs\evidence\build\reproducibility-1.0.43-2026-11-20.json`,
+  `docs\evidence\hardware\v1.0.43-power-policy-no-change-2026-11-20.json`,
+  `docs\evidence\hardware\v1.0.43-worker-hang-2026-11-20.json`,
+  `docs\evidence\ui\native-dpi-100-125-150-2026-11-20.json`,
+  `docs\evidence\ui\native-workarea-200-1366x768-2026-11-20.json`,
+  `docs\evidence\ui\native-maximize-scroll-2026-11-20.json`,
+  `docs\evidence\release\public-sanitization-1.0.43-2026-11-20.json`.
+- Deployment evidence:
+  `docs\evidence\packaging\v1.0.43-deployment-2026-11-20.json`
+- Live state after promotion: tray `--tray --simple-mode --max-target-watts 45`,
+  GUI PID `29100`, worker PID `16968`, battery line, target and Fast/Slow
+  read-back `10/10/10 W` at 05:21 local time. Night stays 23:00-07:00 at
+  `10/10 W`; day stays 07:00-23:00 battery `25 W` / AC `45 W`.
+
+### 1.0.42 Deployment Evidence (previous)
 
 On 2026-11-18, `1.0.42` replaced the `1.0.41` tree at `C:\RyzenAdj` after the
 formal gate passed.

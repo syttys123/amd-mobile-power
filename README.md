@@ -6,7 +6,7 @@ AMD thin-and-light laptops. It uses a Rust GUI and a separate C++ worker so the
 UI and hardware access stay behind a narrow named-pipe contract.
 
 > Status: no public release yet. The current stable-local deployment is
-> `1.0.42` (source `927a1bb`), validated on one MECHREVO WUJIE15 PRO with
+> `1.0.43` (source `bbe5e14`), validated on one MECHREVO WUJIE15 PRO with
 > a Ryzen 7 8845HS. Its GUI, probe, worker, and portable ZIP rebuild
 > byte-identically from the same commit. The local release gate and deployment
 > pass; the release remains `READY_FOR_HUMAN_REVIEW` and is not approved for
@@ -19,8 +19,9 @@ UI and hardware access stay behind a narrow named-pipe contract.
 ![Native advanced mode (1.0.42 fixture capture)](media/promo-html/assets/advanced-1.0.42.png)
 
 The reference captures above use the deployed 1.0.42 GUI in an isolated,
-hardware-free fixture. They show the current interface without exposing a
-capture pipe name or changing the running tray policy. See
+hardware-free fixture; the interface is unchanged in 1.0.43 apart from the
+compact diagnostics-export status string. They show the current interface
+without exposing a capture pipe name or changing the running tray policy. See
 [docs/UI_SCREENSHOT_EVIDENCE.md](docs/UI_SCREENSHOT_EVIDENCE.md).
 
 ## Current Capabilities
@@ -54,7 +55,7 @@ capture pipe name or changing the running tray policy. See
 - Portable ZIP, isolated install/overwrite/uninstall helpers, checksums,
   diagnostics export, and byte-reproducible binaries and packages.
 
-The deployed 1.0.42 package includes the safety remediation: bounded overlapped
+The deployed 1.0.43 package includes the safety remediation: bounded overlapped
 pipe I/O and a 1 MiB response cap, a kill-on-close Job Object orphan guard, a
 terminal-fault latch only for repeated `refresh_failed` from a responsive
 worker, an explicit pipe DACL, hardware-owner conflict detection, NaN/Inf
@@ -90,12 +91,12 @@ portable build's read-only default.
 Current review candidate:
 
 ```text
-artifacts/native-packages/amd-mobile-power-v1.0.42-win-x64-native-preview.zip
+artifacts/native-packages/amd-mobile-power-v1.0.43-win-x64-native-preview.zip
 ```
 
-- Size: `795,340` bytes
+- Size: `803,432` bytes
 - SHA256:
-  `35384501e2cf4b5808ba8796d212fb4b7394d49455153e817fefed1c11b44998`
+  `663f49eba5a0506bcacc2830104f48f5f13943372b51f65a84deb137c2c3f6f4`
 
 1. Extract the complete ZIP to a writable directory.
 2. On a fresh Windows host, open an elevated PowerShell in the extracted
@@ -168,7 +169,7 @@ git submodule update --init --recursive
 .\native\verify-native.ps1 -NoBuild -VerifyHardware -VerifyRustGui `
   -VerifyRustWorker -VerifyWriteGuard
 .\native\verify-release.ps1 `
-  -Version 1.0.42 `
+  -Version 1.0.43 `
   -VerifyReproducibility `
   -VerifyShellIntegration `
   -ExecuteNoChangePolicy `
@@ -192,7 +193,8 @@ conservative values and restore the previous state.
 - [docs/BUILDING.md](docs/BUILDING.md): build and verification commands.
 - [docs/SECURITY.md](docs/SECURITY.md): hardware and driver safety boundaries.
 - [docs/NATIVE_RC_STATUS.md](docs/NATIVE_RC_STATUS.md):
-  current 1.0.42 gate history. The version-bound review dossier is
+  current 1.0.43 gate history. The version-bound review dossier still describes
+  1.0.42 and is pending a 1.0.43 refresh:
   [docs/NATIVE_RELEASE_CANDIDATE_1.0.42_ZH.md](docs/NATIVE_RELEASE_CANDIDATE_1.0.42_ZH.md).
   Historical dossiers remain available but do not describe the deployed package.
   Current implementation details live in

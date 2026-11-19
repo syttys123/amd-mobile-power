@@ -1,0 +1,90 @@
+{
+  "Verification": "PASS",
+  "Package": "D:\\amd-mobile-power\\artifacts\\native-packages\\amd-mobile-power-v1.0.43-win-x64-native-preview.zip",
+  "PackageSHA256": "663f49eba5a0506bcacc2830104f48f5f13943372b51f65a84deb137c2c3f6f4",
+  "ExpectedPackageSHA256": "663f49eba5a0506bcacc2830104f48f5f13943372b51f65a84deb137c2c3f6f4",
+  "ExpectedSourceCommit": "bbe5e1421387bba21c67bfa51accf824b214f22a",
+  "IdentityBound": true,
+  "PackageVersion": "1.0.43",
+  "SourceCommit": "bbe5e1421387bba21c67bfa51accf824b214f22a",
+  "WorkingTree": "Clean",
+  "PayloadChecksumEntries": 19,
+  "DeployedHashes": {
+    "Gui": "84bfa2673a6a8d3a9c40ca40110ca2ca815b0d191638f98d5784f1f1408fe933",
+    "Worker": "ffec2afc798ba39026857cd1cc287dcdbb2a268e5b53314756b35bef83a8cf0d",
+    "Probe": "3e9460477921741a5f959bb86b38c05a0a5bf3b7cd1f71bfbfe5d71841b511ef",
+    "Payload": {
+      "amd-mobile-power-gui.exe": "84bfa2673a6a8d3a9c40ca40110ca2ca815b0d191638f98d5784f1f1408fe933",
+      "amd-mobile-power-probe.exe": "3e9460477921741a5f959bb86b38c05a0a5bf3b7cd1f71bfbfe5d71841b511ef",
+      "amdmobilepower_native_worker.exe": "ffec2afc798ba39026857cd1cc287dcdbb2a268e5b53314756b35bef83a8cf0d",
+      "BUILD-INFO.txt": "aa3507e60d0033643dea364451bd4424a464ae2772923151ab694ddb01db3ee9",
+      "collect-native-diagnostics.ps1": "044fbdab3dc33075d8b5494ab007f4627d828b3d921458f70f11165adf012b8b",
+      "inpoutx64.dll": "5f27ed4d5cd58a1ee23deeb802e09e73f3a1d884ce2135f6e827f67b171269e7",
+      "install-driver-bootstrap.ps1": "1f6d1c33c1a7a4b9c703267d73a903f9b4802de7823c465fd81dfb264c8b6090",
+      "install-preview.ps1": "e677ee33c3abe0e093150cec135a4829e580d4c635648b80722dc57c5e89b229",
+      "libryzenadj.dll": "ada4f533338b7eecfac816ff900ba866cef9f2e2248002554d5206e390a6a196",
+      "licenses/GPL-3.0.txt": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "licenses/InpOut32-LICENSE.txt": "12d517a5704512ddd7985dfebe6d52665edb90606fb32edd97a64fd47683d8e6",
+      "licenses/RyzenAdj-LICENSE.txt": "7d3a95e5e06978064ed3f8e2b7c8f845e7fd8a405294727cc708f94cb83b8059",
+      "licenses/WinRing0-COPYRIGHT.txt": "89bed827a96edd80b0fe55b876f73f929ad33ae13e920eaf1b78416d7f073a4d",
+      "README.txt": "7055ecdc28c2905fb8a6813f19442927ef904e9f583bcb2bc1e60015113f7ef1",
+      "THIRD_PARTY_NOTICES.md": "272a834f5cc4fad9d08a881c73616f48715d38c53ac8ccb935a604645e66b550",
+      "uninstall-driver-bootstrap.ps1": "3d1b3cb641dac2ed88bee5bd51fba70925496516dd95c246f6e06b3a40ca2ebb",
+      "uninstall-preview.ps1": "4f4770e3e72bbbde75cd385a5b425fc8eed93c9b6778cdb257e791a876d70ad8",
+      "WinRing0x64.dll": "a746fd5728e7485f741cc330a279674bc8590b1b8007d8614046c49f58698485",
+      "WinRing0x64.sys": "11bd2c9f9e2397c9a16e0990e4ed2cf0679498fe0fd418a3dfdac60b5c160ee5"
+    }
+  },
+  "Target": "C:\\RyzenAdj",
+  "TargetScope": "Stable",
+  "ProcessStopScope": "TargetDirectoryTreeOnly",
+  "StoppedProcesses": [
+    {
+      "ProcessId": 6480,
+      "Name": "amd-mobile-power-gui.exe",
+      "ExecutablePath": "C:\\RyzenAdj\\amd-mobile-power-gui.exe"
+    },
+    {
+      "ProcessId": 17720,
+      "Name": "amdmobilepower_native_worker.exe",
+      "ExecutablePath": "C:\\RyzenAdj\\amdmobilepower_native_worker.exe"
+    }
+  ],
+  "PreviousVersion": "1.0.42",
+  "PreviousCommit": "927a1bbf74e78b061eafb6088e807f4fc5ff365b",
+  "PreviousWorkingTree": "Clean",
+  "PreviousBuildInfoStatus": "Present",
+  "Backup": "C:\\RyzenAdj.before-20261120-052000-v1.0.42-927a1bb",
+  "BackupKind": "PreviousStable",
+  "IsSameVersion": false,
+  "IsSameCommit": false,
+  "GuiArguments": "--simple-mode --max-target-watts 45",
+  "ShortcutsUpdated": [
+    "%USERPROFILE%\\Desktop\\功耗设置 5-60W.lnk"
+  ],
+  "ShortcutArguments": [
+    {
+      "Path": "%USERPROFILE%\\Desktop\\功耗设置 5-60W.lnk",
+      "Before": "--simple-mode --max-target-watts 45",
+      "After": "--simple-mode --max-target-watts 45",
+      "Dropped": []
+    }
+  ],
+  "LaunchVerification": "PASS",
+  "Launched": true,
+  "RecordedAt": "2026-11-20T05:20:12.5970896+08:00",
+  "PreviousStableBackup": "C:\\RyzenAdj.before-20261120-052000-v1.0.42-927a1bb",
+  "TraySession": {
+    "GuiPid": 29100,
+    "WorkerPid": 16968,
+    "Arguments": "--tray --simple-mode --max-target-watts 45",
+    "PowerLine": "battery",
+    "TargetWatts": 10,
+    "FastLimitWatts": 10,
+    "SlowLimitWatts": 10,
+    "StapmLimitWatts": 10,
+    "Verification": "PASS",
+    "StartedAt": "2026-11-20T05:21:35+08:00"
+  },
+  "CompactDiagnosticsStatus": "Fixed: compact status no longer renders a dangling 诊断已导出： prefix"
+}

@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-11-19
+Last updated: 2026-11-20
 
 ## Objective
 
@@ -20,6 +20,45 @@ after each meaningful change. Conversation history and compacted summaries are
 not authoritative.
 
 ## Latest Maintenance Milestone
+
+2026-11-20 05:21 (1.0.43: compact diagnostics status fix, gate watchdog suspension, stable promotion):
+
+- The compact simple-mode status bar showed a dangling `诊断已导出：` after a
+  diagnostics export: `visible_status` mirrors the first line of the two-line
+  advanced message, and that first line ends with a separator whose detail sits
+  on line two. `compact_status_line` now strips trailing separators, and the
+  export path sets a complete `诊断已导出` for the compact bar while the full
+  path remains in advanced mode. Rust tests 38/38, `cargo fmt` and
+  `cargo clippy -D warnings` pass. An isolated hardware-free diagnostics
+  capture of the new build shows the complete text:
+  `artifacts/media/diag-status-audit-20261120`.
+- The release gate failed intermittently after the 11-19 logon/watchdog task
+  was added: while the gate stops the tray for exclusive hardware access, the
+  five-minute current-policy task restarted it, and the isolated worker then
+  exited with code 3 because another process owned the RyzenAdj mutex. The gate
+  now stops and disables `AmdMobilePower CurrentPolicy AtLogon`,
+  `DirectDayPolicy 0700`, and `DirectNightPolicy 2300` before the hardware
+  section, re-enables them in `finally`, and records the prior states as
+  `PolicyTasksSuspended`. The recovery contract passes in PowerShell 5.1 and 7.
+- `native/verify-release.ps1 -Version 1.0.43 -AllowBatteryWriteGuard` passes
+  package `663f49eb...` (803,432 bytes, source `bbe5e14`), shell integration,
+  no-change policy, worker-hang, DPI 100/125/150, 1366x768 at 200% work area,
+  maximize/scroll, byte reproducibility, and public sanitization. Evidence:
+  `docs/evidence/packaging/v1.0.43-release-gate-2026-11-20.json`.
+- Promoted to `C:\RyzenAdj` with backup
+  `C:\RyzenAdj.before-20261120-052000-v1.0.42-927a1bb`. The first apply used
+  the live `--tray` arguments and failed the launch check because a tray-only
+  launch has no main window; the helper rolled back to 1.0.42 cleanly.
+  Re-running with windowed arguments passed (`LaunchVerification=PASS`), then
+  the tray was started as `--tray --simple-mode --max-target-watts 45`. Live
+  read-back at 05:21: battery line, target and limits 10/10/10 W, GUI PID
+  `29100`, worker PID `16968`. Evidence:
+  `docs/evidence/packaging/v1.0.43-deployment-2026-11-20.json`.
+- Night policy remains 23:00-07:00 at 10/10 W and day 07:00-23:00 at battery
+  25 W / AC 45 W; the three policy tasks were re-enabled after promotion.
+  Remaining: the public promo video is still the 1.0.42 review cut, so a 1.0.43
+  media refresh is pending; the second physical AMD device and the owner's
+  publication approval also remain open.
 
 2026-11-19 23:02 (night target changed to 10 W):
 

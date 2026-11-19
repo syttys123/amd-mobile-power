@@ -1,0 +1,56 @@
+{
+  "Version": "1.0.43",
+  "Verification": "PASS",
+  "Package": "amd-mobile-power-v1.0.43-win-x64-native-preview.zip",
+  "SHA256": "663f49eba5a0506bcacc2830104f48f5f13943372b51f65a84deb137c2c3f6f4",
+  "Size": 803432,
+  "SourceCommit": "bbe5e1421387bba21c67bfa51accf824b214f22a",
+  "PackageEvidence": "D:\\amd-mobile-power\\docs\\evidence\\packaging\\v1.0.43-clean-2026-11-20.json",
+  "ShellIntegration": "PASS",
+  "ShellEvidence": "D:\\amd-mobile-power\\docs\\evidence\\packaging\\v1.0.43-shell-integration-2026-11-20.json",
+  "NoChangePolicy": "PASS",
+  "PolicyEvidence": "D:\\amd-mobile-power\\docs\\evidence\\hardware\\v1.0.43-power-policy-no-change-2026-11-20.json",
+  "WorkerHang": "PASS",
+  "WorkerHangEvidence": "D:\\amd-mobile-power\\docs\\evidence\\hardware\\v1.0.43-worker-hang-2026-11-20.json",
+  "DpiFixtures": "PASS",
+  "DpiEvidence": "D:\\amd-mobile-power\\docs\\evidence\\ui\\native-dpi-100-125-150-2026-11-20.json",
+  "SmallViewport": "PASS",
+  "SmallViewportEvidence": "D:\\amd-mobile-power\\docs\\evidence\\ui\\native-workarea-200-1366x768-2026-11-20.json",
+  "MaximizeScroll": "PASS",
+  "MaximizeScrollEvidence": "D:\\amd-mobile-power\\docs\\evidence\\ui\\native-maximize-scroll-2026-11-20.json",
+  "Reproducibility": "PASS",
+  "ReproducibilityEvidence": "D:\\amd-mobile-power\\docs\\evidence\\build\\reproducibility-1.0.43-2026-11-20.json",
+  "PolicyTasksSuspended": [
+    {
+      "Name": "AmdMobilePower CurrentPolicy AtLogon",
+      "PreviousState": "Ready",
+      "Suspended": true
+    },
+    {
+      "Name": "AmdMobilePower DirectDayPolicy 0700",
+      "PreviousState": "Ready",
+      "Suspended": true
+    },
+    {
+      "Name": "AmdMobilePower DirectNightPolicy 2300",
+      "PreviousState": "Ready",
+      "Suspended": true
+    }
+  ],
+  "RecordedAt": "2026-11-20T05:07:58.0638181+08:00",
+  "InitialStableGui": {
+    "Running": true,
+    "ProcessId": 20128,
+    "Arguments": "--tray --simple-mode --max-target-watts 45"
+  },
+  "StableGuiRecovery": {
+    "Status": "PASS",
+    "InitialGuiRunning": true,
+    "InitialGuiPid": 20128,
+    "InitialGuiArguments": "--tray --simple-mode --max-target-watts 45",
+    "RestoredGuiPid": 11804,
+    "RestoredWorkerPid": 4440,
+    "BatteryWatts": 10,
+    "AcWatts": 10
+  }
+}
