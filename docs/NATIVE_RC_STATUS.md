@@ -58,7 +58,8 @@ run `44620445052` for the push containing `bbe5e14` completed successfully on
 Evidence:
 `docs/evidence/packaging/v1.0.43-release-gate-2026-11-20.json`,
 `docs/evidence/packaging/v1.0.43-deployment-2026-11-20.json`,
-`docs/evidence/hardware/local-night-10w-policy-2026-11-19.json`.
+`docs/evidence/hardware/local-night-10w-policy-2026-11-19.json`,
+`docs/evidence/release/native-publication-readiness-1.0.43-2026-11-20.json`.
 
 ## Stable Candidate 1.0.43
 

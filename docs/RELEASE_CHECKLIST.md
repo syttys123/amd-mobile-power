@@ -32,6 +32,10 @@ The exact gated ZIP comes from `bbe5e14`, SHA256
       compat scene now shows the complete `诊断已导出` status.
 - [x] 1.0.43 launch copy and candidate dossier added; review bundle
       `artifacts/native-release-review/v1.0.43` refreshed.
+- [x] Publication readiness PASS: `LocalReadiness=PASS`,
+      `PublicReleaseReadiness=READY_FOR_HUMAN_REVIEW`, 13/13 local checks
+      including packaged GUI/tray evidence and deployed hash match:
+      `evidence/release/native-publication-readiness-1.0.43-2026-11-20.json`.
 - [ ] Independent pojia audit, second AMD device, and owner publication
       approval.
 

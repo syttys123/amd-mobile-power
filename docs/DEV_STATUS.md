@@ -44,6 +44,12 @@ not authoritative.
 - 1.0.43 launch copy and candidate dossier were added, and the review bundle
   under `artifacts/native-release-review/v1.0.43` was refreshed from the exact
   video, cover, contact sheet and media evidence after the media commit.
+- Publication readiness for 1.0.43 is `PASS`: `LocalReadiness=PASS`,
+  `PublicReleaseReadiness=READY_FOR_HUMAN_REVIEW`, and all 13 local checks pass
+  (package hash/verification, no-change policy, packaged GUI/tray evidence,
+  deployed hash match, probe, icon, shortcut, compatibility index, media draft,
+  review bundle). Evidence:
+  `docs/evidence/release/native-publication-readiness-1.0.43-2026-11-20.json`.
 
 2026-11-20 05:21 (1.0.43: compact diagnostics status fix, gate watchdog suspension, stable promotion):
 
