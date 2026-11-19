@@ -158,6 +158,7 @@ Assert-True ($finallyText.Contains('-NotePropertyName "StableGuiRecovery"')) `
 # edit introduces a command that could touch hosts, processes, or hardware.
 $allowedFinallyCommands = @(
     'Restore-StableGuiAfterReleaseGate',
+    'Resume-PolicyTasks',
     'Write-Output',
     'Test-Path',
     'Get-Content',
@@ -198,6 +199,10 @@ if ($unexpectedFinallyCommands.Count -eq 0) {
             AcWatts = 10
         }
     }
+    $script:resumeCalls = 0
+    function Resume-PolicyTasks {
+        $script:resumeCalls++
+    }
 
     function New-GateHarness([string]$BodyExpression) {
         [scriptblock]::Create(@(
@@ -231,6 +236,7 @@ if ($unexpectedFinallyCommands.Count -eq 0) {
         #    original verification error.
         Write-BaseEvidence
         $script:restoreCalls = 0
+        $script:resumeCalls = 0
         $script:restoreMode = 'success'
         $failingGate = New-GateHarness `
             "throw [System.InvalidOperationException]::new('verification boom')"
@@ -243,6 +249,8 @@ if ($unexpectedFinallyCommands.Count -eq 0) {
         }
         Assert-True ($script:restoreCalls -eq 1) `
             'body failure must invoke the recovery function exactly once'
+        Assert-True ($script:resumeCalls -eq 1) `
+            'body failure must resume the policy tasks exactly once'
         Assert-True ($null -ne $observed) `
             'body failure must propagate an error after recovery'
         if ($null -ne $observed) {
@@ -281,12 +289,15 @@ if ($unexpectedFinallyCommands.Count -eq 0) {
         #    recovery result in the evidence document.
         Write-BaseEvidence
         $script:restoreCalls = 0
+        $script:resumeCalls = 0
         $script:restoreMode = 'success'
         $successGate = New-GateHarness '$null = 1'
         $null = & $successGate
         $document = Get-Content -LiteralPath $EvidencePath -Raw | ConvertFrom-Json
         Assert-True ($script:restoreCalls -eq 1) `
             'success path must invoke recovery'
+        Assert-True ($script:resumeCalls -eq 1) `
+            'success path must resume the policy tasks'
         Assert-True ($null -ne $document.InitialStableGui) `
             'success path must record InitialStableGui'
         Assert-True ($document.InitialStableGui.Running -eq $true) `

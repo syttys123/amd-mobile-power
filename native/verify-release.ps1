@@ -109,6 +109,54 @@ function Get-LiveStableWorker {
     )
 }
 
+$policyTaskNames = @(
+    "AmdMobilePower CurrentPolicy AtLogon",
+    "AmdMobilePower DirectDayPolicy 0700",
+    "AmdMobilePower DirectNightPolicy 2300"
+)
+$script:suspendedPolicyTasks = @()
+
+# The current-policy watchdog restarts the supervised tray whenever it sees a
+# missing or mismatched state. Pause it for the exclusive hardware section so
+# it cannot race the gate's isolated worker for the RyzenAdj owner mutex.
+function Suspend-PolicyTasks {
+    param([string[]]$Names)
+
+    $state = @()
+    foreach ($name in $Names) {
+        $task = Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue
+        if ($null -eq $task) {
+            $state += [pscustomobject]@{
+                Name = $name; PreviousState = "Absent"; Suspended = $false
+            }
+            continue
+        }
+        if ($task.State -eq "Disabled") {
+            $state += [pscustomobject]@{
+                Name = $name; PreviousState = "Disabled"; Suspended = $false
+            }
+            continue
+        }
+        if ($task.State -eq "Running") {
+            Stop-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue
+        }
+        Disable-ScheduledTask -TaskName $name -ErrorAction Stop | Out-Null
+        $script:suspendedPolicyTasks += $name
+        $state += [pscustomobject]@{
+            Name = $name; PreviousState = [string]$task.State; Suspended = $true
+        }
+    }
+    return $state
+}
+
+function Resume-PolicyTasks {
+    foreach ($name in @($script:suspendedPolicyTasks)) {
+        Enable-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue | Out-Null
+        Write-Output ("Policy task resumed: {0}" -f $name)
+    }
+    $script:suspendedPolicyTasks = @()
+}
+
 function Test-PathInsideAnyRoot {
     param(
         [string]$Path,
@@ -347,6 +395,7 @@ if ($stableGuiSnapshot.Count -gt 1) {
         (($stableGuiSnapshot | ForEach-Object { $_.Id }) -join ", "))
 }
 $stableRecoveryResult = $null
+$policyTaskSuspension = @()
 
 $verificationFailure = $null
 try {
@@ -369,6 +418,7 @@ if ($AllowBatteryWriteGuard) {
 # the worker still takes the process-wide RyzenAdj owner mutex. Pause the
 # supervised tray for the exclusive hardware section; finally restores it.
 if ($nativeArguments.VerifyHardware) {
+    $policyTaskSuspension = @(Suspend-PolicyTasks -Names $policyTaskNames)
     Stop-TestOwnerProcesses
     Stop-StableGui
 }
@@ -575,6 +625,7 @@ $result = [ordered]@{
     else {
         $null
     }
+    PolicyTasksSuspended = $policyTaskSuspension
     RecordedAt = (Get-Date).ToString("o")
 }
 
@@ -688,5 +739,8 @@ finally {
                 $verificationFailure.Exception)
         }
         throw
+    }
+    finally {
+        Resume-PolicyTasks
     }
 }
