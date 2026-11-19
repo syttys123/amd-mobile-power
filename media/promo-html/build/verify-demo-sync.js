@@ -1,4 +1,4 @@
-// Multi-clip identity, event, pointer and claim gate for the 1.0.42 review.
+// Multi-clip identity, event, pointer and claim gate for the review cut.
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
@@ -17,8 +17,9 @@ const scenes = fs.readFileSync(scenesPath, "utf8");
 const errors = [];
 const check = (condition, message) => { if (!condition) errors.push(message); };
 
-check(render.Version === "1.0.42", "Render version must be 1.0.42");
-check(config.Version === "1.0.42", "Config version must be 1.0.42");
+const expectedVersion = process.env.PROMO_VERSION || "1.0.43";
+check(render.Version === expectedVersion, `Render version must be ${expectedVersion}`);
+check(config.Version === expectedVersion, `Config version must be ${expectedVersion}`);
 check(render.GuiSha256 === config.GuiSha256, "GUI identity mismatch");
 check(render.FrameCount === Math.ceil(render.TotalSeconds * render.Fps), "Frame count mismatch");
 check(render.TotalSeconds >= 30 && render.TotalSeconds <= 70, "Review duration out of range");

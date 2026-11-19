@@ -7,6 +7,7 @@ const manifestPath = path.resolve(process.argv[2]);
 const framesDir = path.resolve(process.argv[3]);
 const outputDir = path.resolve(process.argv[4]);
 const version = process.argv[5];
+const buildDate = process.argv[6] || new Date().toISOString().slice(0, 10);
 if (!version || !/^\d+\.\d+\.\d+(?:[-.][A-Za-z0-9]+)*$/.test(version)) {
   throw new Error("A package version is required");
 }
@@ -24,7 +25,7 @@ function frameData(frameIndex) {
   try {
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
     const coverFrame = Math.floor(1.75 * manifest.Fps);
-    const coverPath = path.join(outputDir, `bilibili-cover-${version}-2026-11-18.png`);
+    const coverPath = path.join(outputDir, `bilibili-cover-${version}-${buildDate}.png`);
     await page.setContent(`<body style="margin:0;background:#0b1216"><img src="${frameData(coverFrame)}" style="display:block;width:1920px;height:1080px"></body>`);
     await page.evaluate(() => document.images[0].decode());
     await page.screenshot({ path: coverPath });
@@ -47,7 +48,7 @@ function frameData(frameIndex) {
       footer{margin-top:26px;color:#a6b8b0;font-size:18px;display:flex;justify-content:space-between}
     </style></head><body><header><div><h1>AMD Mobile Power · 宣传片审查联系表</h1><p>真实渲染帧 · 隔离模拟数据 · 无声字幕审查版</p></div><div class="version">${version}</div></header><main>${cells}</main><footer><span>1920×1080 · 30 fps · ${manifest.TotalSeconds.toFixed(1)} s · ${manifest.FrameCount} frames</span><span>尚未批准公开发布</span></footer></body></html>`);
     await page.evaluate(async () => { for (const image of document.images) await image.decode(); });
-    const contactPath = path.join(outputDir, `native-promo-${version}-contact-sheet-2026-11-18.png`);
+    const contactPath = path.join(outputDir, `native-promo-${version}-contact-sheet-${buildDate}.png`);
     await page.screenshot({ path: contactPath, fullPage: true });
     const result = {
       Verification: "PASS", Version: version, RenderManifest: manifestPath,

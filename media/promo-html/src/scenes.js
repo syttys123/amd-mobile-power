@@ -1,4 +1,4 @@
-// Frame-exact storyboard. Every GUI clip is an isolated 1.0.42 fixture.
+// Frame-exact storyboard. Every GUI clip is an isolated 1.0.43 fixture.
 window.__SCENES__ = [
   { id: "hook", duration: 3.5, narration: "同一台 AMD 轻薄本，插电要性能，电池想省一点。" },
   { id: "safety", duration: 8.5, narration: "默认只读。先阅读并勾选须知，再确认解锁；随时可以重新锁定。", clip: "consent" },

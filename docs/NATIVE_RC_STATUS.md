@@ -291,15 +291,20 @@ docs/evidence/ui/native-maximize-scroll-2026-11-18.json
 docs/evidence/release/public-sanitization-1.0.41-2026-11-18.json
 ```
 
-These are local release/deployment records, not a public release. The latest
-prepared review bundle under `artifacts/native-release-review/` uses the
-55-second 1.0.42 silent fixture review cut and exact-frame cover/contact sheet.
-The historical 1.0.39 draft is archived only. Current media evidence is
-`docs/evidence/media/native-promo-1.0.42-review-2026-11-18.json`. Independent
-pojia audit attempts were blocked by upstream quota; automated checks and
-main-agent inspection are not an independent PASS. Owner review and publication
-approval remain required. A 1.0.43 media refresh is pending: the 1.0.42 compat
-clip still shows the old `诊断已导出：` status string that this release fixes.
+These are local release/deployment records, not a public release. The 1.0.43
+review cut was rebuilt from fresh 1.0.43 fixture clips:
+`artifacts/media/promo-1.0.43-review/amd-mobile-power-1.0.43-review-silent.mp4`
+(3,472,403 bytes, SHA256
+`d795f85054531b7a8bf69e6bd693de8da6a681d168d0b9c49842f0ce4d75f181`,
+55.0 s, 1920x1080, 30 fps, 1650 frames, no audio). Full decode, demo-sync,
+layout, 24 keyframes, three luminance screens and the 17-check capture contract
+pass; the compat scene now shows the complete `诊断已导出` status. Current media
+evidence is `docs/evidence/media/native-promo-1.0.43-review-2026-11-20.json`.
+Independent pojia audit attempts were blocked by upstream quota; automated
+checks and main-agent keyframe inspection are not an independent PASS. Owner
+review and publication approval remain required. The historical 1.0.42 review
+cut remains archived at
+`artifacts/media/promo-1.0.42-review-final2/`.
 
 ## Deployed Safety Remediation
 

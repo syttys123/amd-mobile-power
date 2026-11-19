@@ -25,8 +25,15 @@ The exact gated ZIP comes from `bbe5e14`, SHA256
       read-back at 05:21.
 - [x] Hosted Windows CI run `44620445052` for the push containing `bbe5e14`
       completed successfully.
-- [ ] 1.0.43 media refresh, independent pojia audit, second AMD device, and
-      owner publication approval.
+- [x] Rebuilt the 55-second silent review cut from fresh 1.0.43 fixture clips:
+      `artifacts/media/promo-1.0.43-review/amd-mobile-power-1.0.43-review-silent.mp4`
+      (SHA256 `d795f850...`), with full decode, demo-sync, layout, keyframes,
+      three luminance screens and the 17-check capture contract passing. The
+      compat scene now shows the complete `诊断已导出` status.
+- [x] 1.0.43 launch copy and candidate dossier added; review bundle
+      `artifacts/native-release-review/v1.0.43` refreshed.
+- [ ] Independent pojia audit, second AMD device, and owner publication
+      approval.
 
 Current package gates:
 

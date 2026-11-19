@@ -29,10 +29,11 @@ for (const [kind, entry] of Object.entries(config.Clips)) {
   try {
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
     await page.goto(pathToFileURL(path.resolve(__dirname, "../index.html")).href);
-    await page.evaluate(({ posters, clips }) => {
+    await page.evaluate(({ posters, clips, version }) => {
       window.__POSTERS__ = posters;
       window.__CLIPS__ = clips;
-    }, { posters, clips });
+      window.__VERSION__ = version;
+    }, { posters, clips, version: config.Version });
     const scenes = await page.evaluate(() => window.__timeline);
     const results = [];
     for (const scene of scenes) {

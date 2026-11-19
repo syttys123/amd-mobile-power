@@ -119,15 +119,17 @@ function validateManifest(manifest, files, kind) {
     const page = await browser.newPage({ viewport: { width, height } });
     await page.goto(`file:///${htmlPath.replace(/\\/g, "/")}`);
     await page.waitForFunction(() => typeof window.__totalDuration === "function");
-    await page.evaluate(({ clips: metadata, posters: images }) => {
+    await page.evaluate(({ clips: metadata, posters: images, version }) => {
       window.__CLIPS__ = metadata;
       window.__POSTERS__ = images;
+      window.__VERSION__ = version;
     }, {
       clips: Object.fromEntries(Object.entries(clips).map(([kind, clip]) => [kind, {
         Events: clip.Events, LeadSeconds: clip.LeadSeconds,
         ClientWidth: clip.ClientWidth, ClientHeight: clip.ClientHeight,
       }])),
       posters,
+      version: config.Version,
     });
     const total = await page.evaluate(() => window.__totalDuration());
     const scenes = await page.evaluate(() => window.__timeline);

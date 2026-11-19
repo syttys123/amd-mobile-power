@@ -21,6 +21,30 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-20 06:20 (1.0.43 media rebuild):
+
+- Recaptured all five isolated fixture clips with the deployed 1.0.43 GUI
+  (`84bfa267...`) into `artifacts/media/promo-1.0.43-*`, added
+  `media/promo-html/build/clips-1.0.43.json`, and made the scene overlay derive
+  its version from the clips config so the render reads `1.0.43 界面演示`.
+- Rendered 1650 frames at 30 fps and encoded the 55.0 s silent H.264 review cut:
+  `artifacts/media/promo-1.0.43-review/amd-mobile-power-1.0.43-review-silent.mp4`
+  (3,472,403 bytes, SHA256 `d795f850...`). Full decode, demo-sync, layout
+  (24 samples), 24 keyframes, three luminance screens and the 17-check capture
+  contract pass in PowerShell 5.1 and 7. Whole-frame luminance stays between
+  37.26 and 89.05 with no isolated spikes or bright frames.
+- The compat scene now shows the complete `诊断已导出` status instead of the
+  dangling colon; the old 1.0.42 cut remains archived at
+  `artifacts/media/promo-1.0.42-review-final2/`.
+- Main-agent keyframe inspection covers ui-demo, auto-policy and compat. The
+  independent pojia audit remains unavailable because of upstream quota, and
+  hook/firmware frames were not re-inspected in this pass; human review is still
+  required. Evidence:
+  `docs/evidence/media/native-promo-1.0.43-review-2026-11-20.json`.
+- 1.0.43 launch copy and candidate dossier were added, and the review bundle
+  under `artifacts/native-release-review/v1.0.43` was refreshed from the exact
+  video, cover, contact sheet and media evidence after the media commit.
+
 2026-11-20 05:21 (1.0.43: compact diagnostics status fix, gate watchdog suspension, stable promotion):
 
 - The compact simple-mode status bar showed a dangling `诊断已导出：` after a

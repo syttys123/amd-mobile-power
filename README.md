@@ -194,15 +194,14 @@ conservative values and restore the previous state.
 - [docs/BUILDING.md](docs/BUILDING.md): build and verification commands.
 - [docs/SECURITY.md](docs/SECURITY.md): hardware and driver safety boundaries.
 - [docs/NATIVE_RC_STATUS.md](docs/NATIVE_RC_STATUS.md):
-  current 1.0.43 gate history. The version-bound review dossier still describes
-  1.0.42 and is pending a 1.0.43 refresh:
-  [docs/NATIVE_RELEASE_CANDIDATE_1.0.42_ZH.md](docs/NATIVE_RELEASE_CANDIDATE_1.0.42_ZH.md).
+  current 1.0.43 gate history. The version-bound review dossier is
+  [docs/NATIVE_RELEASE_CANDIDATE_1.0.43_ZH.md](docs/NATIVE_RELEASE_CANDIDATE_1.0.43_ZH.md).
   Historical dossiers remain available but do not describe the deployed package.
   Current implementation details live in
   [docs/NATIVE_RC_STATUS.md](docs/NATIVE_RC_STATUS.md) and
   [docs/DEV_STATUS.md](docs/DEV_STATUS.md).
-- [docs/NATIVE_LAUNCH_COPY_1.0.42_ZH.md](docs/NATIVE_LAUNCH_COPY_1.0.42_ZH.md):
-  latest prepared review-only GitHub and Bilibili copy (1.0.42). It is not
+- [docs/NATIVE_LAUNCH_COPY_1.0.43_ZH.md](docs/NATIVE_LAUNCH_COPY_1.0.43_ZH.md):
+  latest prepared review-only GitHub and Bilibili copy (1.0.43). It is not
   publication approval.
 
 ## License

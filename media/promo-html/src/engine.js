@@ -201,8 +201,9 @@ function clipScene(scene, t, root, options) {
   });
   const left = heading(options.eyebrow, options.title, options.body,
     options.leftWidth || 620);
+  const versionLabel = `${window.__VERSION__ || "1.0"} 界面演示`;
   const shot = imageFrame(options.id, options.poster, options.width, options.height,
-    options.label || "1.0.42 界面演示", "模拟数据 · 未写硬件");
+    options.label || versionLabel, "模拟数据 · 未写硬件");
   wrap.append(left, shot.wrap);
   root.append(wrap);
   const config = window.__CLIPS__ && window.__CLIPS__[scene.clip];

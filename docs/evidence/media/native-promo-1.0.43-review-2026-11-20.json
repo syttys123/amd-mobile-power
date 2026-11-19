@@ -1,0 +1,95 @@
+{
+  "SchemaVersion": 2,
+  "Version": "1.0.43",
+  "Status": "DRAFT_FOR_HUMAN_REVIEW",
+  "Video": "artifacts/media/promo-1.0.43-review/amd-mobile-power-1.0.43-review-silent.mp4",
+  "VideoSHA256": "d795f85054531b7a8bf69e6bd693de8da6a681d168d0b9c49842f0ce4d75f181",
+  "VideoBytes": 3472403,
+  "DurationSeconds": 55.0,
+  "Width": 1920,
+  "Height": 1080,
+  "FrameRate": 30,
+  "Frames": 1650,
+  "VideoCodec": "h264",
+  "Audio": "none",
+  "GuiSHA256": "84bfa2673a6a8d3a9c40ca40110ca2ca815b0d191638f98d5784f1f1408fe933",
+  "SourceCommit": "bbe5e1421387bba21c67bfa51accf824b214f22a",
+  "SimulatedData": true,
+  "HardwareAccess": false,
+  "Scenes": [
+    "hook",
+    "safety",
+    "ui-demo",
+    "presets",
+    "auto-policy",
+    "firmware",
+    "compat",
+    "closing"
+  ],
+  "FullDecode": "PASS",
+  "DemoSyncReview": {
+    "Path": "artifacts/media/promo-1.0.43-review/demo-sync-review.json",
+    "Result": "PASS"
+  },
+  "LayoutReview": {
+    "Path": "artifacts/media/promo-1.0.43-review/layout-review.json",
+    "Result": "PASS",
+    "Samples": 24
+  },
+  "KeyframeReview": {
+    "Path": "artifacts/media/promo-1.0.43-review/keyframes",
+    "Result": "PASS",
+    "Samples": 24
+  },
+  "LuminanceReview": {
+    "WholeFrame": {
+      "Path": "artifacts/media/promo-1.0.43-review/luminance-review.json",
+      "Frames": 1650,
+      "Minimum": 37.2606,
+      "Maximum": 89.0546,
+      "IsolatedSpikes": [],
+      "BrightFrames": []
+    },
+    "GuiRegion": {
+      "Path": "artifacts/media/promo-1.0.43-review/luminance-gui-region-review.json",
+      "Frames": 1650,
+      "Minimum": 36.3889,
+      "Maximum": 150.595,
+      "IsolatedSpikes": [],
+      "BrightFrames": []
+    },
+    "Mobile960": {
+      "Path": "artifacts/media/promo-1.0.43-review/luminance-960-review.json",
+      "Frames": 1650,
+      "Minimum": 37.2774,
+      "Maximum": 89.0986,
+      "IsolatedSpikes": [],
+      "BrightFrames": []
+    },
+    "Scope": "Downscaled luminance heuristics; not proof of absence of local flicker"
+  },
+  "CaptureContract": {
+    "PowerShell51": "artifacts/media/capture-contract-1.0.43-ps5.json",
+    "PowerShell7": "artifacts/media/capture-contract-1.0.43-ps7.json",
+    "Checks": 17,
+    "Result": "PASS"
+  },
+  "Clips": {
+    "Consent": "artifacts/media/promo-1.0.43-consent-flow/flow-manifest.json",
+    "Simple": "artifacts/media/promo-1.0.43-final-simple/frames-manifest.json",
+    "Presets": "artifacts/media/promo-1.0.43-final-presets/frames-manifest.json",
+    "Policy": "artifacts/media/promo-1.0.43-final-policy/frames-manifest.json",
+    "Diagnostics": "artifacts/media/promo-1.0.43-diagnostics-flow/flow-manifest.json"
+  },
+  "ReviewAssets": {
+    "Cover": "artifacts/media/promo-1.0.43-review/bilibili-cover-1.0.43-2026-11-20.png",
+    "ContactSheet": "artifacts/media/promo-1.0.43-review/native-promo-1.0.43-contact-sheet-2026-11-20.png",
+    "Manifest": "artifacts/media/promo-1.0.43-review/review-assets-1.0.43.json"
+  },
+  "VisualAudit": {
+    "MainAgent": "Keyframes re-inspected for ui-demo, auto-policy and compat: preset sequence 25/45/10, pointer hover before click, policy 25/45 with battery-only, and the compact status now reads 诊断已导出 without a dangling colon.",
+    "IndependentAgent": "Unavailable: pojia upstream quota rejected the agent; not counted as an independent PASS.",
+    "Scope": "Main-agent keyframe inspection plus deterministic gates; full human review remains required"
+  },
+  "RecordedAt": "2026-11-20T06:20:00+08:00"
+}
