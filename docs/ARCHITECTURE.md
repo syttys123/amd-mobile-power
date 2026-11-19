@@ -165,13 +165,17 @@ The contract test parses this structure and injects body/recovery failures into
 the extracted `catch`/`finally` blocks; it never touches the stable processes
 or hardware.
 
-Host-specific day/night maintenance has three triggers: 07:00, 23:00, and
-current-user logon plus 20 seconds. The logon path uses
+Host-specific day/night maintenance has boundary tasks at 07:00 and 23:00,
+plus a current-policy task triggered at logon and every five minutes. It uses
 `native/restore-current-policy.ps1` to choose the configured window from the
-local clock, then delegates to the same verified direct-policy helper. This
-closes the gap where an unexpected reboot between boundaries left no GUI,
-worker, or policy ticker. The logon task is limited/interactive, runs on
-battery, ignores overlapping instances, and is installed only by an explicit
+local clock. The periodic path first verifies settings, explicit applied-line
+identity, and Fast/Slow read-back; a healthy match skips without writing or
+restarting the tray. A mismatch delegates to the same verified direct-policy
+helper. This covers both an unexpected reboot and Modern Standby spanning a
+boundary, where Task Scheduler may record a missed run without promptly
+executing it. The task is limited/interactive, runs on battery, ignores
+overlapping instances, repeats for ten years without stopping at duration end,
+and is installed only by an explicit
 `install-current-policy-task.ps1 -Apply`; it is not a package-wide default.
 
 ## Capability Detection

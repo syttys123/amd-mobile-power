@@ -7,6 +7,9 @@ param(
     [ValidateRange(0, 23)][int]$NightStartHour = 23,
     [string]$HelperPath = (Join-Path $PSScriptRoot 'apply-power-policy-direct.ps1'),
     [string]$LogPath = (Join-Path $env:LOCALAPPDATA 'AmdMobilePower\maintenance\current-policy.log'),
+    [string]$ProbePath = 'C:\RyzenAdj\amd-mobile-power-probe.exe',
+    [string]$PipeName = '\\.\pipe\AmdMobilePower.RustGui.Worker.v1',
+    [switch]$SkipIfAlreadyApplied,
     [datetime]$Now = (Get-Date)
 )
 
@@ -38,6 +41,61 @@ if ($directory -and -not (Test-Path -LiteralPath $directory)) {
 }
 "{0:o} START window={1} battery={2} ac={3}" -f (Get-Date), $window, $battery, $ac |
     Add-Content -LiteralPath $LogPath -Encoding UTF8
+
+if ($SkipIfAlreadyApplied) {
+    if (-not (Test-Path -LiteralPath $ProbePath -PathType Leaf)) {
+        throw "Policy probe is missing: $ProbePath"
+    }
+    . (Join-Path $PSScriptRoot 'worker-client.ps1')
+    try {
+        $policyResult = Invoke-WorkerPipeRequest -PipeName $PipeName `
+            -Command 'getPowerPolicy' -ConnectTimeoutMilliseconds 1500 `
+            -ReadTimeoutMilliseconds 2500
+        $snapshotResult = Invoke-WorkerPipeRequest -PipeName $PipeName `
+            -Command 'getSnapshot' -ConnectTimeoutMilliseconds 1500 `
+            -ReadTimeoutMilliseconds 2500
+        if ($policyResult.Success -and $snapshotResult.Success) {
+            $state = $policyResult.Payload
+            $settings = $state.settings
+            $telemetry = $snapshotResult.Payload.telemetry
+            $line = [string]$telemetry.powerLine
+            $expected = if ($line -eq 'ac') { $ac } else { $battery }
+            $target = if ($line -eq 'ac') { $settings.acTarget } else { $settings.batteryTarget }
+            $applied = $state.lastAppliedTarget
+            $settingsMatch = $settings.enabled -eq $true -and
+                $settings.batteryEnabled -eq $true -and $settings.acEnabled -eq $true -and
+                $settings.batteryTarget.stapmWatts -eq $battery -and
+                $settings.batteryTarget.fastWatts -eq $battery -and
+                $settings.batteryTarget.slowWatts -eq $battery -and
+                $settings.acTarget.stapmWatts -eq $ac -and
+                $settings.acTarget.fastWatts -eq $ac -and
+                $settings.acTarget.slowWatts -eq $ac
+            $attemptMatch = $state.lastAttemptSucceeded -eq $true -and
+                [string]$state.lastObservedPowerLine -eq $line -and
+                [string]$state.lastAttemptPowerLine -eq $line -and
+                [string]$state.lastAppliedPowerLine -eq $line -and
+                $null -ne $applied -and
+                $applied.stapmWatts -eq $expected -and
+                $applied.fastWatts -eq $expected -and
+                $applied.slowWatts -eq $expected
+            $readBackMatch = $null -ne $telemetry.fastLimitWatts -and
+                $null -ne $telemetry.slowLimitWatts -and
+                [Math]::Abs([double]$telemetry.fastLimitWatts - $expected) -le 1.0 -and
+                [Math]::Abs([double]$telemetry.slowLimitWatts - $expected) -le 1.0
+            if ($settingsMatch -and $attemptMatch -and $readBackMatch) {
+                "{0:o} SKIP window={1} battery={2} ac={3} reason=already-applied line={4} fastSlow={5}/{6}" -f `
+                    (Get-Date), $window, $battery, $ac, $line,
+                    $telemetry.fastLimitWatts, $telemetry.slowLimitWatts |
+                    Add-Content -LiteralPath $LogPath -Encoding UTF8
+                return
+            }
+        }
+    }
+    catch {
+        "{0:o} RECOVER reason=probe-unavailable detail={1}" -f (Get-Date), $_.Exception.Message |
+            Add-Content -LiteralPath $LogPath -Encoding UTF8
+    }
+}
 
 $global:LASTEXITCODE = 0
 & $HelperPath `

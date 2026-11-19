@@ -20,8 +20,10 @@
   On 2026-11-19 a local current-user logon recovery task was added after an
   unexpected reboot left the tray absent between schedule boundaries:
   `AmdMobilePower CurrentPolicy AtLogon` runs
-  `native/restore-current-policy.ps1` 20 seconds after logon and selects the
-  same day/night targets from the local clock. It is host maintenance state,
+  `native/restore-current-policy.ps1` 20 seconds after logon and every five
+  minutes, selecting the same day/night targets from the local clock. Healthy
+  read-back skips without a write or tray restart; this also repairs a boundary
+  missed during Modern Standby. It is host maintenance state,
   not part of the 1.0.42 payload. The installer is dry-run by default and
   requires `-Apply`; it does not elevate the GUI or replace the deployment.
   Previous deployment history follows.

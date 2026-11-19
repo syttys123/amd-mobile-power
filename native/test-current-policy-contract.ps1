@@ -70,8 +70,23 @@ if (-not $AllowGuiAutoStart -or -not $RefreshGui) { throw 'unsafe helper flags' 
          $installerText.Contains('$registeredSid -ne $identity.User.Value') -and
          $installerText.Contains('$registeredUser -ne $currentShortName')) `
         'Task Scheduler may return SID, qualified account, or short account'
+    Add-Result 'sleep-boundary-watchdog' `
+        ($installerText.Contains('-RepetitionInterval') -and
+         $installerText.Contains('$registered.Triggers.Count -ne 2') -and
+         $installerText.Contains("Repetition.Duration = 'P3650D'") -and
+         $installerText.Contains('Repetition.StopAtDurationEnd = $false') -and
+         $installerText.Contains('-SkipIfAlreadyApplied')) `
+        'periodic trigger recovers missed sleep boundaries without unconditional GUI restart'
 
-    foreach ($file in @('restore-current-policy.ps1','install-current-policy-task.ps1')) {
+    $restoreText = Get-Content -LiteralPath $script -Raw
+    Add-Result 'watchdog-readback-gate' `
+        ($restoreText.Contains('$settingsMatch -and $attemptMatch -and $readBackMatch') -and
+         $restoreText.Contains('reason=already-applied') -and
+         $restoreText.Contains('lastAppliedPowerLine') -and
+         $restoreText.Contains('[Math]::Abs([double]$telemetry.fastLimitWatts - $expected) -le 1.0')) `
+        'skip requires matching settings, fresh applied-line fields, and Fast/Slow read-back'
+
+    foreach ($file in @('restore-current-policy.ps1','install-current-policy-task.ps1','test-current-policy-contract.ps1')) {
         $tokens = $null; $errors = $null
         [System.Management.Automation.Language.Parser]::ParseFile(
             (Join-Path $root $file), [ref]$tokens, [ref]$errors) | Out-Null

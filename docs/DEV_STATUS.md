@@ -21,6 +21,31 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-19 (modern-standby missed-boundary watchdog):
+
+- At 08:27 the live policy was still night 15/15 W although the local clock was
+  in the day window. The 07:00 task reported `NumberOfMissedRuns=1` and its last
+  run remained 2026-11-18; Kernel-Power logs show Modern Standby across the
+  boundary. `StartWhenAvailable` did not promptly repair the missed run, and a
+  logon-only trigger cannot cover resume without a new logon.
+- Restored day battery 25 W / AC 45 W through the deployed helper. Current AC
+  Fast/Slow read-back is 45/45 W; STAPM remains firmware-managed and was observed
+  moving between about 29 and 35 W, so it is not claimed as a fixed 45 W cap.
+- Extended the current-policy task with a five-minute repetition trigger in
+  addition to logon. The periodic path first checks worker settings, explicit
+  attempt/applied line identity, and Fast/Slow read-back. A matching healthy
+  state logs `SKIP reason=already-applied` and does not restart the tray or write
+  hardware; only a missing/mismatched state invokes the existing recovery helper.
+- Set the repetition duration to ten years with `StopAtDurationEnd=false`;
+  Task Scheduler's default empty duration would otherwise stop after one day.
+  The registered task reports next run 08:40, interval PT5M, and two triggers.
+  Actual runs at 08:33/08:34/08:35 returned 0 and skipped without changing GUI
+  PID `6368` / worker PID `17332`.
+- The expanded isolated contract passes 15/15 in PowerShell 5.1 and 7, including
+  the long repetition duration, no-stop setting, read-back skip gate, and AST.
+  Existing policy-helper contracts and document links pass. A real future
+  sleep/resume across 07:00 or 23:00 remains the final end-to-end observation.
+
 2026-11-19 (post-reboot policy recovery):
 
 - At 03:02 the stable GUI/worker and pipe were absent. System logs showed an

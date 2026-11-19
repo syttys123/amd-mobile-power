@@ -1,0 +1,47 @@
+{
+  "SchemaVersion": 1,
+  "Verification": "PASS",
+  "RecordedAt": "2026-11-19T08:35:02+08:00",
+  "Issue": {
+    "ObservedAt": "2026-11-19T08:27:35+08:00",
+    "ExpectedWindow": "day",
+    "ActualPolicy": "night 15/15 W",
+    "DayTaskLastRun": "2026-11-18T07:00:01+08:00",
+    "DayTaskMissedRuns": 1,
+    "CauseEvidence": "Kernel-Power Modern Standby entry/exit and system-time synchronization across the 07:00 boundary"
+  },
+  "Recovery": {
+    "BatteryWatts": 25,
+    "AcWatts": 45,
+    "ObservedLine": "ac",
+    "AppliedLine": "ac",
+    "FastLimitWatts": 45,
+    "SlowLimitWatts": 45,
+    "StapmBehavior": "Firmware-managed; observed approximately 29-35 W, not a fixed requested 45 W",
+    "HelperResult": "PASS"
+  },
+  "Watchdog": {
+    "TaskName": "AmdMobilePower CurrentPolicy AtLogon",
+    "Triggers": ["Current user logon plus PT20S", "Every PT5M"],
+    "RepetitionDuration": "P3650D",
+    "StopAtDurationEnd": false,
+    "SkipRequires": ["enabled dual-line settings match", "observed/attempt/applied lines match", "applied target matches current line", "Fast/Slow read-back within 1 W"],
+    "HealthyAction": "SKIP without hardware write or GUI restart",
+    "ObservedRuns": ["08:33:29", "08:34:59", "08:35:02"],
+    "LastTaskResult": 0,
+    "NextRunObserved": "2026-11-19T08:40:00+08:00",
+    "GuiProcessId": 6368,
+    "WorkerProcessId": 17332
+  },
+  "Contracts": {
+    "PowerShell51": "artifacts/policy-watchdog-contract-ps5-final.json",
+    "PowerShell7": "artifacts/policy-watchdog-contract-ps7-final.json",
+    "Checks": 15,
+    "Result": "PASS",
+    "HardwareAccess": false,
+    "ScheduledTaskMutatedByContract": false
+  },
+  "ResidualRisk": "A future real Modern Standby resume across a policy boundary is still needed to confirm wake timing on this firmware.",
+  "StableDeploymentReplaced": false,
+  "PublicReleaseApproved": false
+}
