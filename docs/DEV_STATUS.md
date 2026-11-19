@@ -56,9 +56,13 @@ not authoritative.
   `docs/evidence/packaging/v1.0.43-deployment-2026-11-20.json`.
 - Night policy remains 23:00-07:00 at 10/10 W and day 07:00-23:00 at battery
   25 W / AC 45 W; the three policy tasks were re-enabled after promotion.
+  A main-agent frame audit confirms preset hover-before-click ordering and the
+  policy/firmware/closing copy, and records the dangling-colon defect as fixed
+  in this build: `docs/evidence/media/native-promo-main-agent-audit-2026-11-20.json`.
   Remaining: the public promo video is still the 1.0.42 review cut, so a 1.0.43
-  media refresh is pending; the second physical AMD device and the owner's
-  publication approval also remain open.
+  media refresh is pending; hook/firmware frames were not re-inspected, the
+  independent pojia audit remains unavailable, and the second physical AMD
+  device plus the owner's publication approval are still open.
 
 2026-11-19 23:02 (night target changed to 10 W):
 

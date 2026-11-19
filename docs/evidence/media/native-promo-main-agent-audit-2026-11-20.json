@@ -1,0 +1,82 @@
+{
+  "SchemaVersion": 1,
+  "Scope": "Main-agent visual audit of the 1.0.42 silent review cut; no independent-agent PASS is claimed",
+  "Video": "artifacts/media/promo-1.0.42-review-final2/amd-mobile-power-1.0.42-review-silent.mp4",
+  "VideoSHA256": "52aeee33e4e308a2d4b9e107e5a526c54402f7d61b44c1dda811670bb50759dc",
+  "DurationSeconds": 55.0,
+  "Inspected": [
+    {
+      "Scene": "ui-demo",
+      "Artifacts": [
+        "keyframes/ui-demo-00401.png",
+        "keyframes/ui-demo-00532.png",
+        "keyframes/ui-demo-00663.png",
+        "audit-presetrow-25w.png",
+        "audit-presetrow-45w.png",
+        "audit-presetrow-10w-move2.png",
+        "audit-tx/t19.4.png",
+        "audit-tx/t19.8.png"
+      ],
+      "Result": "PASS",
+      "Notes": "Pointer enters and hovers the preset before its pill changes; no premature 10 W switch. 25 W, 45 W and 10 W each show apply/processing feedback, then the applied read-back."
+    },
+    {
+      "Scene": "presets",
+      "Artifacts": ["keyframes/presets-00810.png"],
+      "Result": "PASS",
+      "Notes": "Preset 1 edited to 12 W, saved, and the status line reads 12 / 25 / 45 W; the 10 W target is still separate until the next click."
+    },
+    {
+      "Scene": "auto-policy",
+      "Artifacts": [
+        "keyframes/auto-policy-00947.png",
+        "keyframes/auto-policy-01050.png",
+        "keyframes/auto-policy-01152.png"
+      ],
+      "Result": "PASS",
+      "Notes": "Battery 25 W / external 45 W saved and enabled; the battery-only toggle ends at 仅电池 25 W. The first sampled frame shows 35 W mid-typing before 45 W, consistent with the field edit."
+    },
+    {
+      "Scene": "compat",
+      "Artifacts": [
+        "keyframes/compat-01425.png",
+        "audit-status-zoom.png",
+        "artifacts/media/promo-1.0.42-diagnostics-flow/frames-aa71e60b4c5b47e0b3a10fc3393f120c/frame-0028.png"
+      ],
+      "Result": "DEFECT_FOUND",
+      "Notes": "The compact status bar renders 诊断已导出： while the exported path sits on the second line, so the visible single line ends with a dangling colon. Root cause: visible_status mirrors only the first line of the two-line advanced message. Fixed in 1.0.43 (commit 9353430) and verified with an isolated capture; the 1.0.42 review cut still shows the old string and needs a media refresh."
+    },
+    {
+      "Scene": "safety",
+      "Artifacts": ["keyframes/safety-00232.png"],
+      "Result": "PASS",
+      "Notes": "Consent dialog text is complete and legible; checkbox, cancel and confirm states render correctly."
+    },
+    {
+      "Scene": "closing",
+      "Artifacts": ["keyframes/closing-01635.png"],
+      "Result": "PASS",
+      "Notes": "Repository URL and review-only notice are complete and centered."
+    }
+  ],
+  "NotInspected": [
+    "hook scene keyframes",
+    "firmware scene keyframes",
+    "safety-00135 and safety-00329",
+    "compat-01345 and compat-01504",
+    "closing-01544 and closing-01590"
+  ],
+  "DeterministicGates": {
+    "FullDecode": "PASS",
+    "DemoSync": "PASS",
+    "Layout": "PASS",
+    "Luminance": "PASS within the recorded downscaled heuristic scope"
+  },
+  "ResidualRisk": [
+    "No independent pojia visual audit: upstream quota blocked the agent; this file records main-agent inspection only.",
+    "The 1.0.42 review cut predates the 1.0.43 compact-status fix; a full 1.0.43 media refresh is pending.",
+    "Luminance gates are downscaled heuristics and do not prove absence of local flicker.",
+    "Hook and firmware scenes were not re-inspected in this pass."
+  ],
+  "RecordedAt": "2026-11-20T05:40:00+08:00"
+}
