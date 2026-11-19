@@ -1,8 +1,8 @@
 param(
     [ValidateRange(5, 60)][int]$DayBatteryWatts = 25,
     [ValidateRange(5, 60)][int]$DayAcWatts = 45,
-    [ValidateRange(5, 60)][int]$NightBatteryWatts = 15,
-    [ValidateRange(5, 60)][int]$NightAcWatts = 15,
+    [ValidateRange(5, 60)][int]$NightBatteryWatts = 10,
+    [ValidateRange(5, 60)][int]$NightAcWatts = 10,
     [ValidateRange(0, 23)][int]$DayStartHour = 7,
     [ValidateRange(0, 23)][int]$NightStartHour = 23,
     [string]$HelperPath = (Join-Path $PSScriptRoot 'apply-power-policy-direct.ps1'),

@@ -158,7 +158,7 @@ boundary. It records the initial stable GUI/arguments, clears only test
 GUI/worker processes rooted under repository artifacts, and always restores the
 stable `C:\RyzenAdj` tray from `finally`. The recovery uses
 `apply-power-policy-direct.ps1 -AllowGuiAutoStart -RefreshGui`, applies the
-current 07:00-23:00 (`25/45 W`) or night (`15/15 W`) policy, and independently
+current 07:00-23:00 (`25/45 W`) or night (`10/10 W`) policy, and independently
 probes `enabled=true` and the current Fast/Slow limits. A failed recovery is
 reported as a composite error; it does not replace the original gate failure.
 The contract test parses this structure and injects body/recovery failures into

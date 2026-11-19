@@ -38,10 +38,10 @@ Assert-Contains $source '-RefreshGui' `
     'stable recovery must use the safe GUI reload path'
 Assert-Contains $source '$hour -ge 7 -and $hour -lt 23' `
     'recovery must select the 07:00-23:00 day window'
-Assert-Contains $source '{ 25 } else { 15 }' `
-    'recovery must select battery 25/15 W by time window'
-Assert-Contains $source '{ 45 } else { 15 }' `
-    'recovery must select AC 45/15 W by time window'
+Assert-Contains $source '{ 25 } else { 10 }' `
+    'recovery must select battery 25/10 W by time window'
+Assert-Contains $source '{ 45 } else { 10 }' `
+    'recovery must select AC 45/10 W by time window'
 Assert-Contains $source 'getPowerPolicy' `
     'recovery must probe the worker policy'
 Assert-Contains $source 'getSnapshot' `
@@ -194,8 +194,8 @@ if ($unexpectedFinallyCommands.Count -eq 0) {
             InitialGuiArguments = '--tray --simple-mode --max-target-watts 45'
             RestoredGuiPid = 16293
             RestoredWorkerPid = 42153
-            BatteryWatts = 15
-            AcWatts = 15
+            BatteryWatts = 10
+            AcWatts = 10
         }
     }
 
@@ -302,8 +302,8 @@ if ($unexpectedFinallyCommands.Count -eq 0) {
             'StableGuiRecovery must record the restored GUI pid'
         Assert-True ($document.StableGuiRecovery.RestoredWorkerPid -eq 42153) `
             'StableGuiRecovery must record the restored worker pid'
-        Assert-True ($document.StableGuiRecovery.BatteryWatts -eq 15 -and
-            $document.StableGuiRecovery.AcWatts -eq 15) `
+        Assert-True ($document.StableGuiRecovery.BatteryWatts -eq 10 -and
+            $document.StableGuiRecovery.AcWatts -eq 10) `
             'StableGuiRecovery must record the applied policy targets'
 
         # 4. A recovery-only failure must surface the recovery error directly,

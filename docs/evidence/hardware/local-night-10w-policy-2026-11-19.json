@@ -1,0 +1,41 @@
+{
+  "SchemaVersion": 1,
+  "Verification": "PASS",
+  "RecordedAt": "2026-11-19T23:05:25+08:00",
+  "UserRequest": "晚上改为10w",
+  "Policy": {
+    "Day": {"BatteryWatts": 25, "AcWatts": 45},
+    "Night": {"BatteryWatts": 10, "AcWatts": 10},
+    "NightWindow": "23:00-07:00"
+  },
+  "Tasks": {
+    "DirectNightPolicy": "AmdMobilePower DirectNightPolicy 2300 uses -BatteryWatts 10 -AcWatts 10",
+    "CurrentPolicyWatchdog": "AmdMobilePower CurrentPolicy AtLogon uses -NightBatteryWatts 10 -NightAcWatts 10",
+    "WatchdogLastTaskResult": 0,
+    "WatchdogHealthyAction": "SKIP reason=already-applied line=ac fastSlow=10/10"
+  },
+  "ReadBack": {
+    "Enabled": true,
+    "ObservedLine": "ac",
+    "AttemptLine": "ac",
+    "AppliedLine": "ac",
+    "BatteryTarget": "10/10/10",
+    "AcTarget": "10/10/10",
+    "FastLimitWatts": 10,
+    "SlowLimitWatts": 10,
+    "MeasuredFastWatts": 9.99819,
+    "MeasuredSlowWatts": 10.0003,
+    "MeasuredStapmWatts": 10.0001,
+    "StapmLimitBehavior": "Firmware-managed dynamic read-back; not claimed as a fixed 10 W register"
+  },
+  "Contracts": {
+    "CurrentPolicyPowerShell51": "artifacts/policy-night10-contract-ps5.json",
+    "CurrentPolicyPowerShell7": "artifacts/policy-night10-contract-ps7.json",
+    "CurrentPolicyChecks": 15,
+    "ReleaseGuiRecovery": "PASS in PowerShell 5.1 and 7",
+    "PolicyHelper": "PASS in PowerShell 5.1 and 7",
+    "DocumentLinks": "PASS"
+  },
+  "StableDeploymentReplaced": false,
+  "PublicReleaseApproved": false
+}

@@ -20,11 +20,11 @@ if (-not $AllowGuiAutoStart -or -not $RefreshGui) { throw 'unsafe helper flags' 
 '@ | Set-Content -LiteralPath $fakeHelper -Encoding UTF8
     $script = Join-Path $root 'restore-current-policy.ps1'
     foreach ($case in @(
-        @{ Hour = 6; Expected = '15/15'; Window = 'night' },
+        @{ Hour = 6; Expected = '10/10'; Window = 'night' },
         @{ Hour = 7; Expected = '25/45'; Window = 'day' },
         @{ Hour = 22; Expected = '25/45'; Window = 'day' },
-        @{ Hour = 23; Expected = '15/15'; Window = 'night' },
-        @{ Hour = 0; Expected = '15/15'; Window = 'night' }
+        @{ Hour = 23; Expected = '10/10'; Window = 'night' },
+        @{ Hour = 0; Expected = '10/10'; Window = 'night' }
     )) {
         $log = Join-Path $work ("case-$($case.Hour).log")
         & $script -HelperPath $fakeHelper -LogPath $log `
@@ -55,7 +55,7 @@ if (-not $AllowGuiAutoStart -or -not $RefreshGui) { throw 'unsafe helper flags' 
     $plan = ($planJson -join "`n") | ConvertFrom-Json
     Add-Result 'installer-dry-run' `
         (-not $plan.Apply -and $plan.Arguments.Contains('-DayBatteryWatts 25') -and
-         $plan.Arguments.Contains('-NightBatteryWatts 15')) `
+         $plan.Arguments.Contains('-NightBatteryWatts 10')) `
         'dry run emits the reviewed action without registration'
 
     $installerText = Get-Content -LiteralPath $installer -Raw

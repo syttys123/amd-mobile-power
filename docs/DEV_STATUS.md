@@ -21,6 +21,20 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-19 23:02 (night target changed to 10 W):
+
+- The user changed the night policy from 15/15 W to battery/AC 10/10 W. The
+  23:00 boundary task, current-policy logon/watchdog task, script defaults, and
+  isolated boundary tests were updated together so a later task reinstall does
+  not restore the old 15 W value. Day remains battery 25 W / AC 45 W.
+- Applied the new night policy through the deployed helper. Worker settings and
+  applied target are 10/10/10 W on both lines; current AC Fast/Slow read-back is
+  10/10 W and measured power is about 10 W. STAPM limit remains firmware-managed
+  and is not claimed as a fixed 10 W register value.
+- The real 23:00 transition first completed at 15/15 W under the old setting;
+  both boundary and watchdog tasks returned 0. The subsequent explicit user
+  change converged to 10/10 W without changing the stable package.
+
 2026-11-19 (modern-standby missed-boundary watchdog):
 
 - At 08:27 the live policy was still night 15/15 W although the local clock was

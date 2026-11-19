@@ -3,8 +3,8 @@ param(
     [string]$ScriptPath = (Join-Path $PSScriptRoot 'restore-current-policy.ps1'),
     [ValidateRange(5, 60)][int]$DayBatteryWatts = 25,
     [ValidateRange(5, 60)][int]$DayAcWatts = 45,
-    [ValidateRange(5, 60)][int]$NightBatteryWatts = 15,
-    [ValidateRange(5, 60)][int]$NightAcWatts = 15,
+    [ValidateRange(5, 60)][int]$NightBatteryWatts = 10,
+    [ValidateRange(5, 60)][int]$NightAcWatts = 10,
     [ValidateRange(1, 60)][int]$WatchdogIntervalMinutes = 5,
     [switch]$Apply
 )

@@ -15,7 +15,7 @@
   `00369735`. The deployed tray session runs
   `--simple-mode --max-target-watts 45` with editable presets `10 / 25 / 45 W`
   and a `45 W` ceiling. The armed day/night policy is 07:00 battery `25 W` /
-  AC `45 W` and 23:00 `15/15 W`; policy targets and temporary local user caps
+  AC `45 W` and 23:00 `10/10 W`; policy targets and temporary local user caps
   are runtime state and are not part of the release package.
   On 2026-11-19 a local current-user logon recovery task was added after an
   unexpected reboot left the tray absent between schedule boundaries:

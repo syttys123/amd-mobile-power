@@ -283,8 +283,8 @@ function Restore-StableGuiAfterReleaseGate {
     }
 
     $hour = (Get-Date).Hour
-    $batteryWatts = if ($hour -ge 7 -and $hour -lt 23) { 25 } else { 15 }
-    $acWatts = if ($hour -ge 7 -and $hour -lt 23) { 45 } else { 15 }
+    $batteryWatts = if ($hour -ge 7 -and $hour -lt 23) { 25 } else { 10 }
+    $acWatts = if ($hour -ge 7 -and $hour -lt 23) { 45 } else { 10 }
     $firstError = $null
     try {
         Invoke-StablePolicyHelper -BatteryWatts $batteryWatts -AcWatts $acWatts
