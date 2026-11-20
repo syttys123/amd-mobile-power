@@ -1,6 +1,6 @@
 // Frame-exact storyboard. Every GUI clip is an isolated 1.0.43 fixture.
 window.__SCENES__ = [
-  { id: "hook", duration: 3.5, narration: "同一台 AMD 轻薄本，插电要性能，电池想省一点。" },
+  { id: "hook", duration: 3.5, narration: "AMD 轻薄本的功耗上限，按你的需求随时调整。" },
   { id: "safety", duration: 8.5, narration: "默认只读。先阅读并勾选须知，再确认解锁；随时可以重新锁定。", clip: "consent" },
   { id: "ui-demo", duration: 11.5, narration: "点一下预设就会应用并核对。示例依次切换 25 W、45 W 和 10 W。", clip: "simple" },
   { id: "presets", duration: 7.0, narration: "三档都能改。这里把 10 W 改成 12 W，保存后再应用。", clip: "presets", clipOffset: 0.7, clipEnd: 7.8 },

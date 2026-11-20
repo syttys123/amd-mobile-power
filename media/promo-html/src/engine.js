@@ -177,7 +177,7 @@ renderers.hook = (scene, t, root) => {
   Object.assign(wrap.style, {
     display: "flex", alignItems: "center", padding: "0 120px 90px", gap: "80px",
   });
-  const left = heading("AMD MOBILE POWER", "插电要性能\n电池要续航",
+  const left = heading("AMD MOBILE POWER", "功耗上限\n按你的需求定",
     "一个原生 Windows 功耗面板\n看清实时功耗，也看清实际上限", 1080);
   left.children[1].style.fontSize = "108px";
   const icon = node("img", { width: "260px", height: "260px" });
@@ -278,7 +278,7 @@ renderers.closing = (scene, t, root) => {
     text("github.com/syttys123/amd-mobile-power", {
       color: C.accent, fontSize: "32px", fontWeight: "600", marginBottom: "28px",
     }),
-    text("审查版 · 无声字幕 · 尚未公开发布", {
+    text("开源项目 · 无声字幕演示 · 模拟数据未写硬件", {
       color: C.faint, fontSize: "20px",
     }),
   );

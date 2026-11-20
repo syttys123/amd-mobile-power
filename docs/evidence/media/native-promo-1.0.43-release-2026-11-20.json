@@ -1,0 +1,85 @@
+{
+  "SchemaVersion": 2,
+  "Version": "1.0.43",
+  "Status": "OWNER_APPROVED_FOR_GITHUB_RELEASE",
+  "Video": "artifacts/media/promo-1.0.43-release/amd-mobile-power-1.0.43.mp4",
+  "VideoSHA256": "4317a7547bcf9b0177ef3ad9c2e800dc96e9f6d1b06c2bc51bffb77d835f8dd5",
+  "VideoBytes": 3468851,
+  "DurationSeconds": 55.0,
+  "Width": 1920,
+  "Height": 1080,
+  "FrameRate": 30,
+  "Frames": 1650,
+  "VideoCodec": "h264",
+  "Audio": "none",
+  "GuiSHA256": "84bfa2673a6a8d3a9c40ca40110ca2ca815b0d191638f98d5784f1f1408fe933",
+  "SourceCommit": "bbe5e1421387bba21c67bfa51accf824b214f22a",
+  "SimulatedData": true,
+  "HardwareAccess": false,
+  "CopyChanges": [
+    "Hook headline changed from plug/battery framing to demand-first: 功耗上限，按你的需求定",
+    "Closing line no longer says unpublished; states open-source silent demo with simulated data",
+    "Bilibili cover rebuilt as a composed thumbnail with 10/25/45 W demand chips and the applied 45 W GUI state"
+  ],
+  "Scenes": ["hook", "safety", "ui-demo", "presets", "auto-policy", "firmware", "compat", "closing"],
+  "FullDecode": "PASS",
+  "DemoSyncReview": {
+    "Path": "artifacts/media/promo-1.0.43-release/demo-sync-review.json",
+    "Result": "PASS"
+  },
+  "LayoutReview": {
+    "Path": "artifacts/media/promo-1.0.43-release/layout-review.json",
+    "Result": "PASS",
+    "Samples": 24
+  },
+  "KeyframeReview": {
+    "Path": "artifacts/media/promo-1.0.43-release/keyframes",
+    "Result": "PASS",
+    "Samples": 24
+  },
+  "LuminanceReview": {
+    "WholeFrame": {
+      "Path": "artifacts/media/promo-1.0.43-release/luminance-review.json",
+      "Frames": 1650,
+      "Minimum": 37.2913,
+      "Maximum": 89.0546,
+      "IsolatedSpikes": [],
+      "BrightFrames": []
+    },
+    "GuiRegion": {
+      "Path": "artifacts/media/promo-1.0.43-release/luminance-gui-region-review.json",
+      "Frames": 1650,
+      "Minimum": 37.4581,
+      "Maximum": 150.595,
+      "IsolatedSpikes": [],
+      "BrightFrames": []
+    },
+    "Mobile960": {
+      "Path": "artifacts/media/promo-1.0.43-release/luminance-960-review.json",
+      "Frames": 1650,
+      "Minimum": 37.309,
+      "Maximum": 89.0986,
+      "IsolatedSpikes": [],
+      "BrightFrames": []
+    },
+    "Scope": "Downscaled luminance heuristics; not proof of absence of local flicker"
+  },
+  "Clips": {
+    "Consent": "artifacts/media/promo-1.0.43-consent-flow/flow-manifest.json",
+    "Simple": "artifacts/media/promo-1.0.43-final-simple/frames-manifest.json",
+    "Presets": "artifacts/media/promo-1.0.43-final-presets/frames-manifest.json",
+    "Policy": "artifacts/media/promo-1.0.43-final-policy/frames-manifest.json",
+    "Diagnostics": "artifacts/media/promo-1.0.43-diagnostics-flow/flow-manifest.json"
+  },
+  "ReviewAssets": {
+    "Cover": "artifacts/media/promo-1.0.43-release/bilibili-cover-1.0.43-demand.png",
+    "ContactSheet": "artifacts/media/promo-1.0.43-release/native-promo-1.0.43-contact-sheet-2026-11-20.png",
+    "Manifest": "artifacts/media/promo-1.0.43-release/review-assets-1.0.43.json"
+  },
+  "VisualAudit": {
+    "MainAgent": "Hook and closing re-inspected after copy change; GUI scenes unchanged from the audited 1.0.43 review cut.",
+    "IndependentAgent": "Unavailable: pojia upstream quota rejected the agent; not counted as an independent PASS.",
+    "OwnerApproval": "User explicitly approved GitHub Release creation on 2026-11-20; Bilibili upload remains separate."
+  },
+  "RecordedAt": "2026-11-20T07:40:00+08:00"
+}
