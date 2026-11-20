@@ -21,6 +21,25 @@ not authoritative.
 
 ## Latest Maintenance Milestone
 
+2026-11-20 (v1.0.43 GitHub Release published, owner-approved):
+
+- Reworked the promo messaging to demand-oriented power policy (any target
+  watts, editable presets, dual-line auto policy) instead of a plugged-vs-
+  battery binary; rebuilt the composed Bilibili cover via
+  `media/promo-html/build/make-cover.js` and re-rendered the 55 s release cut
+  `artifacts/media/promo-1.0.43-release/amd-mobile-power-1.0.43.mp4`
+  (SHA256 `4317a754...`). All media gates pass; evidence in
+  `docs/evidence/media/native-promo-1.0.43-release-2026-11-20.json`.
+- Created GitHub Release `v1.0.43` (id `452514299`, target `77cbdfb`) with
+  Chinese release notes covering install steps, SHA256 values, and safety
+  boundaries; uploaded the gated ZIP, demo MP4, and new cover PNG.
+- Re-downloaded all three assets through the local proxy and confirmed
+  SHA256 matches byte-for-byte (direct downloads are truncated by the local
+  FlClash environment). Evidence:
+  `docs/evidence/release/github-release-v1.0.43-2026-11-20.json`.
+- Bilibili upload remains pending explicit owner approval plus an
+  authenticated session; nothing was uploaded.
+
 2026-11-20 06:20 (1.0.43 media rebuild):
 
 - Recaptured all five isolated fixture clips with the deployed 1.0.43 GUI

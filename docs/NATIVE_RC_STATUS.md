@@ -1,6 +1,6 @@
 # Native Release Candidate Status
 
-Status: `STABLE_LOCAL_DEPLOYED_1.0.43_PENDING_PUBLICATION`
+Status: `GITHUB_RELEASE_V1.0.43_PUBLISHED_BILIBILI_PENDING`
 
 This document tracks the native Rust GUI + C++ worker package and its
 stable-local deployment. `C:\RyzenAdj` currently holds `1.0.43`
@@ -50,9 +50,14 @@ previous native `1.0.17-native` build is preserved as
 Decision (2026-11-20): the native line has a fully gated stable-local
 deployment for the verified 8845HS platform, and `C:\RyzenAdj` contains the
 `1.0.43` package (source `bbe5e14`). Broader AMD generation support remains
-experimental. Public release remains `READY_FOR_HUMAN_REVIEW` and is not
-approved; real OS DPI transitions, a second AMD device, a clean Windows
-WinRing0 baseline, and owner media review are still open. Hosted Windows CI
+experimental. The owner approved the GitHub Release on 2026-11-20: tag
+`v1.0.43` (release id `452514299`, target `77cbdfb`) is published with the
+gated ZIP, the demand-oriented 55 s demo MP4, and the new composed cover;
+all three asset downloads were proxy-verified against local SHA256 values
+(`docs/evidence/release/github-release-v1.0.43-2026-11-20.json`). Bilibili
+upload still requires explicit approval and an authenticated session. Real
+OS DPI transitions, a second AMD device, and a clean Windows WinRing0
+baseline remain open. Hosted Windows CI
 run `44620445052` for the push containing `bbe5e14` completed successfully on
 2026-11-20. Current per-gate status is tracked in `RELEASE_CHECKLIST.md`.
 Evidence:

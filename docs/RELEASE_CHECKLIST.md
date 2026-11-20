@@ -2,7 +2,7 @@
 
 ## Deployed Stable 1.0.43 (2026-11-20)
 
-Current target: **1.0.43**, status **STABLE_LOCAL_DEPLOYED_PENDING_PUBLICATION**.
+Current target: **1.0.43**, status **GITHUB_RELEASE_PUBLISHED_BILIBILI_PENDING**.
 The exact gated ZIP comes from `bbe5e14`, SHA256
 `663f49eba5a0506bcacc2830104f48f5f13943372b51f65a84deb137c2c3f6f4`
 (803,432 bytes). Binary identities: GUI `84bfa267`, worker `ffec2afc`, probe
@@ -36,8 +36,15 @@ The exact gated ZIP comes from `bbe5e14`, SHA256
       `PublicReleaseReadiness=READY_FOR_HUMAN_REVIEW`, 13/13 local checks
       including packaged GUI/tray evidence and deployed hash match:
       `evidence/release/native-publication-readiness-1.0.43-2026-11-20.json`.
-- [ ] Independent pojia audit, second AMD device, and owner publication
-      approval.
+- [x] Owner approved the GitHub Release (2026-11-20). Release `v1.0.43`
+      (id `452514299`, target `77cbdfb`) is published with three assets:
+      gated ZIP, 55 s demand-oriented demo MP4, and the new composed cover.
+      All three asset downloads were re-fetched through the local proxy and
+      their SHA256 values match the local artifacts:
+      `evidence/release/github-release-v1.0.43-2026-11-20.json`.
+- [ ] Bilibili upload still requires explicit owner approval and an
+      authenticated session. Independent pojia audit and a second AMD device
+      remain open.
 
 Current package gates:
 

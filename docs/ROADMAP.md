@@ -86,6 +86,7 @@
 - [x] Finalize Chinese project introduction for review.
 - [x] Feature screenshots and terminal-free demo recording.
 - [x] Promotional video script and rendered draft.
-- [ ] GitHub release.
+- [x] GitHub release (`v1.0.43`, 2026-11-20, owner-approved; assets verified by
+      proxy download SHA256 comparison).
 - [ ] Bilibili upload and description.
 

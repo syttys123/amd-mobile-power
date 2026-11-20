@@ -1,0 +1,38 @@
+{
+  "Date": "2026-11-20",
+  "Status": "PUBLISHED_OWNER_APPROVED",
+  "Approval": "Owner explicitly approved creating the GitHub Release and redoing the cover (2026-11-20 chat).",
+  "Repository": "syttys123/amd-mobile-power",
+  "ReleaseId": 452514299,
+  "Tag": "v1.0.43",
+  "TargetCommit": "77cbdfb1aab3945f563aa336b27176914753f570",
+  "Url": "https://github.com/syttys123/amd-mobile-power/releases/tag/v1.0.43",
+  "Messaging": "Demand-oriented power policy: any target watts with editable presets and dual-line auto policy; not a fixed plugged-performance vs battery-save binary.",
+  "Assets": [
+    {
+      "Name": "amd-mobile-power-v1.0.43-win-x64.zip",
+      "Bytes": 803432,
+      "Sha256": "663f49eba5a0506bcacc2830104f48f5f13943372b51f65a84deb137c2c3f6f4",
+      "DownloadVerified": true
+    },
+    {
+      "Name": "amd-mobile-power-1.0.43-demo.mp4",
+      "Bytes": 3468851,
+      "Sha256": "4317a7547bcf9b0177ef3ad9c2e800dc96e9f6d1b06c2bc51bffb77d835f8dd5",
+      "DownloadVerified": true
+    },
+    {
+      "Name": "bilibili-cover-1.0.43.png",
+      "Bytes": 458443,
+      "Sha256": "0c92ff0c07440b31fb40d134b3d02f12dc9ab3a877116df0a7c34f8331071beb",
+      "DownloadVerified": true
+    }
+  ],
+  "DownloadVerification": {
+    "Method": "curl -L via local proxy http://127.0.0.1:7890, then Get-FileHash SHA256 compared against local artifacts.",
+    "Note": "Direct (non-proxy) downloads were truncated by the local FlClash network environment; proxy downloads matched byte-for-byte.",
+    "Result": "PASS"
+  },
+  "MediaEvidence": "docs/evidence/media/native-promo-1.0.43-release-2026-11-20.json",
+  "BilibiliUpload": "NOT_APPROVED_NOT_EXECUTED"
+}
