@@ -51,6 +51,11 @@ not authoritative.
   deployed hash match, probe, icon, shortcut, compatibility index, media draft,
   review bundle). Evidence:
   `docs/evidence/release/native-publication-readiness-1.0.43-2026-11-20.json`.
+- The installer upgrade path 1.0.42 → 1.0.43 was verified in an isolated
+  directory: install flow PASS, every new payload hash matches, the upgraded
+  GUI passes read-only worker verification, and uninstall leaves no install
+  directory. Evidence:
+  `docs/evidence/packaging/v1.0.43-upgrade-from-1.0.42-2026-11-20.json`.
 
 2026-11-20 05:21 (1.0.43: compact diagnostics status fix, gate watchdog suspension, stable promotion):
 

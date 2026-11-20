@@ -1,0 +1,16 @@
+{
+  "Verification": "PASS",
+  "OldPackage": "amd-mobile-power-v1.0.42-win-x64-native-preview.zip",
+  "OldPackageSHA256": "35384501e2cf4b5808ba8796d212fb4b7394d49455153e817fefed1c11b44998",
+  "NewPackage": "amd-mobile-power-v1.0.43-win-x64-native-preview.zip",
+  "NewPackageSHA256": "663f49eba5a0506bcacc2830104f48f5f13943372b51f65a84deb137c2c3f6f4",
+  "OldVersion": "1.0.42",
+  "NewVersion": "1.0.43",
+  "InstallFlow": "PASS",
+  "InstalledPayloadMatchesNewPackage": true,
+  "RemovedSupersededFiles": [],
+  "ReadOnlyGuiAfterUpgrade": "PASS",
+  "Uninstall": "PASS",
+  "ResidualInstallDirectory": false,
+  "RecordedAt": "2026-11-20T07:14:04.4390372+08:00"
+}
